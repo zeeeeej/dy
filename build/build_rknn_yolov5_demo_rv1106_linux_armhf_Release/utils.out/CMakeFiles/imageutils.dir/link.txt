@@ -1,0 +1,2 @@
+/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libimageutils.a CMakeFiles/imageutils.dir/image_utils.c.o
+/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libimageutils.a
