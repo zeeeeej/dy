@@ -5,7 +5,8 @@
 
 void take_video(const std::string& save_path);
 
-void ensure_path_exists(const std::string& dir_path);
+// void ensure_path_exists(const std::string& dir_path);
+void ensure_path_exists(const char* dir_path);
 
 bool is_valid_video(const std::filesystem::path& file_path, int recent_seconds = 10);
 
@@ -38,7 +39,7 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
 
 std::string read_txt_file(const std::string& file_path);
 
-void movePhotos(std::set<std::string>& photo_names, const std::string& dest_folder);
+void movePhotos(std::set<std::string>& photo_names, const std::string& dest_folder, std::set<std::string>& action_id_record);
 
 void clearFile(const std::string& filepath);
 

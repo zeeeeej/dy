@@ -50,7 +50,7 @@ void action_id_collect(const unsigned char *action_id, size_t action_id_size){
 
     for (size_t i = 0; i < action_id_size; ++i) {
         outfile << std::hex << std::setw(2) << std::setfill('0') << (int)action_id[i];
-        if (i != action_id_size - 1) outfile << " ";
+        if (i != action_id_size - 1) outfile << "_";
     }
     outfile << std::endl;
 
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        printf("%s <model_path> \n", argv[0]);
+        printf("%s <model_path> <tmp_images_path> <photo_images_path> <result_txt_path>\n", argv[0]);
         return -1;
     }
 
@@ -71,21 +71,26 @@ int main(int argc, char **argv)
     const char *model_path = argv[1];
     
 /*--------------判断图片路径是否存在并创建---------------------*/
-    std::string image_tmp_path = "/userdata/tmp_images";
+
+    const char *image_tmp_path = argv[2];
     ensure_path_exists(image_tmp_path);
 
-    std::string images_dir_path = "/userdata/photo_images";
+    const char *images_dir_path = argv[3];
     ensure_path_exists(images_dir_path);
 
-/*--------------事件图片存储路径------------------------------*/
-    std::string action_id_image_path;
 
 
 /*--------------陀螺仪检测并拍照------------------------------*/
     float angle1 = 20.0f;
 
     std::set<std::string> photo_names;
-    std::thread t1([&angle1, &images_dir_path, &photo_names, &image_tmp_path, &action_id_image_path]() {
+    std::set<std::string>* photo_names_ptr = &photo_names;
+    
+    std::set<std::string> action_id_record;
+    std::set<std::string>* action_id_record_ptr = &action_id_record; 
+
+
+    std::thread t1([angle1, &image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr]() {
         while (true) {
             float result = tly_detect(angle1);
             std::cout << "检测到陀螺仪角度: " << result << std::endl;
@@ -103,31 +108,30 @@ int main(int argc, char **argv)
                 // 构建路径字符串
                 std::ostringstream oss;
                 oss << image_tmp_path;
-                if (!image_tmp_path.empty() && image_tmp_path.back() != '/')
+                if (!std::string(image_tmp_path).empty() && std::string(image_tmp_path).back() != '/') {
                     oss << "/";
-                
-                oss << std::put_time(&tm_now, "%Y-%m-%d_%H-%M-%S");
-                oss << "." << std::setfill('0') << std::setw(3) << millis.count();  // 补零到3位
+                }
+                oss << std::put_time(&tm_now, "%Y_%m_%d_%H_%M_%S");
+                oss << "_" << std::setfill('0') << std::setw(3) << millis.count();  // 补零到3位
                 oss << ".jpg";
                 std::string image_biu_path = oss.str();
                 
                 if (take_photo(0, image_biu_path)) {
-                    photo_names.insert(image_biu_path);
+                    photo_names_ptr->insert(image_biu_path);
                 };
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
             } else {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
-                    action_id_image_path = images_dir_path + "/" + action_id;
-                    movePhotos(photo_names, action_id_image_path);
+                    std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
+                    movePhotos(*photo_names_ptr, action_id_image_path_finall, *action_id_record_ptr);
                     clearFile(mydata::action_id_txt_name);
                 } else {
-                    std::cout << "开门角度没到阈值!!" << std::endl;
+                    std::cout << "没有action_id!!" << std::endl;
                 }
             }
         }
     });
-/*--------------创建陀螺仪检测---------------------*/
 
 
 
@@ -148,181 +152,177 @@ int main(int argc, char **argv)
         {
             printf("release_yolov5_model fail! ret=%d\n", ret);
         }
-    
-        // if (src_image.virt_addr != NULL)
-        // {
-        // #if defined(RV1106_1103) 
-        //         dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-        //                 rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
-        // #else
-        //         free(src_image.virt_addr);
-        // #endif
-        //     }  
     }
 
-
-      
-
-
-    std::string txt_dir = "/userdata/txt_dir";
+    const char* txt_dir = argv[4];
     ensure_path_exists(txt_dir);
+   
 
-    
-
- 
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(5));
-        std::vector<std::string> frames = get_image_paths(action_id_image_path);
-        std::string video_name = "a";
-        if (!frames.empty()) {
-            video_name = std::filesystem::path(action_id_image_path).filename().string();
-            for (const auto& img_path : frames) {
-            std::cout << "图片路径: " << img_path << std::endl;
+        if (!action_id_record.empty()) {
+            for (const std::string& action_id_image_path : action_id_record) {
+                std::string action_id_biu = std::filesystem::path(action_id_image_path).filename().string();
+                std::vector<std::string> frames = get_image_paths(action_id_image_path);
+/*--------------事件id检测的文件夹------------------------------*/
+                if (!frames.empty()) {
+                    for (const std::string& img_path : frames) {
+                            
+                            std::cout << "图片路径: " << img_path << std::endl;
 
-            std::string frame_id = std::filesystem::path(img_path).stem().string();
+                            std::string frame_id = std::filesystem::path(img_path).stem().string();
 
-            image_buffer_t src_image;
-            memset(&src_image, 0, sizeof(image_buffer_t));
-            ret = read_image(img_path.c_str(), &src_image);
+                            image_buffer_t src_image;
+                            memset(&src_image, 0, sizeof(image_buffer_t));
+                            ret = read_image(img_path.c_str(), &src_image);
 
-        #if defined(RV1106_1103) 
-            //RV1106 rga requires that input and output bufs are memory allocated by dma
-            ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                            (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
-            memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
-            dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
-            free(src_image.virt_addr);
-            src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
-            src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
-            rknn_app_ctx.img_dma_buf.size = src_image.size;
-        #endif
+                        #if defined(RV1106_1103) 
+                            //RV1106 rga requires that input and output bufs are memory allocated by dma
+                            ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                            (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
+                            memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
+                            dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
+                            free(src_image.virt_addr);
+                            src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
+                            src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
+                            rknn_app_ctx.img_dma_buf.size = src_image.size;
+                        #endif
 
-            if (ret != 0)
-            {
-                printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
-                deinit_post_process();
-    
-                ret = release_yolov5_model(&rknn_app_ctx);
-                if (ret != 0)
-                {
-                    printf("release_yolov5_model fail! ret=%d\n", ret);
-                }
-            
-                if (src_image.virt_addr != NULL)
-                {
-                #if defined(RV1106_1103) 
-                        dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
-                #else
-                        free(src_image.virt_addr);
-                #endif
-                    }  
-            }
-        
-            object_detect_result_list od_results;
-        
-            ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
-            if (ret != 0)
-            {
-                printf("init_yolov5_model fail! ret=%d\n", ret);
-                deinit_post_process();
-    
-                ret = release_yolov5_model(&rknn_app_ctx);
-                if (ret != 0)
-                {
-                    printf("release_yolov5_model fail! ret=%d\n", ret);
-                }
-            
-                if (src_image.virt_addr != NULL)
-                {
-                #if defined(RV1106_1103) 
-                        dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
-                #else
-                        free(src_image.virt_addr);
-                #endif
-                    }  
-            }
-        
+                            if (ret != 0)
+                            {
+                                printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
+                                deinit_post_process();
+                    
+                                ret = release_yolov5_model(&rknn_app_ctx);
+                                if (ret != 0)
+                                {
+                                    printf("release_yolov5_model fail! ret=%d\n", ret);
+                                }
+                            
+                                if (src_image.virt_addr != NULL)
+                                {
+                                #if defined(RV1106_1103) 
+                                        dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                                rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
+                                #else
+                                        free(src_image.virt_addr);
+                                #endif
+                                    }  
+                            }
+                        
+                            object_detect_result_list od_results;
+                        
+                            ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
+                            if (ret != 0)
+                            {
+                                printf("init_yolov5_model fail! ret=%d\n", ret);
+                                deinit_post_process();
+                    
+                                ret = release_yolov5_model(&rknn_app_ctx);
+                                if (ret != 0)
+                                {
+                                    printf("release_yolov5_model fail! ret=%d\n", ret);
+                                }
+                            
+                                if (src_image.virt_addr != NULL)
+                                {
+                                #if defined(RV1106_1103) 
+                                        dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                                rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
+                                #else
+                                        free(src_image.virt_addr);
+                                #endif
+                                    }  
+                            }
+                        
 
-            for (int i = 0; i < od_results.count; i++)
-            {
-                object_detect_result *det_result = &(od_results.results[i]);
-                printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
-                    det_result->box.left, det_result->box.top,
-                    det_result->box.right, det_result->box.bottom,
-                    det_result->prop);
-                int x1 = det_result->box.left;
-                int y1 = det_result->box.top;
-                int x2 = det_result->box.right;
-                int y2 = det_result->box.bottom;
+                            for (int i = 0; i < od_results.count; i++)
+                            {
+                                object_detect_result *det_result = &(od_results.results[i]);
+                                printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
+                                    det_result->box.left, det_result->box.top,
+                                    det_result->box.right, det_result->box.bottom,
+                                    det_result->prop);
+                                int x1 = det_result->box.left;
+                                int y1 = det_result->box.top;
+                                int x2 = det_result->box.right;
+                                int y2 = det_result->box.bottom;
 
-                std::string frame_number_str = video_name + "_" + frame_id + "_" + std::to_string(i);
+                                std::string frame_number_str = action_id_biu + "_" + frame_id + "_" + std::to_string(i);
 
 
-                if (od_results.count == 1 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.9){
-                    std::string txt1_name_path = txt_dir + "/" + video_name + "_1" + ".txt";
-                    std::ofstream outfile(txt1_name_path, std::ios::app); 
-                    if (outfile.is_open()) {
-                        outfile << frame_number_str << " "
-                                << det_result->cls_id << " "
-                                << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
-                        outfile.close();  // 关闭文件
-                        std::cout << "写入成功！" << std::endl;
-                    } else {
-                        std::cout << "无法打开文件！" << std::endl;
+                                if (od_results.count == 1 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.9){
+                                    std::string txt1_name_path = std::string(txt_dir) + "/" + action_id_biu + "_1" + ".txt";
+                                    std::ofstream outfile(txt1_name_path, std::ios::app); 
+                                    if (outfile.is_open()) {
+                                        outfile << frame_number_str << " "
+                                                << det_result->cls_id << " "
+                                                << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
+                                        outfile.close();  // 关闭文件
+                                        std::cout << "写入成功！" << std::endl;
+                                    } else {
+                                        std::cout << "无法打开文件！" << std::endl;
+                                    }
+                                }
+
+                                if (od_results.count == 2 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
+                                    std::string txt2_name_path = std::string(txt_dir) + "/" + action_id_biu + "_2" + ".txt";
+                                    std::ofstream outfile(txt2_name_path, std::ios::app); 
+                                    if (outfile.is_open()) {
+                                        outfile << frame_number_str << " "
+                                                << det_result->cls_id << " "
+                                                << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
+                                        outfile.close();  // 关闭文件
+                                        std::cout << "写入成功！" << std::endl;
+                                    } else {
+                                        std::cout << "无法打开文件！" << std::endl;
+                                    }        
+                                }
+
+                            }
+                            
+               
+
                     }
-                }
+                    
+            }
 
-                if (od_results.count == 2 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
-                    std::string txt2_name_path = txt_dir + "/" + video_name + "_2" + ".txt";
-                    std::ofstream outfile(txt2_name_path, std::ios::app); 
-                    if (outfile.is_open()) {
-                        outfile << frame_number_str << " "
-                                << det_result->cls_id << " "
-                                << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
-                        outfile.close();  // 关闭文件
-                        std::cout << "写入成功！" << std::endl;
-                    } else {
-                        std::cout << "无法打开文件！" << std::endl;
-                    }        
+
+            std::string txt1_name_path_result = std::string(txt_dir) + "/" + action_id_biu + "_1" + ".txt";
+
+            std::string txt2_name_path_result = std::string(txt_dir) + "/" + action_id_biu + "_2" + ".txt";
+
+            std::string crop_img_dirs = "/userdata/crop_images";
+
+            std::string final_result;
+            if (file_exists_and_not_empty(txt2_name_path_result)){
+                final_result = analyse_two(txt2_name_path_result);
+                int line_n = 10;
+                std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
+                if (process_last_n_lines(txt2_name_path_result, crop_img_path, line_n)) {
+                    std::cout << "👍 有截图保存成功" << std::endl;
+                } else {
+                    std::cout << "😢 没有任何截图保存成功" << std::endl;
                 }
+            }
+            if (file_exists_and_not_empty(txt1_name_path_result)) {
+                final_result = analyse_one(txt1_name_path_result);
+                int line_n = 5;
+                std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
+                if (process_last_n_lines(txt1_name_path_result, crop_img_path, line_n)) {
+                    std::cout << "👍 有截图保存成功" << std::endl;
+                } else {
+                    std::cout << "😢 没有任何截图保存成功" << std::endl;
+                }
+            }
 
             }
-            
         }
-        }
+
+       
+
         
-
-        std::string txt1_name_path_result = txt_dir + "/" + video_name + "_1" + ".txt";
-
-        std::string txt2_name_path_result = txt_dir + "/" + video_name + "_2" + ".txt";
-
-        std::string crop_img_dirs = "/userdata/crop_images";
-
-
-        std::string final_result;
-        if (file_exists_and_not_empty(txt2_name_path_result)){
-            final_result = analyse_two(txt2_name_path_result);
-            int line_n = 10;
-            std::string crop_img_path = crop_img_dirs + "/" + video_name;
-            if (process_last_n_lines(txt2_name_path_result, crop_img_path, line_n)) {
-                std::cout << "👍 有截图保存成功" << std::endl;
-            } else {
-                std::cout << "😢 没有任何截图保存成功" << std::endl;
-            }
-        }
-        if (file_exists_and_not_empty(txt1_name_path_result)) {
-            final_result = analyse_one(txt1_name_path_result);
-            int line_n = 5;
-            std::string crop_img_path = crop_img_dirs + "/" + video_name;
-            if (process_last_n_lines(txt1_name_path_result, crop_img_path, line_n)) {
-                std::cout << "👍 有截图保存成功" << std::endl;
-            } else {
-                std::cout << "😢 没有任何截图保存成功" << std::endl;
-            }
-        }
        
     } 
       

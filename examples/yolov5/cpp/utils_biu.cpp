@@ -28,7 +28,7 @@ std::string read_txt_file(const std::string& file_path) {
 }
 
 
-void movePhotos(std::set<std::string>& photo_names, const std::string& dest_folder) {
+void movePhotos(std::set<std::string>& photo_names, const std::string& dest_folder, std::set<std::string>& action_id_record) {
     for (auto it = photo_names.begin(); it != photo_names.end(); ) {
         const std::string& src_path = *it;
         std::filesystem::path src(src_path);
@@ -40,6 +40,7 @@ void movePhotos(std::set<std::string>& photo_names, const std::string& dest_fold
             std::cout << "移动成功: " << src_path << " -> " << dest.string() << std::endl;
             // 移动成功，从set里删除这个元素，注意erase返回下一个有效迭代器
             it = photo_names.erase(it);
+            action_id_record.insert(dest_folder);
         } else {
             std::cerr << "移动失败: " << src_path << " 错误: " << ec.message() << std::endl;
             ++it;  // 移动失败，跳过这个元素
@@ -91,10 +92,26 @@ bool take_photo(int device_id = 0, const std::string& save_path = "photo.jpg") {
 
 
 
-void ensure_path_exists(const std::string& dir_path) {
-    if (!std::filesystem::exists(dir_path)) {
+// void ensure_path_exists(const std::string& dir_path) {
+//     if (!std::filesystem::exists(dir_path)) {
+//         std::cout << "路径不存在，正在创建：" << dir_path << std::endl;
+//         std::filesystem::create_directories(dir_path);  // 递归创建目录
+//     } else {
+//         std::cout << "路径已存在：" << dir_path << std::endl;
+//     }
+// }
+
+
+void ensure_path_exists(const char* dir_path) {
+    if (dir_path == nullptr) {
+        std::cerr << "路径为空，无法创建目录" << std::endl;
+        return;
+    }
+    std::filesystem::path path_obj(dir_path);
+
+    if (!std::filesystem::exists(path_obj)) {
         std::cout << "路径不存在，正在创建：" << dir_path << std::endl;
-        std::filesystem::create_directories(dir_path);  // 递归创建目录
+        std::filesystem::create_directories(path_obj);  // 递归创建目录
     } else {
         std::cout << "路径已存在：" << dir_path << std::endl;
     }
