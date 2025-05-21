@@ -1,0 +1,6 @@
+/mnt/biubiu/asdasda1.jpg 0 14 14 14 14
+/mnt/biubiu/asdasda2.jpg 0 14 14 14 14
+/mnt/biubiu/asdasda3.jpg 0 14 14 14 14
+/mnt/biubiu/asdasda4.jpg 0 14 14 14 14
+/mnt/biubiu/asdasda5.jpg 0 14 14 14 14
+/mnt/biubiu/asdasda6.jpg 0 5 5 5 2
