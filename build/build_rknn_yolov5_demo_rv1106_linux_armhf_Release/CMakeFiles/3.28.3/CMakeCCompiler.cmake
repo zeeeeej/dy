@@ -1,4 +1,4 @@
-set(CMAKE_C_COMPILER "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc")
+set(CMAKE_C_COMPILER "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc")
 set(CMAKE_C_COMPILER_ARG1 "")
 set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_C_COMPILER_VERSION "8.3.0")
@@ -18,15 +18,15 @@ set(CMAKE_C_SIMULATE_ID "")
 set(CMAKE_C_COMPILER_FRONTEND_VARIANT "GNU")
 set(CMAKE_C_SIMULATE_VERSION "")
 
-set(CMAKE_C_COMPILER_SYSROOT "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr")
-set(CMAKE_COMPILER_SYSROOT "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr")
+set(CMAKE_C_COMPILER_SYSROOT "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr")
+set(CMAKE_COMPILER_SYSROOT "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/../arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr")
 
 
-set(CMAKE_AR "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar")
-set(CMAKE_C_COMPILER_AR "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc-ar")
-set(CMAKE_RANLIB "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib")
-set(CMAKE_C_COMPILER_RANLIB "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc-ranlib")
-set(CMAKE_LINKER "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ld")
+set(CMAKE_AR "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar")
+set(CMAKE_C_COMPILER_AR "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc-ar")
+set(CMAKE_RANLIB "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib")
+set(CMAKE_C_COMPILER_RANLIB "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc-ranlib")
+set(CMAKE_LINKER "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ld")
 set(CMAKE_MT "")
 set(CMAKE_TAPI "CMAKE_TAPI-NOTFOUND")
 set(CMAKE_COMPILER_IS_GNUCC 1)
@@ -69,7 +69,7 @@ endif()
 
 
 
-set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include-fixed;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include")
+set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include-fixed;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include")
 set(CMAKE_C_IMPLICIT_LINK_LIBRARIES "gcc;gcc_s;c;gcc;gcc_s")
-set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/lib;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib;/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib")
+set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/lib;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/lib;/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/lib")
 set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")

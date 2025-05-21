@@ -10,6 +10,9 @@
 #include <thread>
 #include <opencv2/opencv.hpp>
 #include <fstream>
+#include "photo.h"
+#include "common.h"
+
 
 
 
@@ -66,28 +69,29 @@ void clearFile(const std::string& filepath) {
 
 
 
-bool take_photo(int device_id = 0, const std::string& save_path = "photo.jpg") {
-    // cv::VideoCapture cap(device_id);
-    // if (!cap.isOpened()) {
-    //     std::cerr << "❌ 无法打开摄像头 device " << device_id << std::endl;
-    //     return false;
-    // }
+bool take_photo(int device_id = 2, const std::string& save_path = "", const std::string& img_name = "") {
+    if (save_path.empty() || img_name.empty()) {
+        std::cerr << "错误：保存路径或文件名为空!" << std::endl;
+        return false;
+    }
 
-    // cv::Mat frame;
-    // cap >> frame;
+    uint8_t id_buf[32]        = {0};
+    uint8_t img_name_buf[128] = {0};
+    uint8_t path_buf[128]     = {0};
 
-    // if (frame.empty()) {
-    //     std::cerr << "❌ 读取图像失败" << std::endl;
-    //     return false;
-    // }
+    // 拷贝路径和文件名（确保不会溢出）
+    std::strncpy((char*)img_name_buf, img_name.c_str(), sizeof(img_name_buf) - 1);
+    std::strncpy((char*)path_buf, save_path.c_str(), sizeof(path_buf) - 1);
 
-    // if (!cv::imwrite(save_path, frame)) {
-    //     std::cerr << "❌ 保存图像失败: " << save_path << std::endl;
-    //     return false;
-    // }
+    int ret = qjy_take_photo(device_id, id_buf, img_name_buf, path_buf);
 
-    std::cout << "✅ 拍照成功，图像保存至: " << save_path << std::endl;
-    return true;
+    if (ret == 0) {
+        std::cout << "拍照成功，图像保存至: " << save_path << "/" << img_name << std::endl;
+        return true;
+    } else {
+        std::cerr << "拍照失败，错误码: " << ret << std::endl;
+        return false;
+    }
 }
 
 
@@ -131,7 +135,7 @@ bool is_valid_video(const std::filesystem::path& file_path, int recent_seconds =
     auto age = std::chrono::duration_cast<std::chrono::seconds>(now - ftime).count();
 
     if (age < recent_seconds) {
-        std::cout << "⚠️ 可能正在录制中，跳过：" << file_path << std::endl;
+        std::cout << "可能正在录制中，跳过：" << file_path << std::endl;
         return false;
     }
 
@@ -176,12 +180,13 @@ std::vector<std::string> get_complete_videos(const std::string& dir_path) {
 // }
 
 
-float tly_detect(float therold) {
-    float angle = 0.0;
-    if (angle >= therold) {
-        return angle;
-    }
-    return -1.0f;
+float tly_detect(int angle1) {
+    // float detect_angle = (float)angle1;
+    // float therold = 20.0f;
+    // if (detect_angle >= therold) {
+    //     return detect_angle;
+    // }
+    return float(angle1);
 }
 
 // void* worker(void* arg) {
@@ -432,7 +437,7 @@ std::string analyse_two(const std::string& file_path) {
 bool process_last_n_lines(const std::string& txt_path, const std::string& save_dir, int keep_last_n) {
     std::ifstream infile(txt_path);
     if (!infile.is_open()) {
-        std::cerr << "❌ 无法打开文件: " << txt_path << std::endl;
+        std::cerr << "无法打开文件: " << txt_path << std::endl;
         return false;
     }
 
@@ -445,7 +450,7 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
     infile.close();
 
     if (lines.empty()) {
-        std::cout << "⚠️ TXT文件为空，不处理" << std::endl;
+        std::cout << "TXT文件为空，不处理" << std::endl;
         return false;
     }
 
@@ -462,13 +467,13 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         std::string img_path;
         int cls_id, x1, y1, x2, y2;
         if (!(iss >> img_path >> cls_id >> x1 >> y1 >> x2 >> y2)) {
-            std::cerr << "❌ 格式错误，跳过: " << lines[i] << std::endl;
+            std::cerr << "格式错误，跳过: " << lines[i] << std::endl;
             continue;
         }
 
         cv::Mat img = cv::imread(img_path);
         if (img.empty()) {
-            std::cerr << "❌ 读取图像失败: " << img_path << std::endl;
+            std::cerr << "读取图像失败: " << img_path << std::endl;
             continue;
         }
 
@@ -476,7 +481,7 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         x2 = std::min(img.cols - 1, x2);
         y2 = std::min(img.rows - 1, y2);
         if (x2 <= x1 || y2 <= y1) {
-            std::cerr << "❌ 无效坐标: " << lines[i] << std::endl;
+            std::cerr << "无效坐标: " << lines[i] << std::endl;
             continue;
         }
 
@@ -486,10 +491,10 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         std::string img_name = std::filesystem::path(img_path).stem().string();
         std::string save_path = save_dir + "/" + img_name + "_cls" + std::to_string(cls_id) + "_crop_" + std::to_string(i) + ".jpg";
         if (cv::imwrite(save_path, cropped)) {
-            std::cout << "✅ 截图完成: " << save_path << std::endl;
+            std::cout << "截图完成: " << save_path << std::endl;
             ++saved_count;
         } else {
-            std::cerr << "❌ 保存失败: " << save_path << std::endl;
+            std::cerr << "保存失败: " << save_path << std::endl;
         }
     }
 

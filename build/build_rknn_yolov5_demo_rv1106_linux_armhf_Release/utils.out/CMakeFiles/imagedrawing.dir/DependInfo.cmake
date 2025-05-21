@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/utils/image_drawing.c" "utils.out/CMakeFiles/imagedrawing.dir/image_drawing.c.o" "gcc" "utils.out/CMakeFiles/imagedrawing.dir/image_drawing.c.o.d"
+  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/image_drawing.c" "utils.out/CMakeFiles/imagedrawing.dir/image_drawing.c.o" "gcc" "utils.out/CMakeFiles/imagedrawing.dir/image_drawing.c.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

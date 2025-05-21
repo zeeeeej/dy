@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp
+CMAKE_SOURCE_DIR = /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release
+CMAKE_BINARY_DIR = /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -132,9 +132,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles /mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -162,17 +162,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named rknn_yolov5_demo
+# Target rules for targets named ipc_app
 
 # Build rule for target.
-rknn_yolov5_demo: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 rknn_yolov5_demo
-.PHONY : rknn_yolov5_demo
+ipc_app: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ipc_app
+.PHONY : ipc_app
 
 # fast build rule for target.
-rknn_yolov5_demo/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/build
-.PHONY : rknn_yolov5_demo/fast
+ipc_app/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/build
+.PHONY : ipc_app/fast
 
 #=============================================================================
 # Target rules for targets named fileutils
@@ -231,7 +231,7 @@ main.o: main.cc.o
 
 # target to build an object file
 main.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/main.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/main.cc.o
 .PHONY : main.cc.o
 
 main.i: main.cc.i
@@ -239,7 +239,7 @@ main.i: main.cc.i
 
 # target to preprocess a source file
 main.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/main.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/main.cc.i
 .PHONY : main.cc.i
 
 main.s: main.cc.s
@@ -247,7 +247,7 @@ main.s: main.cc.s
 
 # target to generate assembly for a file
 main.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/main.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/main.cc.s
 .PHONY : main.cc.s
 
 postprocess.o: postprocess.cc.o
@@ -255,7 +255,7 @@ postprocess.o: postprocess.cc.o
 
 # target to build an object file
 postprocess.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/postprocess.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/postprocess.cc.o
 .PHONY : postprocess.cc.o
 
 postprocess.i: postprocess.cc.i
@@ -263,7 +263,7 @@ postprocess.i: postprocess.cc.i
 
 # target to preprocess a source file
 postprocess.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/postprocess.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/postprocess.cc.i
 .PHONY : postprocess.cc.i
 
 postprocess.s: postprocess.cc.s
@@ -271,7 +271,7 @@ postprocess.s: postprocess.cc.s
 
 # target to generate assembly for a file
 postprocess.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/postprocess.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/postprocess.cc.s
 .PHONY : postprocess.cc.s
 
 rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
@@ -279,7 +279,7 @@ rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
 
 # target to build an object file
 rknpu2/yolov5_rv1106_1103.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/rknpu2/yolov5_rv1106_1103.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/rknpu2/yolov5_rv1106_1103.cc.o
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.o
 
 rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
@@ -287,7 +287,7 @@ rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
 
 # target to preprocess a source file
 rknpu2/yolov5_rv1106_1103.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/rknpu2/yolov5_rv1106_1103.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/rknpu2/yolov5_rv1106_1103.cc.i
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.i
 
 rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
@@ -295,7 +295,7 @@ rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
 
 # target to generate assembly for a file
 rknpu2/yolov5_rv1106_1103.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/rknpu2/yolov5_rv1106_1103.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/rknpu2/yolov5_rv1106_1103.cc.s
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.s
 
 utils_biu.o: utils_biu.cpp.o
@@ -303,7 +303,7 @@ utils_biu.o: utils_biu.cpp.o
 
 # target to build an object file
 utils_biu.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/utils_biu.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/utils_biu.cpp.o
 .PHONY : utils_biu.cpp.o
 
 utils_biu.i: utils_biu.cpp.i
@@ -311,7 +311,7 @@ utils_biu.i: utils_biu.cpp.i
 
 # target to preprocess a source file
 utils_biu.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/utils_biu.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/utils_biu.cpp.i
 .PHONY : utils_biu.cpp.i
 
 utils_biu.s: utils_biu.cpp.s
@@ -319,7 +319,7 @@ utils_biu.s: utils_biu.cpp.s
 
 # target to generate assembly for a file
 utils_biu.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rknn_yolov5_demo.dir/build.make CMakeFiles/rknn_yolov5_demo.dir/utils_biu.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app.dir/build.make CMakeFiles/ipc_app.dir/utils_biu.cpp.s
 .PHONY : utils_biu.cpp.s
 
 # Help Target
@@ -338,7 +338,7 @@ help:
 	@echo "... fileutils"
 	@echo "... imagedrawing"
 	@echo "... imageutils"
-	@echo "... rknn_yolov5_demo"
+	@echo "... ipc_app"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

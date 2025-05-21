@@ -33,15 +33,56 @@
 // #include "hd_uart_parser.h"
 #include <fstream>
 
+
+#include <getopt.h>          
+#include <linux/input.h>     
+
+  
+#include "param.h"
+#include "common.h"
+
+
+
+#include "rk_mpi_sys.h"
+extern "C"{
+#include "isp.h"
+}
+
+#include "log.h"
+#include "network.h"
+
+#include "rockiva.h"
+#include "storage.h"
+#include "system.h"
+#include "photo.h"
+#include "uart.h"
+#include "data.h"
+#include "mpu6887p.h"
+#include "heat.h"
+
+
+#ifdef LOG_TAG
+#undef LOG_TAG
+#endif
+#define LOG_TAG "rkipc.c"
+
+
 #if defined(RV1106_1103) 
     #include "dma_alloc.hpp"
 #endif
+
+
+enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
+
+int enable_minilog = 0;
+int rkipc_log_level = LOG_INFO;
 
 
 
 namespace mydata {
     std::string action_id_txt_name = "/userdata/action_id.txt";
 }
+
 
 
 void action_id_collect(const unsigned char *action_id, size_t action_id_size){
@@ -58,30 +99,126 @@ void action_id_collect(const unsigned char *action_id, size_t action_id_size){
 }
 
 
+
+static int g_main_run_ = 1;
+char *rkipc_ini_path_ = NULL;
+char *rkipc_iq_file_path_ = NULL;
+
+static void sig_proc(int signo) {
+	LOG_INFO("received signo %d \n", signo);
+	g_main_run_ = 0;
+}
+
+static const char short_options[] = "c:a:l:";
+static const struct option long_options[] = {{"config", required_argument, NULL, 'c'},
+                                             {"aiq_file", no_argument, NULL, 'a'},
+                                             {"log_level", no_argument, NULL, 'l'},
+                                             {"help", no_argument, NULL, 'h'},
+                                             {0, 0, 0, 0}};
+
+static void usage_tip(FILE *fp, int argc, char **argv) {
+	fprintf(fp,
+	        "Usage: %s [options]\n"
+	        "Version %s\n"
+	        "Options:\n"
+	        "-c | --config      rkipc ini file, default is "
+	        "/userdata/rkipc.ini, need to be writable\n"
+	        "-a | --aiq_file    aiq file dir path, default is /etc/iqfiles\n"
+	        "-l | --log_level   log_level [0/1/2/3], default is 2\n"
+	        "-h | --help        for help \n\n"
+	        "\n",
+	        argv[0], "V1.0");
+}
+
+void rkipc_get_opt(int argc, char *argv[]) {
+	for (;;) {
+		int idx;
+		int c;
+		c = getopt_long(argc, argv, short_options, long_options, &idx);
+		if (-1 == c)
+			break;
+		switch (c) {
+		case 0: /* getopt_long() flag */
+			break;
+		case 'c':
+			rkipc_ini_path_ = optarg;
+			break;
+		case 'a':
+			rkipc_iq_file_path_ = optarg;
+			break;
+		case 'l':
+			rkipc_log_level = atoi(optarg);
+			break;
+		case 'h':
+			usage_tip(stdout, argc, argv);
+			exit(EXIT_SUCCESS);
+		default:
+			usage_tip(stderr, argc, argv);
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+
 int main(int argc, char **argv)
 {
-    if (argc != 2)
-    {
-        printf("%s <model_path> <tmp_images_path> <photo_images_path> <result_txt_path>\n", argv[0]);
-        return -1;
+
+    const char* path = "/userdata/jpeg";
+	LOG_DEBUG("main begin\n");
+	rkipc_version_dump();
+	signal(SIGINT, sig_proc);
+	signal(SIGTERM, sig_proc);
+
+	rkipc_get_opt(argc, argv);
+	LOG_INFO("rkipc_ini_path_ is %s, rkipc_iq_file_path_ is %s, rkipc_log_level "
+	         "is %d~~~~~~~~~~~~\n",
+	         rkipc_ini_path_, rkipc_iq_file_path_, rkipc_log_level);
+	
+    if(access(path, F_OK) == 0) {
+        LOG_INFO("Directory exists.\n");
+    } else {
+        if( mkdir(path, 0755) == -1 ){
+			LOG_ERROR("create folder fail\n");
+		}
     }
 
-    // hd_uart_init(action_id_collect);
+	if(access("/userdata/update_ota.tar", F_OK) == 0)
+	{
+		if(remove("/userdata/update_ota.tar") == 0)
+		{
+			LOG_INFO("remove ota file success!\n");
+		}else{
+			LOG_ERROR("remove ota file failed!\n");
+		}
+	}
 
-    const char *model_path = argv[1];
+
+    rk_param_init(rkipc_ini_path_);
+	rk_isp_init(0, rkipc_iq_file_path_);
+	rk_isp_set_from_ini(1);
+	RK_MPI_SYS_Init();
+	
+	qjy_uart_init((void*)qjy_uart_parser);
+	gsensor_init();
+	qjy_photo_init();
+	heat_pwm_init();
+
+
+
+    const char *model_path = "/oem/usr/share/one_category_full.rknn";
     
 /*--------------判断图片路径是否存在并创建---------------------*/
 
-    const char *image_tmp_path = argv[2];
+    const char *image_tmp_path = "/userdata/tmp_images_path";
     ensure_path_exists(image_tmp_path);
 
-    const char *images_dir_path = argv[3];
+    const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
 
 
 
 /*--------------陀螺仪检测并拍照------------------------------*/
-    float angle1 = 20.0f;
+    // float angle1 = 20.0f;
 
     std::set<std::string> photo_names;
     std::set<std::string>* photo_names_ptr = &photo_names;
@@ -90,12 +227,13 @@ int main(int argc, char **argv)
     std::set<std::string>* action_id_record_ptr = &action_id_record; 
 
 
-    std::thread t1([angle1, &image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr]() {
         while (true) {
+            int angle1 = get_angle();
             float result = tly_detect(angle1);
             std::cout << "检测到陀螺仪角度: " << result << std::endl;
           
-            if (result >= 0.0f) {
+            if (result >= 20.0f) {
                 auto now = std::chrono::system_clock::now();
                 // 获取time_t格式（秒）
                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
@@ -107,16 +245,17 @@ int main(int argc, char **argv)
                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
                 // 构建路径字符串
                 std::ostringstream oss;
-                oss << image_tmp_path;
-                if (!std::string(image_tmp_path).empty() && std::string(image_tmp_path).back() != '/') {
-                    oss << "/";
-                }
+                // oss << image_tmp_path;
+                // if (!std::string(image_tmp_path).empty() && std::string(image_tmp_path).back() != '/') {
+                //     oss << "/";
+                // }
                 oss << std::put_time(&tm_now, "%Y_%m_%d_%H_%M_%S");
                 oss << "_" << std::setfill('0') << std::setw(3) << millis.count();  // 补零到3位
                 oss << ".jpg";
-                std::string image_biu_path = oss.str();
+                std::string image_biu_name_path = oss.str();
                 
-                if (take_photo(0, image_biu_path)) {
+                if (take_photo(2, image_tmp_path,image_biu_name_path)) {
+                    std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     photo_names_ptr->insert(image_biu_path);
                 };
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -154,7 +293,7 @@ int main(int argc, char **argv)
         }
     }
 
-    const char* txt_dir = argv[4];
+    const char* txt_dir = "/userdata/txt_dir_path";
     ensure_path_exists(txt_dir);
    
 
@@ -301,9 +440,9 @@ int main(int argc, char **argv)
                 int line_n = 10;
                 std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
                 if (process_last_n_lines(txt2_name_path_result, crop_img_path, line_n)) {
-                    std::cout << "👍 有截图保存成功" << std::endl;
+                    std::cout << "有截图保存成功" << std::endl;
                 } else {
-                    std::cout << "😢 没有任何截图保存成功" << std::endl;
+                    std::cout << "没有任何截图保存成功" << std::endl;
                 }
             }
             if (file_exists_and_not_empty(txt1_name_path_result)) {
@@ -311,9 +450,9 @@ int main(int argc, char **argv)
                 int line_n = 5;
                 std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
                 if (process_last_n_lines(txt1_name_path_result, crop_img_path, line_n)) {
-                    std::cout << "👍 有截图保存成功" << std::endl;
+                    std::cout << "有截图保存成功" << std::endl;
                 } else {
-                    std::cout << "😢 没有任何截图保存成功" << std::endl;
+                    std::cout << "没有任何截图保存成功" << std::endl;
                 }
             }
 
@@ -325,6 +464,22 @@ int main(int argc, char **argv)
         
        
     } 
+
+    while (g_main_run_) {
+		usleep(1000 * 1000);
+	}
+
+
+	rk_param_deinit();
+	qjy_photo_deinit();
+
+	rk_isp_deinit(0);
+	
+	RK_MPI_SYS_Exit();
+	
+	pthread_sem_deinit();
+	qjy_uart_deinit();
+	gsensor_deinit();
       
     return 0;
 }

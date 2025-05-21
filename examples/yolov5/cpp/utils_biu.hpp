@@ -14,7 +14,7 @@ std::vector<std::string> get_complete_videos(const std::string& dir_path);
 
 void watch_for_takevideo_signal();
 
-float tly_detect(float therold);
+float tly_detect(int angle1);
 
 
 
@@ -43,6 +43,6 @@ void movePhotos(std::set<std::string>& photo_names, const std::string& dest_fold
 
 void clearFile(const std::string& filepath);
 
-bool take_photo(int device_id = 0, const std::string& save_path = "photo.jpg");
+bool take_photo(int device_id, const std::string& save_path, const std::string& img_name);
 
 #endif

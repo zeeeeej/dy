@@ -1,2 +1,2 @@
-/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libimagedrawing.a CMakeFiles/imagedrawing.dir/image_drawing.c.o
-/mnt/c/Users/11198/Documents/RV1103_demo/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libimagedrawing.a
+/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libimagedrawing.a CMakeFiles/imagedrawing.dir/image_drawing.c.o
+/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libimagedrawing.a
