@@ -444,8 +444,7 @@ int main(int argc, char **argv)
                 } else {
                     std::cout << "没有任何截图保存成功" << std::endl;
                 }
-            }
-            if (file_exists_and_not_empty(txt1_name_path_result)) {
+            } else {
                 final_result = analyse_one(txt1_name_path_result);
                 int line_n = 5;
                 std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
@@ -455,13 +454,11 @@ int main(int argc, char **argv)
                     std::cout << "没有任何截图保存成功" << std::endl;
                 }
             }
+            // if (file_exists_and_not_empty(txt1_name_path_result)) 
 
             }
         }
-
-       
-
-        
+    
        
     } 
 

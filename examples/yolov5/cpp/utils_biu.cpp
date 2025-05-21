@@ -67,9 +67,9 @@ void clearFile(const std::string& filepath) {
 //     std::this_thread::sleep_for(std::chrono::seconds(5));
 // }
 
+//常量引用参数
 
-
-bool take_photo(int device_id = 2, const std::string& save_path = "", const std::string& img_name = "") {
+bool take_photo(int device_id, const std::string& save_path, const std::string& img_name) {
     if (save_path.empty() || img_name.empty()) {
         std::cerr << "错误：保存路径或文件名为空!" << std::endl;
         return false;
