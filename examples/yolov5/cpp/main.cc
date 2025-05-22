@@ -72,12 +72,12 @@ extern "C"{
 #endif
 
 
-enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
+// enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 
-int enable_minilog = 0;
-int rkipc_log_level = LOG_INFO;
+// int enable_minilog = 0;
+// int rkipc_log_level = LOG_INFO;
 
-
+static int pic_id = 0;
 
 namespace mydata {
     std::string action_id_txt_name = "/userdata/action_id.txt";
@@ -238,8 +238,8 @@ int main(int argc, char **argv)
                 // 获取time_t格式（秒）
                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
                 // 线程安全地转换为tm结构
-                std::tm tm_now;
-                localtime_r(&time_now, &tm_now);
+                // std::tm tm_now;
+                // localtime_r(&time_now, &tm_now);
                 // 计算毫秒部分
                 auto duration = now.time_since_epoch();
                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
@@ -249,9 +249,13 @@ int main(int argc, char **argv)
                 // if (!std::string(image_tmp_path).empty() && std::string(image_tmp_path).back() != '/') {
                 //     oss << "/";
                 // }
-                oss << std::put_time(&tm_now, "%Y_%m_%d_%H_%M_%S");
-                oss << "_" << std::setfill('0') << std::setw(3) << millis.count();  // 补零到3位
-                oss << ".jpg";
+                // oss << std::put_time(&tm_now, "%Y_%m_%d_%H_%M_%S");
+                // oss << "_" << std::setfill('0') << std::setw(3) << millis.count();  // 补零到3位
+                // oss << ".jpg";
+                pic_id = (pic_id + 1) & 0xFF;
+
+                oss << std::setfill('0') << std::setw(3) << millis.count();  
+                oss << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
                 
                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {

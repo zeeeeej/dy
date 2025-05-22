@@ -36,6 +36,7 @@ void movePhotos(std::set<std::string>& photo_names, const std::string& dest_fold
         const std::string& src_path = *it;
         std::filesystem::path src(src_path);
         std::filesystem::path dest = std::filesystem::path(dest_folder) / src.filename();
+        // 目标路径  /userdata/image_path/action_id/005_时间戳_picid.jpg
 
         std::error_code ec;
         std::filesystem::rename(src, dest, ec);  // 尝试移动文件

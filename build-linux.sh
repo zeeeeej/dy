@@ -206,7 +206,7 @@ cmake ../../${BUILD_DEMO_PATH} \
     -DDISABLE_RGA=${DISABLE_RGA} \
     -DDISABLE_LIBJPEG=${DISABLE_LIBJPEG} \
     -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-make -j4
+make -j12
 make install
 
 # Check if there is a rknn model in the install directory
