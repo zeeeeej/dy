@@ -162,17 +162,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named ipc_app_0522_1
+# Target rules for targets named ipc_app_0523_2
 
 # Build rule for target.
-ipc_app_0522_1: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ipc_app_0522_1
-.PHONY : ipc_app_0522_1
+ipc_app_0523_2: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ipc_app_0523_2
+.PHONY : ipc_app_0523_2
 
 # fast build rule for target.
-ipc_app_0522_1/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/build
-.PHONY : ipc_app_0522_1/fast
+ipc_app_0523_2/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/build
+.PHONY : ipc_app_0523_2/fast
 
 #=============================================================================
 # Target rules for targets named fileutils
@@ -226,12 +226,132 @@ audioutils/fast:
 	$(MAKE) $(MAKESILENT) -f utils.out/CMakeFiles/audioutils.dir/build.make utils.out/CMakeFiles/audioutils.dir/build
 .PHONY : audioutils/fast
 
+hd_uart/src/hd_camera_protocol.o: hd_uart/src/hd_camera_protocol.c.o
+.PHONY : hd_uart/src/hd_camera_protocol.o
+
+# target to build an object file
+hd_uart/src/hd_camera_protocol.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol.c.o
+.PHONY : hd_uart/src/hd_camera_protocol.c.o
+
+hd_uart/src/hd_camera_protocol.i: hd_uart/src/hd_camera_protocol.c.i
+.PHONY : hd_uart/src/hd_camera_protocol.i
+
+# target to preprocess a source file
+hd_uart/src/hd_camera_protocol.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol.c.i
+.PHONY : hd_uart/src/hd_camera_protocol.c.i
+
+hd_uart/src/hd_camera_protocol.s: hd_uart/src/hd_camera_protocol.c.s
+.PHONY : hd_uart/src/hd_camera_protocol.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_camera_protocol.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol.c.s
+.PHONY : hd_uart/src/hd_camera_protocol.c.s
+
+hd_uart/src/hd_camera_protocol_cmd.o: hd_uart/src/hd_camera_protocol_cmd.c.o
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.o
+
+# target to build an object file
+hd_uart/src/hd_camera_protocol_cmd.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.c.o
+
+hd_uart/src/hd_camera_protocol_cmd.i: hd_uart/src/hd_camera_protocol_cmd.c.i
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.i
+
+# target to preprocess a source file
+hd_uart/src/hd_camera_protocol_cmd.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_cmd.c.i
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.c.i
+
+hd_uart/src/hd_camera_protocol_cmd.s: hd_uart/src/hd_camera_protocol_cmd.c.s
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_camera_protocol_cmd.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_cmd.c.s
+.PHONY : hd_uart/src/hd_camera_protocol_cmd.c.s
+
+hd_uart/src/hd_camera_protocol_property.o: hd_uart/src/hd_camera_protocol_property.c.o
+.PHONY : hd_uart/src/hd_camera_protocol_property.o
+
+# target to build an object file
+hd_uart/src/hd_camera_protocol_property.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_property.c.o
+.PHONY : hd_uart/src/hd_camera_protocol_property.c.o
+
+hd_uart/src/hd_camera_protocol_property.i: hd_uart/src/hd_camera_protocol_property.c.i
+.PHONY : hd_uart/src/hd_camera_protocol_property.i
+
+# target to preprocess a source file
+hd_uart/src/hd_camera_protocol_property.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_property.c.i
+.PHONY : hd_uart/src/hd_camera_protocol_property.c.i
+
+hd_uart/src/hd_camera_protocol_property.s: hd_uart/src/hd_camera_protocol_property.c.s
+.PHONY : hd_uart/src/hd_camera_protocol_property.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_camera_protocol_property.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_camera_protocol_property.c.s
+.PHONY : hd_uart/src/hd_camera_protocol_property.c.s
+
+hd_uart/src/hd_uart_parser.o: hd_uart/src/hd_uart_parser.c.o
+.PHONY : hd_uart/src/hd_uart_parser.o
+
+# target to build an object file
+hd_uart/src/hd_uart_parser.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_uart_parser.c.o
+.PHONY : hd_uart/src/hd_uart_parser.c.o
+
+hd_uart/src/hd_uart_parser.i: hd_uart/src/hd_uart_parser.c.i
+.PHONY : hd_uart/src/hd_uart_parser.i
+
+# target to preprocess a source file
+hd_uart/src/hd_uart_parser.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_uart_parser.c.i
+.PHONY : hd_uart/src/hd_uart_parser.c.i
+
+hd_uart/src/hd_uart_parser.s: hd_uart/src/hd_uart_parser.c.s
+.PHONY : hd_uart/src/hd_uart_parser.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_uart_parser.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_uart_parser.c.s
+.PHONY : hd_uart/src/hd_uart_parser.c.s
+
+hd_uart/src/hd_utils.o: hd_uart/src/hd_utils.c.o
+.PHONY : hd_uart/src/hd_utils.o
+
+# target to build an object file
+hd_uart/src/hd_utils.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_utils.c.o
+.PHONY : hd_uart/src/hd_utils.c.o
+
+hd_uart/src/hd_utils.i: hd_uart/src/hd_utils.c.i
+.PHONY : hd_uart/src/hd_utils.i
+
+# target to preprocess a source file
+hd_uart/src/hd_utils.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_utils.c.i
+.PHONY : hd_uart/src/hd_utils.c.i
+
+hd_uart/src/hd_utils.s: hd_uart/src/hd_utils.c.s
+.PHONY : hd_uart/src/hd_utils.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_utils.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/hd_uart/src/hd_utils.c.s
+.PHONY : hd_uart/src/hd_utils.c.s
+
 main.o: main.cc.o
 .PHONY : main.o
 
 # target to build an object file
 main.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/main.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/main.cc.o
 .PHONY : main.cc.o
 
 main.i: main.cc.i
@@ -239,7 +359,7 @@ main.i: main.cc.i
 
 # target to preprocess a source file
 main.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/main.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/main.cc.i
 .PHONY : main.cc.i
 
 main.s: main.cc.s
@@ -247,7 +367,7 @@ main.s: main.cc.s
 
 # target to generate assembly for a file
 main.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/main.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/main.cc.s
 .PHONY : main.cc.s
 
 postprocess.o: postprocess.cc.o
@@ -255,7 +375,7 @@ postprocess.o: postprocess.cc.o
 
 # target to build an object file
 postprocess.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/postprocess.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/postprocess.cc.o
 .PHONY : postprocess.cc.o
 
 postprocess.i: postprocess.cc.i
@@ -263,7 +383,7 @@ postprocess.i: postprocess.cc.i
 
 # target to preprocess a source file
 postprocess.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/postprocess.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/postprocess.cc.i
 .PHONY : postprocess.cc.i
 
 postprocess.s: postprocess.cc.s
@@ -271,7 +391,7 @@ postprocess.s: postprocess.cc.s
 
 # target to generate assembly for a file
 postprocess.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/postprocess.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/postprocess.cc.s
 .PHONY : postprocess.cc.s
 
 rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
@@ -279,7 +399,7 @@ rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
 
 # target to build an object file
 rknpu2/yolov5_rv1106_1103.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/rknpu2/yolov5_rv1106_1103.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/rknpu2/yolov5_rv1106_1103.cc.o
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.o
 
 rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
@@ -287,7 +407,7 @@ rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
 
 # target to preprocess a source file
 rknpu2/yolov5_rv1106_1103.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/rknpu2/yolov5_rv1106_1103.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/rknpu2/yolov5_rv1106_1103.cc.i
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.i
 
 rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
@@ -295,7 +415,7 @@ rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
 
 # target to generate assembly for a file
 rknpu2/yolov5_rv1106_1103.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/rknpu2/yolov5_rv1106_1103.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/rknpu2/yolov5_rv1106_1103.cc.s
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.s
 
 utils_biu.o: utils_biu.cpp.o
@@ -303,7 +423,7 @@ utils_biu.o: utils_biu.cpp.o
 
 # target to build an object file
 utils_biu.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/utils_biu.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/utils_biu.cpp.o
 .PHONY : utils_biu.cpp.o
 
 utils_biu.i: utils_biu.cpp.i
@@ -311,7 +431,7 @@ utils_biu.i: utils_biu.cpp.i
 
 # target to preprocess a source file
 utils_biu.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/utils_biu.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/utils_biu.cpp.i
 .PHONY : utils_biu.cpp.i
 
 utils_biu.s: utils_biu.cpp.s
@@ -319,7 +439,7 @@ utils_biu.s: utils_biu.cpp.s
 
 # target to generate assembly for a file
 utils_biu.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0522_1.dir/build.make CMakeFiles/ipc_app_0522_1.dir/utils_biu.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0523_2.dir/build.make CMakeFiles/ipc_app_0523_2.dir/utils_biu.cpp.s
 .PHONY : utils_biu.cpp.s
 
 # Help Target
@@ -338,7 +458,22 @@ help:
 	@echo "... fileutils"
 	@echo "... imagedrawing"
 	@echo "... imageutils"
-	@echo "... ipc_app_0522_1"
+	@echo "... ipc_app_0523_2"
+	@echo "... hd_uart/src/hd_camera_protocol.o"
+	@echo "... hd_uart/src/hd_camera_protocol.i"
+	@echo "... hd_uart/src/hd_camera_protocol.s"
+	@echo "... hd_uart/src/hd_camera_protocol_cmd.o"
+	@echo "... hd_uart/src/hd_camera_protocol_cmd.i"
+	@echo "... hd_uart/src/hd_camera_protocol_cmd.s"
+	@echo "... hd_uart/src/hd_camera_protocol_property.o"
+	@echo "... hd_uart/src/hd_camera_protocol_property.i"
+	@echo "... hd_uart/src/hd_camera_protocol_property.s"
+	@echo "... hd_uart/src/hd_uart_parser.o"
+	@echo "... hd_uart/src/hd_uart_parser.i"
+	@echo "... hd_uart/src/hd_uart_parser.s"
+	@echo "... hd_uart/src/hd_utils.o"
+	@echo "... hd_uart/src/hd_utils.i"
+	@echo "... hd_uart/src/hd_utils.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

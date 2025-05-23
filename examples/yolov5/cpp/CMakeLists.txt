@@ -8,7 +8,7 @@ set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibc
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-project(ipc_app_0522_1)
+project(ipc_app_0523_2)
 
 if (ENABLE_ASAN)
 	message(STATUS "BUILD WITH ADDRESS SANITIZER")
@@ -36,12 +36,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../utils/ utils.out)
 file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
 
+file(GLOB urat_files hd_uart/src/*.c)
+
 add_executable(${PROJECT_NAME}
     main.cc
     postprocess.cc
-
     utils_biu.cpp
     ${rknpu_yolov5_file}
+    ${urat_files}
 )
 
 set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)
@@ -53,6 +55,8 @@ message(STATUS "OpenCV Libraries: ${OpenCV_LIBS}")
 message(STATUS "OpenCV Include Path: ${OpenCV_INCLUDE_DIRS}")
 
 include_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include)
+include_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include)
+
 link_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs)
 
 message(STATUS "Link directories: ${CMAKE_LINK_DIRECTORIES}")

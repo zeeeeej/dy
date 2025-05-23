@@ -142,7 +142,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=ipc_app_0522_1
+CMAKE_PROJECT_NAME:STATIC=ipc_app_0523_2
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib
@@ -228,13 +228,13 @@ ENABLE_ASAN:UNINITIALIZED=OFF
 TARGET_SOC:UNINITIALIZED=rv1106
 
 //Value Computed by CMake
-ipc_app_0522_1_BINARY_DIR:STATIC=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release
+ipc_app_0523_2_BINARY_DIR:STATIC=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release
 
 //Value Computed by CMake
-ipc_app_0522_1_IS_TOP_LEVEL:STATIC=ON
+ipc_app_0523_2_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-ipc_app_0522_1_SOURCE_DIR:STATIC=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp
+ipc_app_0523_2_SOURCE_DIR:STATIC=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp
 
 //Value Computed by CMake
 rknn_model_zoo_3rdparty_libs_BINARY_DIR:STATIC=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/3rdparty.out

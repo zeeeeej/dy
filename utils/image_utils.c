@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <math.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include "im2d.h"
 #include "drmrga.h"
@@ -474,7 +475,7 @@ static int get_rga_fmt(image_format_t fmt) {
     }
 }
 
-int get_image_size(image_buffer_t* image)
+int get_image_size(const image_buffer_t* image)
 {
     if (image == NULL) {
         return 0;
@@ -582,7 +583,7 @@ static int convert_image_rga(image_buffer_t* src_img, image_buffer_t* dst_img, i
 
     if (use_handle) {
         if (src_phy != NULL) {
-            rga_handle_src = importbuffer_physicaladdr((uint64_t)src_phy, &in_param);
+            rga_handle_src = importbuffer_physicaladdr((uintptr_t)src_phy, &in_param);
         } else if (src_fd > 0) {
             rga_handle_src = importbuffer_fd(src_fd, &in_param);
         } else {
@@ -606,7 +607,7 @@ static int convert_image_rga(image_buffer_t* src_img, image_buffer_t* dst_img, i
 
     if (use_handle) {
         if (dst_phy != NULL) {
-            rga_handle_dst = importbuffer_physicaladdr((uint64_t)dst_phy, &dst_param);
+            rga_handle_dst = importbuffer_physicaladdr((uintptr_t)dst_phy, &dst_param);
         } else if (dst_fd > 0) {
             rga_handle_dst = importbuffer_fd(dst_fd, &dst_param);
         } else {
@@ -631,7 +632,7 @@ static int convert_image_rga(image_buffer_t* src_img, image_buffer_t* dst_img, i
     if (drect.width != dstWidth || drect.height != dstHeight) {
         im_rect dst_whole_rect = {0, 0, dstWidth, dstHeight};
         int imcolor;
-        char* p_imcolor = &imcolor;
+        char* p_imcolor = (char*)&imcolor;
         p_imcolor[0] = color;
         p_imcolor[1] = color;
         p_imcolor[2] = color;

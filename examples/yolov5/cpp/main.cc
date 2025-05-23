@@ -34,6 +34,10 @@
 #include <fstream>
 
 
+
+#include "hd_uart_parser.h"
+// #include "hd_camera_protocol.h"
+
 #include <getopt.h>          
 #include <linux/input.h>     
 
@@ -85,17 +89,13 @@ namespace mydata {
 
 
 
-void action_id_collect(const unsigned char *action_id, size_t action_id_size){
+void action_id_collect(const char *action_id){
+    if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+
     std::ofstream outfile(mydata::action_id_txt_name); 
-    if (!outfile) return;
+    if (!outfile.is_open()) return;
 
-    for (size_t i = 0; i < action_id_size; ++i) {
-        outfile << std::hex << std::setw(2) << std::setfill('0') << (int)action_id[i];
-        if (i != action_id_size - 1) outfile << "_";
-    }
-    outfile << std::endl;
-
-    outfile.close();
+    outfile << action_id << std::endl;
 }
 
 
@@ -204,6 +204,9 @@ int main(int argc, char **argv)
 	heat_pwm_init();
 
 
+    
+
+
 
     const char *model_path = "/oem/usr/share/one_category_full.rknn";
     
@@ -214,6 +217,9 @@ int main(int argc, char **argv)
 
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
+
+
+    hd_uart_init("/userdata/crop_images", 0x02, action_id_collect, nullptr);
 
 
 

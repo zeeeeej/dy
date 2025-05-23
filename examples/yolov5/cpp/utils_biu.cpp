@@ -76,9 +76,9 @@ bool take_photo(int device_id, const std::string& save_path, const std::string& 
         return false;
     }
 
-    uint8_t id_buf[32]        = {0};
-    uint8_t img_name_buf[128] = {0};
-    uint8_t path_buf[128]     = {0};
+    uint8_t id_buf[40]        = {0};
+    uint8_t img_name_buf[40] = {0};
+    uint8_t path_buf[40]     = {0};
 
     // 拷贝路径和文件名（确保不会溢出）
     std::strncpy((char*)img_name_buf, img_name.c_str(), sizeof(img_name_buf) - 1);

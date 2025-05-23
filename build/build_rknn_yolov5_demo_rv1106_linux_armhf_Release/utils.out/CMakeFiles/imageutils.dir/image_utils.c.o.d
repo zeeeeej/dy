@@ -46,11 +46,11 @@ utils.out/CMakeFiles/imageutils.dir/image_utils.c.o: \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mathdef.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mathcalls.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/time.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include/stdint.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/stdint.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/im2d.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/im2d_version.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/im2d_type.h \
- /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include/stdint.h \
- /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/stdint.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/rga.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/im2d_common.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/im2d_buffer.h \

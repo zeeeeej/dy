@@ -34,6 +34,14 @@ utils.out/CMakeFiles/imagedrawing.dir/image_drawing.c.o: \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/string.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/ctype.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/uClibc_touplow.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/math.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/huge_val.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/huge_valf.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/huge_vall.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/inf.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/nan.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mathdef.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mathcalls.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/image_drawing.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/common.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/font.h
