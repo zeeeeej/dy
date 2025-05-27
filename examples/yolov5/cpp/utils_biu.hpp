@@ -45,4 +45,6 @@ void clearFile(const std::string& filepath);
 
 bool take_photo(int device_id, const std::string& save_path, const std::string& img_name);
 
+void resize_images_in_folder(const std::string& folder_path, int max_length);
+
 #endif

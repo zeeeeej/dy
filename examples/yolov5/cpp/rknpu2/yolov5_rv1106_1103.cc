@@ -21,6 +21,7 @@
 #include "common.h"
 #include "file_utils.h"
 #include "image_utils.h"
+#include <opencv2/opencv.hpp>
 
 static void dump_tensor_attr(rknn_tensor_attr *attr)
 {
@@ -211,13 +212,37 @@ int inference_yolov5_model(rknn_app_context_t *app_ctx, image_buffer_t *img, obj
         return -1;
     }
 
-    // letterbox
+    
+
+    // letterbox_original
     ret = convert_image_with_letterbox(img, &dst_img, &letter_box, bg_color);
     if (ret < 0)
     {
         printf("convert_image_with_letterbox fail! ret=%d\n", ret);
         return -1;
     }
+
+
+    //letterbox_gai
+
+    // if(input_img->format == IMAGE_FORMAT_RGB888)
+    // {
+    //     cv::Mat recogmat = cv::Mat(input_img->height, input_img->width, CV_8UC3, input_img->virt_addr);
+    //     letterbox(recogmat, resizeImg, letter_box, cv::Size(app_ctx_.model_width, app_ctx_.model_height));
+    // }
+    // else if(input_img->format == IMAGE_FORMAT_YUV420SP_NV12)
+    // {
+    //     cv::Mat recogmat = cv::Mat(input_img->height*1.5, input_img->width, CV_8U, input_img->virt_addr);
+    //     cv::cvtColor(recogmat, recogmat, cv::COLOR_YUV2RGB_NV12);
+    //     letterbox(recogmat, resizeImg, letter_box, cv::Size(app_ctx_.model_width, app_ctx_.model_height));
+    // }
+
+    // if (resizeImg.empty())
+    // {
+    //     printf("esizeImg.empty()\n");
+    //     return;
+    // }
+
 
     // Run
     printf("rknn_run\n");

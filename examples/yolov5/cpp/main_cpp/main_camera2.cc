@@ -64,10 +64,6 @@ extern "C"{
 #include "mpu6887p.h"
 #include "heat.h"
 
-#include <memory>
-#include <cstdio>
-
-
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -75,9 +71,9 @@ extern "C"{
 #define LOG_TAG "rkipc.c"
 
 
-#if defined(RV1106_1103) 
-    #include "dma_alloc.hpp"
-#endif
+
+#include "dma_alloc.hpp"
+
 
 
 // enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
@@ -209,10 +205,6 @@ int main(int argc, char **argv)
 
 
     
-
-
-
-
 /*--------------判断图片路径是否存在并创建---------------------*/
 
     const char *image_tmp_path = "/userdata/tmp_images_path";
@@ -222,7 +214,7 @@ int main(int argc, char **argv)
     ensure_path_exists(images_dir_path);
 
 
- 
+
 /*--------------陀螺仪检测并拍照------------------------------*/
     // float angle1 = 20.0f;
 
@@ -232,39 +224,35 @@ int main(int argc, char **argv)
     std::set<std::string> action_id_record;
     std::set<std::string>* action_id_record_ptr = &action_id_record; 
 
-    bool ready_to_trigger = true;
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr, &ready_to_trigger]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr]() {
         while (true) {
             int angle1 = get_angle();
             float result = tly_detect(angle1);
             std::cout << "检测到陀螺仪角度: " << result << std::endl;
-  
-            if (result >= 20.0f && ready_to_trigger) {
-                ready_to_trigger = false;  // 防止重复触发
+          
+            if (result >= 20.0f) {
                 auto now = std::chrono::system_clock::now();
-                
+            
                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
-              
+            
                 auto duration = now.time_since_epoch();
                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
-             
-                std::ostringstream oss;
               
-                // pic_id = (pic_id + 1) & 0xFF;
-                pic_id = (pic_id + 1) % 10;
+                std::ostringstream oss;
+             
+                pic_id = (pic_id + 1) & 0xFF;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
+                oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
                 
-                if (take_photo(1, image_tmp_path,image_biu_name_path)) {
+                if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     photo_names_ptr->insert(image_biu_path);
                 };
-                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-            } else if (result <= 5.0f) {
-                ready_to_trigger = true;  // 恢复触发状态
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            } else if (result <= 0.0f) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
@@ -279,9 +267,14 @@ int main(int argc, char **argv)
 
 
 
+
     while (g_main_run_) {
-		usleep(1000 * 1000);
-	}
+      usleep(1000 * 1000);
+    } 
+
+    // while (g_main_run_) {
+	// 	usleep(1000 * 1000);
+	// }
 
 
 	rk_param_deinit();
