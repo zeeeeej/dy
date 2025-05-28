@@ -80,6 +80,6 @@ public:
     }
 };
 void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest_folder, ThreadSafeSet<std::string>& action_id_record);
-void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders=9);
+void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders=10);
 
 #endif

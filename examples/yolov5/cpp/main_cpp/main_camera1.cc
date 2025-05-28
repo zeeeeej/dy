@@ -67,6 +67,8 @@ extern "C"{
 #include <memory>
 #include <cstdio>
 
+#include <ctime>
+#include <chrono>
 
 
 #ifdef LOG_TAG
@@ -101,13 +103,15 @@ void action_id_collect(const char *action_id){
 
     std::ofstream outfile(mydata::action_id_txt_name); 
     if (!outfile.is_open()) return;
+    std::cout << "action_id: " << action_id << std::endl;
 
-    outfile << action_id << std::endl;
+    outfile << std::string(action_id) << std::endl;
 }
 
-uint8_t on_event(void * event_id,void * event_value,uint32_t event_value_size) {
-    return 0;
+void *on_event(int event_id, void *event_value, size_t event_value_size) {
+    return NULL;
 }
+    
 
 static int g_main_run_ = 1;
 char *rkipc_ini_path_ = NULL;
@@ -233,7 +237,7 @@ int main(int argc, char **argv)
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
 
-	hd_uart_init(addr_biu, "/userdata/crop_images", action_id_collect, on_event);
+	hd_uart_init(addr_biu, "/userdata/images_dir_path", action_id_collect, on_event);
 
 	int line_n10 = 10;
     int line_n5 = 5;
@@ -246,9 +250,13 @@ int main(int argc, char **argv)
     
     ThreadSafeSet<std::string> action_id_record;
 
+    bool door_closed_reported = false;
+
+  
 
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record]() {
+
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &door_closed_reported]() {
         while (true) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             int angle1 = get_angle();
@@ -260,7 +268,7 @@ int main(int argc, char **argv)
                 zero_count++;
                 // 如果连续10个0以上，并且还没报告过关门
                 if (zero_count >= 30 ) {
-                    std::cout << "检测到陀螺仪角度: 0 （确认关门）" << std::endl;
+                    // std::cout << "检测到陀螺仪角度: 0 （确认关门）" << std::endl;
                     // door_closed_reported = true;
                     last_reported_angle = 0;
                 }
@@ -273,7 +281,7 @@ int main(int argc, char **argv)
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 20.0f) {
+            if (last_reported_angle >= 20.0f && !door_closed_reported) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -289,7 +297,7 @@ int main(int argc, char **argv)
                 pic_id = (pic_id + 1) & 0xFF;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
+                oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
 
                
@@ -300,19 +308,21 @@ int main(int argc, char **argv)
                 };
 
                 // writeStringToFileAfterDelay("/userdata/action_id.txt", "hhhhhh", 1);
-				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+				// std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 last_reported_angle = 1; 
+                door_closed_reported = true; // 关门后设置为true，防止重复报告
                
-            } else if (last_reported_angle <= 0.0f) {
+            } else if (last_reported_angle <= 0.0f ) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                // std ::cout << "读取到的action_id: " << action_id << std::endl;
+                std ::cout << "读取到的action_id: " << action_id << std::endl;
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
                     clearFile(mydata::action_id_txt_name);
                 } 
-               
+           
+               door_closed_reported = false;
               
             }
         }

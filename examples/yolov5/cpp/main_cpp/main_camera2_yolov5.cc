@@ -101,8 +101,8 @@ void writeStringToFileAfterDelay(const std::string& file_path, const std::string
 }
 
 
-uint8_t on_event(void * event_id,void * event_value,uint32_t event_value_size) {
-    return 0;
+void *on_event(int event_id, void *event_value, size_t event_value_size) {
+    return NULL;
 }
 
 void print_meminfo() {
@@ -400,6 +400,7 @@ int main(int argc, char **argv)
     while (g_main_run_) {
         // std::lock_guard<std::mutex> lock(swap_mutex);
         // std::swap(action_id_record, action_id_record_read);
+		delete_oldest_folders(images_dir_path);
         std::string action_id_path_biu;
         while (action_id_record.try_pop(action_id_path_biu)) {
         std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();

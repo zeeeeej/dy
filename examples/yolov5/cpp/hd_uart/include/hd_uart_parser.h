@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #define  EVENT_SNAPSHOT                     0x01
+#define  EVENT_DEBUG_WRITE                  0x02
 
 /**
  * 收到3.17 广播门开事件（0x1E）
@@ -13,7 +14,7 @@ extern "C" {
  */
 typedef void (*hd_on_action_id_changed)(const char *action_id_str);
 
-typedef uint8_t (*hd_on_event)(void * event_id,void * event_value,uint32_t event_value_size);
+typedef void* (*hd_on_event)(int  event_id,void * event_value,size_t event_value_size);
 
 /**
  * 初始化
@@ -50,6 +51,9 @@ void hd_uart_recv(uint8_t byte);
 void hd_uart_deinit();
 
 char * hd_uart_version();
+
+void hd_uart_debug_recv(const unsigned char *raw, size_t raw_size);
+void hd_uart_debug_write_self(int write_outside);
 
 #ifdef __cplusplus
 }

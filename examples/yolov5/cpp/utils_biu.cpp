@@ -92,17 +92,36 @@ void resize_images_in_folder(const std::string& folder_path, int max_length) {
 
 
 
+// std::string read_txt_file(const std::string& file_path) {
+//     std::ifstream ifs(file_path);
+//     if (!ifs.is_open()) {
+//         std::cerr << "打开文件失败：" << file_path << std::endl;
+//         return "";
+//     }
+    
+//     std::stringstream buffer;
+//     buffer << ifs.rdbuf();  // 读取整个文件内容到buffer
+//     return buffer.str();    // 返回字符串
+// }
+
 std::string read_txt_file(const std::string& file_path) {
     std::ifstream ifs(file_path);
     if (!ifs.is_open()) {
         std::cerr << "打开文件失败：" << file_path << std::endl;
         return "";
     }
-    
+
     std::stringstream buffer;
-    buffer << ifs.rdbuf();  // 读取整个文件内容到buffer
-    return buffer.str();    // 返回字符串
+    buffer << ifs.rdbuf();  // 读取整个文件内容
+    std::string content = buffer.str();
+
+    // 删除所有换行符（\n 和 \r）
+    content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+    content.erase(std::remove(content.begin(), content.end(), '\r'), content.end());
+
+    return content;
 }
+
 
 
 
