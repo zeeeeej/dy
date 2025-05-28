@@ -12,6 +12,42 @@
 #include <fstream>
 #include "photo.h"
 #include "common.h"
+#include <mutex>
+#include "utils_biu.hpp"
+#include <vector>
+
+void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders) {
+    std::vector<std::pair<std::filesystem::path, std::filesystem::file_time_type>> folders;
+
+    // 遍历该目录下所有文件夹
+    for (const auto& entry : std::filesystem::directory_iterator(parent_path)) {
+        if (std::filesystem::is_directory(entry)) {
+            try {
+                auto time = std::filesystem::last_write_time(entry);  // 获取修改时间
+                folders.emplace_back(entry.path(), time);
+            } catch (const std::exception& e) {
+                std::cerr << "Failed to get time for: " << entry.path() << " - " << e.what() << std::endl;
+            }
+        }
+    }
+
+    // 如果文件夹数量不超过最大值，直接返回
+    if (folders.size() <= max_folders) return;
+
+    // 按时间升序排列（越早的排在前面）
+    std::sort(folders.begin(), folders.end(), [](const auto& a, const auto& b) {
+        return a.second < b.second;
+    });
+
+    size_t folders_to_delete = folders.size() - max_folders;
+
+    for (size_t i = 0; i < folders_to_delete; ++i) {
+        std::cout << "Deleting folder: " << folders[i].first << std::endl;
+        std::filesystem::remove_all(folders[i].first);  // 删除整个文件夹
+    }
+}
+
+
 
 
 void resize_images_in_folder(const std::string& folder_path, int max_length) {
@@ -69,23 +105,47 @@ std::string read_txt_file(const std::string& file_path) {
 }
 
 
-void movePhotos(std::set<std::string>& photo_names, const std::string& dest_folder, std::set<std::string>& action_id_record) {
-    for (auto it = photo_names.begin(); it != photo_names.end(); ) {
-        const std::string& src_path = *it;
-        std::filesystem::path src(src_path);
+
+void remove_folder_if_exists(const std::string& folder_path) {
+   
+
+    std::filesystem::path dir(folder_path);
+
+    if (std::filesystem::exists(dir)) {
+        if (std::filesystem::is_directory(dir)) {
+            std::error_code ec;
+            std::filesystem::remove_all(dir, ec);  // 删除整个目录及其内容
+            if (ec) {
+                std::cerr << "删除目录失败：" << ec.message() << std::endl;
+            } else {
+                std::cout << "已删除目录：" << folder_path << std::endl;
+            }
+        } else {
+            std::cerr << "路径存在但不是目录：" << folder_path << std::endl;
+        }
+    } else {
+        std::cout << "目录不存在，无需删除：" << folder_path << std::endl;
+    }
+}
+
+
+
+
+void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest_folder, ThreadSafeSet<std::string>& action_id_record) {
+    std::string src_path_biu;
+    while (photo_names.try_pop(src_path_biu)) {
+
+        std::filesystem::path src(src_path_biu);
         std::filesystem::path dest = std::filesystem::path(dest_folder) / src.filename();
         // 目标路径  /userdata/image_path/action_id/005_时间戳_picid.jpg
 
         std::error_code ec;
         std::filesystem::rename(src, dest, ec);  // 尝试移动文件
         if (!ec) {
-            std::cout << "移动成功: " << src_path << " -> " << dest.string() << std::endl;
-            // 移动成功，从set里删除这个元素，注意erase返回下一个有效迭代器
-            it = photo_names.erase(it);
+            std::cout << "移动成功: " << src_path_biu << " -> " << dest.string() << std::endl;
             action_id_record.insert(dest_folder);
         } else {
-            std::cerr << "移动失败: " << src_path << " 错误: " << ec.message() << std::endl;
-            ++it;  // 移动失败，跳过这个元素
+            std::cerr << "移动失败: " << src_path_biu << " 错误: " << ec.message() << std::endl;
         }
     }
 }
@@ -145,6 +205,30 @@ bool take_photo(int device_id, const std::string& save_path, const std::string& 
 // }
 
 
+void create_empty_txt(const std::string& file_path) {
+    // 提取目录路径
+    std::filesystem::path path_obj(file_path);
+    std::filesystem::path parent_dir = path_obj.parent_path();
+
+    // 如果目录不存在则创建
+    if (!std::filesystem::exists(parent_dir)) {
+        std::cout << "目录不存在，创建中：" << parent_dir << std::endl;
+        std::filesystem::create_directories(parent_dir);
+    }
+
+    // 创建空文件（覆盖写入空内容）
+    std::ofstream file(file_path, std::ios::trunc); // trunc表示清空已有内容
+    if (!file) {
+        std::cerr << "创建文件失败：" << file_path << std::endl;
+        return;
+    }
+
+    std::cout << "已成功创建空 txt 文件：" << file_path << std::endl;
+}
+
+
+
+
 void ensure_path_exists(const char* dir_path) {
     if (dir_path == nullptr) {
         std::cerr << "路径为空，无法创建目录" << std::endl;
@@ -162,7 +246,7 @@ void ensure_path_exists(const char* dir_path) {
 
 
 
-bool is_valid_video(const std::filesystem::path& file_path, int recent_seconds = 10) {
+bool is_valid_video(const std::filesystem::path& file_path, int recent_seconds) {
     // 1. 只检查常见视频后缀
     std::vector<std::string> exts = {".mp4", ".avi", ".mkv", ".mov"};
     if (std::find(exts.begin(), exts.end(), file_path.extension()) == exts.end())
@@ -334,7 +418,7 @@ int count_nonzero_iou(const std::vector<float>& ious) {
 
 
 
-std::vector<float> expand_box(const std::vector<float>& box, float scale = 0.1f) {
+std::vector<float> expand_box(const std::vector<float>& box, float scale) {
     float x_min = box[0];
     float y_min = box[1];
     float x_max = box[2];
@@ -470,6 +554,9 @@ std::string analyse_two(const std::string& file_path) {
 
     return result_print;
 }
+
+
+
 
 
 

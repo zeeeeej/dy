@@ -199,7 +199,7 @@ int main(int argc, char **argv)
 	RK_MPI_SYS_Init();
 	
 	qjy_uart_init((void*)qjy_uart_parser);
-	gsensor_init();
+	// gsensor_init();
 	qjy_photo_init();
 	heat_pwm_init();
 
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
 
-
+	hd_uart_init("/userdata/crop_images", 0x02, action_id_collect, nullptr);
 
 /*--------------陀螺仪检测并拍照------------------------------*/
     // float angle1 = 20.0f;
@@ -229,9 +229,15 @@ int main(int argc, char **argv)
         while (true) {
             int angle1 = get_angle();
             float result = tly_detect(angle1);
-            std::cout << "检测到陀螺仪角度: " << result << std::endl;
+           
           
             if (result >= 20.0f) {
+
+				std::cout << "等待陀螺仪角度检测..." << std::endl;
+				int angle1 = get_angle();
+				std::cout << "获取到陀螺仪角度: " << angle1 << std::endl;
+				float result = tly_detect(angle1);
+				std::cout << "检测到陀螺仪角度: " << result << std::endl;
                 auto now = std::chrono::system_clock::now();
             
                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
@@ -251,7 +257,7 @@ int main(int argc, char **argv)
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     photo_names_ptr->insert(image_biu_path);
                 };
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
             } else if (result <= 0.0f) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
@@ -286,7 +292,7 @@ int main(int argc, char **argv)
 	
 	pthread_sem_deinit();
 	qjy_uart_deinit();
-	gsensor_deinit();
+	// gsensor_deinit();
       
     return 0;
 }

@@ -86,6 +86,9 @@ extern "C"{
 // int rkipc_log_level = LOG_INFO;
 
 static int pic_id = 0;
+static int pic_action_id = 0; // 用于标识拍照的动作ID
+
+int addr_biu = 1;
 
 namespace mydata {
     std::string action_id_txt_name = "/userdata/action_id.txt";
@@ -102,11 +105,18 @@ void action_id_collect(const char *action_id){
     outfile << action_id << std::endl;
 }
 
-
+uint8_t on_event(void * event_id,void * event_value,uint32_t event_value_size) {
+    return 0;
+}
 
 static int g_main_run_ = 1;
 char *rkipc_ini_path_ = NULL;
 char *rkipc_iq_file_path_ = NULL;
+
+
+static int zero_count = 0;
+// static bool door_closed_reported = false;
+static int last_reported_angle = -9999;
 
 static void sig_proc(int signo) {
 	LOG_INFO("received signo %d \n", signo);
@@ -173,6 +183,8 @@ int main(int argc, char **argv)
 	signal(SIGINT, sig_proc);
 	signal(SIGTERM, sig_proc);
 
+	recv_callback_func func = {qjy_uart_parser, hd_uart_recv};
+
 	rkipc_get_opt(argc, argv);
 	LOG_INFO("rkipc_ini_path_ is %s, rkipc_iq_file_path_ is %s, rkipc_log_level "
 	         "is %d~~~~~~~~~~~~\n",
@@ -202,7 +214,7 @@ int main(int argc, char **argv)
 	rk_isp_set_from_ini(1);
 	RK_MPI_SYS_Init();
 	
-	qjy_uart_init((void*)qjy_uart_parser);
+	qjy_uart_init(&func, addr_biu);
 	gsensor_init();
 	qjy_photo_init();
 	heat_pwm_init();
@@ -221,66 +233,98 @@ int main(int argc, char **argv)
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
 
+	hd_uart_init(addr_biu, "/userdata/crop_images", action_id_collect, on_event);
 
+	int line_n10 = 10;
+    int line_n5 = 5;
  
 /*--------------陀螺仪检测并拍照------------------------------*/
     // float angle1 = 20.0f;
 
-    std::set<std::string> photo_names;
-    std::set<std::string>* photo_names_ptr = &photo_names;
+    ThreadSafeSet<std::string> photo_names;
     
-    std::set<std::string> action_id_record;
-    std::set<std::string>* action_id_record_ptr = &action_id_record; 
+    
+    ThreadSafeSet<std::string> action_id_record;
 
-    bool ready_to_trigger = true;
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names_ptr, &action_id_record_ptr, &ready_to_trigger]() {
+
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record]() {
         while (true) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             int angle1 = get_angle();
+            // std::cout << "***sssssssssssss***: " << angle1 << std::endl;
             float result = tly_detect(angle1);
-            std::cout << "检测到陀螺仪角度: " << result << std::endl;
-  
-            if (result >= 20.0f && ready_to_trigger) {
-                ready_to_trigger = false;  // 防止重复触发
+            // std::cout << "******: " << result << std::endl;
+
+            if (result <= 0) {
+                zero_count++;
+                // 如果连续10个0以上，并且还没报告过关门
+                if (zero_count >= 30 ) {
+                    std::cout << "检测到陀螺仪角度: 0 （确认关门）" << std::endl;
+                    // door_closed_reported = true;
+                    last_reported_angle = 0;
+                }
+            } else {
+                zero_count = 0;  // 非0则清零计数
+                // door_closed_reported = false;
+                if (result != last_reported_angle) {
+                    std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
+                }
+                last_reported_angle = result;
+            }
+          
+            if (last_reported_angle >= 20.0f) {
+
+                std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
+               
                 auto now = std::chrono::system_clock::now();
-                
+            
                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
-              
+            
                 auto duration = now.time_since_epoch();
                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
-             
-                std::ostringstream oss;
               
-                // pic_id = (pic_id + 1) & 0xFF;
-                pic_id = (pic_id + 1) % 10;
+                std::ostringstream oss;
+             
+                pic_id = (pic_id + 1) & 0xFF;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
+                oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
+
+               
                 
-                if (take_photo(1, image_tmp_path,image_biu_name_path)) {
+                if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
-                    photo_names_ptr->insert(image_biu_path);
+                    photo_names.insert(image_biu_path);
                 };
-                std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-            } else if (result <= 5.0f) {
-                ready_to_trigger = true;  // 恢复触发状态
+
+                // writeStringToFileAfterDelay("/userdata/action_id.txt", "hhhhhh", 1);
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                last_reported_angle = 1; 
+               
+            } else if (last_reported_angle <= 0.0f) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
+                // std ::cout << "读取到的action_id: " << action_id << std::endl;
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
-                    movePhotos(*photo_names_ptr, action_id_image_path_finall, *action_id_record_ptr);
+                    ensure_path_exists(action_id_image_path_finall.c_str());
+                    movePhotos(photo_names, action_id_image_path_finall, action_id_record);
                     clearFile(mydata::action_id_txt_name);
-                } else {
-                    std::cout << "没有action_id!!" << std::endl;
-                }
+                } 
+               
+              
             }
         }
     });
 
 
 
+
+
     while (g_main_run_) {
-		usleep(1000 * 1000);
+		delete_oldest_folders(images_dir_path);
+		std::this_thread::sleep_for(std::chrono::minutes(1));
 	}
 
 

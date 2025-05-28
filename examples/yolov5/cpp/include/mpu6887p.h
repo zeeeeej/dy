@@ -20,6 +20,8 @@ enum parameter
 int get_input_number();
 int gsensor_init();
 int gsensor_deinit();
+int gsensor_capture_init();
+int gsensor_capture_deinit();
 void mpu_set_angle(uint8_t angle);
 void mpu_set_rotation(uint8_t rot);
 void mpu_set_enable(uint8_t enable);

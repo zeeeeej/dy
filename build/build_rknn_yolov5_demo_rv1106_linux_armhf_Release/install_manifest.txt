@@ -1,4 +1,4 @@
-/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/install/rv1106_linux_armhf/rknn_yolov5_demo/./ipc_app_0523_2
+/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/install/rv1106_linux_armhf/rknn_yolov5_demo/./ipc_app_0527_yolov5
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/install/rv1106_linux_armhf/rknn_yolov5_demo/model/one_category_full.rknn
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/install/rv1106_linux_armhf/rknn_yolov5_demo/lib/librknnmrt.so
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/install/rv1106_linux_armhf/rknn_yolov5_demo/lib/librga.so

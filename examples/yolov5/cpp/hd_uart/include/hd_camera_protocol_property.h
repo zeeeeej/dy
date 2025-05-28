@@ -29,6 +29,13 @@ extern "C" {
 #define PROPERTY_ID_Yaw_Angle                   0x12
 #define PROPERTY_ID_Acceleration                0x13
 #define PROPERTY_ID_Opening_Angle_Latest        0x14
+#define PROPERTY_ID_SYSTEM_VERSION              0x15
+
+
+#define PROPERTY_HD_ID_DEBUG                    0xD1
+#define PROPERTY_HD_ID_DEBUG_ACTION_ID          0xD2
+#define PROPERTY_HD_ID_DEBUG_ANGEL              0xD3
+#define PROPERTY_HD_ID_DEBUG_HD_UART_VERSION    0xD4
 
 
 #ifdef __cplusplus

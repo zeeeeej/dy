@@ -24,6 +24,10 @@
 #include "image_utils.h"
 #include "file_utils.h"
 #include "image_drawing.h"
+#include <iostream>
+#include <array>
+#include <cstdio>
+
 
 #if defined(RV1106_1103) 
     #include "dma_alloc.hpp"

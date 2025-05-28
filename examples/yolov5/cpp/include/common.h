@@ -48,12 +48,14 @@ int read_cmdline_to_buf(void *buf, int len);
 long get_cmd_val(const char *string, int len);
 
 
+// void rkipc_version_dump();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 void rkipc_version_dump();
+
 #ifdef __cplusplus
 }
 #endif
