@@ -5,6 +5,37 @@
 #include <set>
 #include <mutex>
 
+
+
+template <typename T>
+class ThreadSafeSet {
+    std::set<T> data_;
+    std::mutex mutex_;
+public:
+    void insert(const T& val) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        data_.insert(val);
+    }
+
+    bool try_pop(T& val) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (data_.empty()) return false;
+        val = *data_.begin();
+        data_.erase(data_.begin());
+        return true;
+    }
+
+    bool empty() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return data_.empty();
+    }
+
+    bool contains(const T& val) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return data_.count(val) > 0;
+    }
+};
+
 void take_video(const std::string& save_path);
 
 // void ensure_path_exists(const std::string& dir_path);
@@ -45,41 +76,25 @@ void clearFile(const std::string& filepath);
 
 bool take_photo(int device_id, const std::string& save_path, const std::string& img_name);
 
+
+
 void resize_images_in_folder(const std::string& folder_path, int max_length);
 
 void create_empty_txt(const std::string& file_path);
 
 void remove_folder_if_exists(const std::string& folder_path);
 
-template <typename T>
-class ThreadSafeSet {
-    std::set<T> data_;
-    std::mutex mutex_;
-public:
-    void insert(const T& val) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        data_.insert(val);
-    }
-
-    bool try_pop(T& val) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (data_.empty()) return false;
-        val = *data_.begin();
-        data_.erase(data_.begin());
-        return true;
-    }
-
-    bool empty() {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return data_.empty();
-    }
-
-    bool contains(const T& val) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        return data_.count(val) > 0;
-    }
-};
 void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest_folder, ThreadSafeSet<std::string>& action_id_record);
 void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders=10);
+
+bool copy_folder_to(const std::filesystem::path& src_folder, const std::filesystem::path& dst_root);
+
+std::string replace_folder_name_in_path(const std::string& path_str, 
+                                       const std::string& old_name, 
+                                       const std::string& new_name);
+
+bool delete_specified_folder(const std::string& folder_path);
+
+bool isImageBlurry(const cv::Mat& image, double& variance_out);
 
 #endif

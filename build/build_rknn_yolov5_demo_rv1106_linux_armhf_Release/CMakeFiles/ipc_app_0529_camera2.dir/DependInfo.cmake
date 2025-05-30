@@ -8,10 +8,10 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/main.cc" "CMakeFiles/ipc_app_0527_yolov5.dir/main.cc.o" "gcc" "CMakeFiles/ipc_app_0527_yolov5.dir/main.cc.o.d"
-  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/postprocess.cc" "CMakeFiles/ipc_app_0527_yolov5.dir/postprocess.cc.o" "gcc" "CMakeFiles/ipc_app_0527_yolov5.dir/postprocess.cc.o.d"
-  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/rknpu2/yolov5_rv1106_1103.cc" "CMakeFiles/ipc_app_0527_yolov5.dir/rknpu2/yolov5_rv1106_1103.cc.o" "gcc" "CMakeFiles/ipc_app_0527_yolov5.dir/rknpu2/yolov5_rv1106_1103.cc.o.d"
-  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/utils_biu.cpp" "CMakeFiles/ipc_app_0527_yolov5.dir/utils_biu.cpp.o" "gcc" "CMakeFiles/ipc_app_0527_yolov5.dir/utils_biu.cpp.o.d"
+  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/main.cc" "CMakeFiles/ipc_app_0529_camera2.dir/main.cc.o" "gcc" "CMakeFiles/ipc_app_0529_camera2.dir/main.cc.o.d"
+  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/postprocess.cc" "CMakeFiles/ipc_app_0529_camera2.dir/postprocess.cc.o" "gcc" "CMakeFiles/ipc_app_0529_camera2.dir/postprocess.cc.o.d"
+  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/rknpu2/yolov5_rv1106_1103.cc" "CMakeFiles/ipc_app_0529_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o" "gcc" "CMakeFiles/ipc_app_0529_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o.d"
+  "/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/utils_biu.cpp" "CMakeFiles/ipc_app_0529_camera2.dir/utils_biu.cpp.o" "gcc" "CMakeFiles/ipc_app_0529_camera2.dir/utils_biu.cpp.o.d"
   )
 
 # Targets to which this target links.

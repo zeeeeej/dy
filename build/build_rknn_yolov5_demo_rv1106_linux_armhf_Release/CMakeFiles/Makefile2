@@ -63,7 +63,7 @@ CMAKE_BINARY_DIR = /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/ipc_app_0527_yolov5.dir/all
+all: CMakeFiles/ipc_app_0529_camera2.dir/all
 all: 3rdparty.out/all
 all: utils.out/all
 .PHONY : all
@@ -74,7 +74,7 @@ preinstall: utils.out/preinstall
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/ipc_app_0527_yolov5.dir/clean
+clean: CMakeFiles/ipc_app_0529_camera2.dir/clean
 clean: 3rdparty.out/clean
 clean: utils.out/clean
 .PHONY : clean
@@ -116,32 +116,32 @@ utils.out/clean: utils.out/CMakeFiles/audioutils.dir/clean
 .PHONY : utils.out/clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/ipc_app_0527_yolov5.dir
+# Target rules for target CMakeFiles/ipc_app_0529_camera2.dir
 
 # All Build rule for target.
-CMakeFiles/ipc_app_0527_yolov5.dir/all: utils.out/CMakeFiles/imagedrawing.dir/all
-CMakeFiles/ipc_app_0527_yolov5.dir/all: utils.out/CMakeFiles/imageutils.dir/all
-CMakeFiles/ipc_app_0527_yolov5.dir/all: utils.out/CMakeFiles/fileutils.dir/all
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0527_yolov5.dir/build.make CMakeFiles/ipc_app_0527_yolov5.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0527_yolov5.dir/build.make CMakeFiles/ipc_app_0527_yolov5.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=9,10,11,12,13 "Built target ipc_app_0527_yolov5"
-.PHONY : CMakeFiles/ipc_app_0527_yolov5.dir/all
+CMakeFiles/ipc_app_0529_camera2.dir/all: utils.out/CMakeFiles/fileutils.dir/all
+CMakeFiles/ipc_app_0529_camera2.dir/all: utils.out/CMakeFiles/imagedrawing.dir/all
+CMakeFiles/ipc_app_0529_camera2.dir/all: utils.out/CMakeFiles/imageutils.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0529_camera2.dir/build.make CMakeFiles/ipc_app_0529_camera2.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0529_camera2.dir/build.make CMakeFiles/ipc_app_0529_camera2.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=9,10,11,12,13 "Built target ipc_app_0529_camera2"
+.PHONY : CMakeFiles/ipc_app_0529_camera2.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/ipc_app_0527_yolov5.dir/rule: cmake_check_build_system
+CMakeFiles/ipc_app_0529_camera2.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles 11
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ipc_app_0527_yolov5.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/ipc_app_0529_camera2.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles 0
-.PHONY : CMakeFiles/ipc_app_0527_yolov5.dir/rule
+.PHONY : CMakeFiles/ipc_app_0529_camera2.dir/rule
 
 # Convenience name for target.
-ipc_app_0527_yolov5: CMakeFiles/ipc_app_0527_yolov5.dir/rule
-.PHONY : ipc_app_0527_yolov5
+ipc_app_0529_camera2: CMakeFiles/ipc_app_0529_camera2.dir/rule
+.PHONY : ipc_app_0529_camera2
 
 # clean rule for target.
-CMakeFiles/ipc_app_0527_yolov5.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0527_yolov5.dir/build.make CMakeFiles/ipc_app_0527_yolov5.dir/clean
-.PHONY : CMakeFiles/ipc_app_0527_yolov5.dir/clean
+CMakeFiles/ipc_app_0529_camera2.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0529_camera2.dir/build.make CMakeFiles/ipc_app_0529_camera2.dir/clean
+.PHONY : CMakeFiles/ipc_app_0529_camera2.dir/clean
 
 #=============================================================================
 # Target rules for target utils.out/CMakeFiles/fileutils.dir

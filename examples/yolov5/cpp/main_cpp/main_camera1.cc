@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 
 
     std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &door_closed_reported]() {
-        while (true) {
+        while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
             int angle1 = get_angle();
             // std::cout << "***sssssssssssss***: " << angle1 << std::endl;
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
                
             } else if (last_reported_angle <= 0.0f ) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                std ::cout << "读取到的action_id: " << action_id << std::endl;
+                // std ::cout << "读取到的action_id: " << action_id << std::endl;
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());

@@ -16,6 +16,114 @@
 #include "utils_biu.hpp"
 #include <vector>
 
+
+
+
+bool isImageBlurry(const cv::Mat& image, double& variance_out) {
+    if (image.empty()) {
+        std::cerr << "图像为空，无法判断是否模糊" << std::endl;
+        variance_out = 0.0;
+        return true;
+    }
+
+    cv::Mat gray;
+    if (image.channels() == 3) {
+        cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    } else {
+        gray = image.clone();
+    }
+
+    cv::Mat laplacian;
+    cv::Laplacian(gray, laplacian, CV_64F);
+
+    cv::Scalar mean, stddev;
+    cv::meanStdDev(laplacian, mean, stddev);
+
+    double variance = stddev[0] * stddev[0];
+    variance_out = variance;
+
+    std::cout << "图像方差: " << variance << std::endl;
+
+    return false; // 这里不做模糊判断，只提取方差
+}
+
+
+
+
+bool delete_specified_folder(const std::string& folder_path) {
+    try {
+        if (std::filesystem::exists(folder_path) && std::filesystem::is_directory(folder_path)) {
+            std::uintmax_t count = std::filesystem::remove_all(folder_path);
+            std::cout << "成功删除文件夹及内容，共删除了 " << count << " 个文件/文件夹" << std::endl;
+            return true;
+        } else {
+            std::cerr << "路径不存在或不是文件夹：" << folder_path << std::endl;
+            return false;
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "删除文件夹异常：" << e.what() << std::endl;
+        return false;
+    }
+}
+
+
+
+
+
+
+std::string replace_folder_name_in_path(const std::string& path_str, 
+                                       const std::string& old_name, 
+                                       const std::string& new_name) {
+    std::filesystem::path path(path_str);
+    std::filesystem::path new_path;
+
+    for (const auto& part : path) {
+        if (part == old_name) {
+            new_path /= new_name;
+        } else {
+            new_path /= part;
+        }
+    }
+
+    return new_path.string();
+}
+
+
+
+
+
+
+
+bool copy_folder_to(const std::filesystem::path& src_folder, const std::filesystem::path& dst_root) {
+    try {
+        if (!std::filesystem::exists(src_folder) || !std::filesystem::is_directory(src_folder)) {
+            std::cerr << "源文件夹不存在或不是目录: " << src_folder << std::endl;
+            return false;
+        }
+
+        std::filesystem::path dst_folder = dst_root / src_folder.filename(); 
+        std::filesystem::create_directories(dst_folder); 
+
+        std::filesystem::copy(
+            src_folder,
+            dst_folder,
+            std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing
+        );
+
+        std::cout << "复制成功：" << src_folder << " -> " << dst_folder << std::endl;
+        return true;
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "复制失败: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+
+
+
+
+
+
 void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders) {
     std::vector<std::pair<std::filesystem::path, std::filesystem::file_time_type>> folders;
 
@@ -66,6 +174,7 @@ void resize_images_in_folder(const std::string& folder_path, int max_length) {
 
                 int width = img.cols;
                 int height = img.rows;
+                std::cout << "处理图片: " << file_path << " (原始尺寸: " << width << "x" << height << ")" << std::endl;
                 int long_side = std::max(width, height);
 
                 // 如果已经小于等于 max_length，则跳过
@@ -575,6 +684,52 @@ std::string analyse_two(const std::string& file_path) {
 }
 
 
+void keepTopSharpImages(const std::string& save_dir, size_t keep_top_n = 5) {
+    struct ImageInfo {
+        std::string path;
+        double variance;
+    };
+
+    std::vector<ImageInfo> image_infos;
+
+    for (const auto& entry : std::filesystem::directory_iterator(save_dir)) {
+        if (!entry.is_regular_file()) continue;
+
+        std::string file_path = entry.path().string();
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != ".jpg" && ext != ".png" && ext != ".jpeg" && ext != ".bmp") continue;
+
+        cv::Mat img = cv::imread(file_path);
+        double variance = 0.0;
+        std::cout << "检查图像: " << file_path << std::endl;
+
+        if (!img.empty()) {
+            isImageBlurry(img, variance);
+            image_infos.push_back({file_path, variance});
+        } else {
+            std::cerr << "读取图像失败: " << file_path << std::endl;
+        }
+    }
+
+    if (image_infos.empty()) {
+        std::cout << "没有找到图像文件，跳过处理" << std::endl;
+        return;
+    }
+
+    // 按照清晰度从高到低排序
+    std::sort(image_infos.begin(), image_infos.end(), [](const ImageInfo& a, const ImageInfo& b) {
+        return a.variance > b.variance;
+    });
+
+    // 保留前 keep_top_n 张，其余删除
+    for (size_t i = keep_top_n; i < image_infos.size(); ++i) {
+        std::cout << "删除模糊图像: " << image_infos[i].path << " (方差: " << image_infos[i].variance << ")" << std::endl;
+        std::filesystem::remove(image_infos[i].path);
+    }
+
+    std::cout << "清晰度最高的前 " << std::min(keep_top_n, image_infos.size()) << " 张图像已保留" << std::endl;
+}
 
 
 
@@ -601,22 +756,28 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         return false;
     }
 
-    while ((int)lines.size() < keep_last_n) {
-        lines.push_back(lines.back());
-    }
+    // while ((int)lines.size() < keep_last_n) {
+    //     lines.push_back(lines.back());
+    // }
 
     std::filesystem::create_directories(save_dir);  // 创建保存目录
 
     int saved_count = 0;
     int total_lines = lines.size();
-    for (int i = total_lines - keep_last_n; i < total_lines; ++i) {
+
+    std::filesystem::path file_path_biu;
+    // for (int i = total_lines - keep_last_n; i < total_lines; ++i) 
+    for (int i = 0; i < total_lines; ++i){
         std::istringstream iss(lines[i]);
         std::string img_path;
+        
         int cls_id, x1, y1, x2, y2;
         if (!(iss >> img_path >> cls_id >> x1 >> y1 >> x2 >> y2)) {
             std::cerr << "格式错误，跳过: " << lines[i] << std::endl;
             continue;
         }
+        std::cout <<img_path << " " << cls_id << " " << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
+        file_path_biu = std::filesystem::path(img_path);
 
         cv::Mat img = cv::imread(img_path);
         if (img.empty()) {
@@ -645,5 +806,24 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         }
     }
 
+    keepTopSharpImages(save_dir, 5);  
+
+    std::cout << "处理完成。" << std::endl;
+
+    delete_specified_folder(file_path_biu.parent_path().string());
+
+    std::string original_path = replace_folder_name_in_path(file_path_biu, "images_oridinal_dir_path", "images_dir_path");   //***4444444 */
+    
+    std::filesystem::path original_path1(original_path);
+    delete_specified_folder(original_path1.parent_path().string());
+
+
     return saved_count > 0;
 }
+
+
+
+
+
+
+
