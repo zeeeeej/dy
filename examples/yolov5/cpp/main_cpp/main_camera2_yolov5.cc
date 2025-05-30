@@ -276,6 +276,8 @@ int main(int argc, char **argv)
     const char *image_tmp_path = "/userdata/tmp_images_path";
     ensure_path_exists(image_tmp_path);
 
+    delete_specified_folder(image_tmp_path);
+
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
 

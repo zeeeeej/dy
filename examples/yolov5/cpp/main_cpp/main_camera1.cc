@@ -239,6 +239,8 @@ int main(int argc, char **argv)
 
 	hd_uart_init(addr_biu, "/userdata/images_dir_path", action_id_collect, on_event);
 
+    delete_specified_folder(image_tmp_path);
+
 	int line_n10 = 10;
     int line_n5 = 5;
  

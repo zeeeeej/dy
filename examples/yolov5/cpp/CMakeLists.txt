@@ -8,7 +8,7 @@ set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibc
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-project(ipc_app_0529_camera2)
+project(ipc_app_0530_camera2)
 
 if (ENABLE_ASAN)
 	message(STATUS "BUILD WITH ADDRESS SANITIZER")
@@ -36,14 +36,14 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../utils/ utils.out)
 file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
 
-# file(GLOB urat_files hd_uart/src/*.c)
+file(GLOB urat_files hd_uart/src/*.c)
 
 add_executable(${PROJECT_NAME}
     main.cc
     postprocess.cc
     utils_biu.cpp
     ${rknpu_yolov5_file}
-    # ${urat_files}
+    ${urat_files}
 )
 
 set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)
@@ -115,7 +115,7 @@ target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils im
     stdc++ 
     /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librksysutils.so
     /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libapp_shared.so
-    /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
+    # /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
   
     /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
     dl

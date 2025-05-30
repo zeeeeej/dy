@@ -27,7 +27,7 @@ typedef struct
     uint8_t md5[16];
 }PICTURE_INFO;
 
-const static char __APP_VERSION__[] = "0.4.6";
+const static char __APP_VERSION__[] = "0.5.0";
 
 sem_t image_sem, uart_sem;
 
