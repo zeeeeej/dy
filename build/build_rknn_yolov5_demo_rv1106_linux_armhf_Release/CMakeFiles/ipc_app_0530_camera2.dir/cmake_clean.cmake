@@ -1,14 +1,4 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o.d"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o.d"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o.d"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o.d"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o"
-  "CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o.d"
   "CMakeFiles/ipc_app_0530_camera2.dir/main.cc.o"
   "CMakeFiles/ipc_app_0530_camera2.dir/main.cc.o.d"
   "CMakeFiles/ipc_app_0530_camera2.dir/postprocess.cc.o"
@@ -22,6 +12,6 @@ file(REMOVE_RECURSE
 )
 
 # Per-language clean rules from dependency scanning.
-foreach(lang C CXX)
+foreach(lang CXX)
   include(CMakeFiles/ipc_app_0530_camera2.dir/cmake_clean_${lang}.cmake OPTIONAL)
 endforeach()

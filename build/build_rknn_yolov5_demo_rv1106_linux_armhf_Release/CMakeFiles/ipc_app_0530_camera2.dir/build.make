@@ -125,87 +125,12 @@ CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.s"
 	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/rknpu2/yolov5_rv1106_1103.cc -o CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.s
 
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o: CMakeFiles/ipc_app_0530_camera2.dir/flags.make
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol.c
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o: CMakeFiles/ipc_app_0530_camera2.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o -MF CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o.d -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o -c /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol.c
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.i"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol.c > CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.i
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.s"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol.c -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.s
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o: CMakeFiles/ipc_app_0530_camera2.dir/flags.make
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_cmd.c
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o: CMakeFiles/ipc_app_0530_camera2.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o -MF CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o.d -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o -c /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_cmd.c
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.i"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_cmd.c > CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.i
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.s"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_cmd.c -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.s
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o: CMakeFiles/ipc_app_0530_camera2.dir/flags.make
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_property.c
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o: CMakeFiles/ipc_app_0530_camera2.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o -MF CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o.d -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o -c /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_property.c
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.i"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_property.c > CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.i
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.s"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_property.c -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.s
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o: CMakeFiles/ipc_app_0530_camera2.dir/flags.make
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_uart_parser.c
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o: CMakeFiles/ipc_app_0530_camera2.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o -MF CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o.d -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o -c /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_uart_parser.c
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.i"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_uart_parser.c > CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.i
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.s"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_uart_parser.c -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.s
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o: CMakeFiles/ipc_app_0530_camera2.dir/flags.make
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_utils.c
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o: CMakeFiles/ipc_app_0530_camera2.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o -MF CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o.d -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o -c /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_utils.c
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.i"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_utils.c > CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.i
-
-CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.s"
-	/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_utils.c -o CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.s
-
 # Object files for target ipc_app_0530_camera2
 ipc_app_0530_camera2_OBJECTS = \
 "CMakeFiles/ipc_app_0530_camera2.dir/main.cc.o" \
 "CMakeFiles/ipc_app_0530_camera2.dir/postprocess.cc.o" \
 "CMakeFiles/ipc_app_0530_camera2.dir/utils_biu.cpp.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o" \
-"CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o"
+"CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o"
 
 # External object files for target ipc_app_0530_camera2
 ipc_app_0530_camera2_EXTERNAL_OBJECTS =
@@ -214,11 +139,6 @@ ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/main.cc.o
 ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/postprocess.cc.o
 ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/utils_biu.cpp.o
 ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o
-ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol.c.o
-ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o
-ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o
-ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_uart_parser.c.o
-ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/hd_uart/src/hd_utils.c.o
 ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/build.make
 ipc_app_0530_camera2: utils.out/libimageutils.a
 ipc_app_0530_camera2: utils.out/libfileutils.a
@@ -239,11 +159,12 @@ ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_mo
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librga.so
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librksysutils.so
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libapp_shared.so
+ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/Linux/armhf_uclibc/librga.a
 ipc_app_0530_camera2: /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/jpeg_turbo/Linux/armhf_uclibc/libturbojpeg.a
 ipc_app_0530_camera2: CMakeFiles/ipc_app_0530_camera2.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable ipc_app_0530_camera2"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable ipc_app_0530_camera2"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/ipc_app_0530_camera2.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

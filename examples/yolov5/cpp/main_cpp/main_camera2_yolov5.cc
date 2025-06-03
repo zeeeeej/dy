@@ -274,9 +274,10 @@ int main(int argc, char **argv)
 
 
     const char *image_tmp_path = "/userdata/tmp_images_path";
+    delete_specified_folder(image_tmp_path);
     ensure_path_exists(image_tmp_path);
 
-    delete_specified_folder(image_tmp_path);
+   
 
     const char *images_dir_path = "/userdata/images_dir_path";
     ensure_path_exists(images_dir_path);
@@ -349,7 +350,7 @@ int main(int argc, char **argv)
               
                 std::ostringstream oss;
              
-                pic_id = (pic_id + 1) & 0xFF;
+                pic_id = (pic_id < 255) ? (pic_id + 1) : 65;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
                 oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";

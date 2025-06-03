@@ -232,6 +232,7 @@ int main(int argc, char **argv)
 /*--------------判断图片路径是否存在并创建---------------------*/
 
     const char *image_tmp_path = "/userdata/tmp_images_path";
+    delete_specified_folder(image_tmp_path);
     ensure_path_exists(image_tmp_path);
 
     const char *images_dir_path = "/userdata/images_dir_path";
@@ -239,7 +240,7 @@ int main(int argc, char **argv)
 
 	hd_uart_init(addr_biu, "/userdata/images_dir_path", action_id_collect, on_event);
 
-    delete_specified_folder(image_tmp_path);
+    
 
 	int line_n10 = 10;
     int line_n5 = 5;
@@ -283,7 +284,7 @@ int main(int argc, char **argv)
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 20.0f && !door_closed_reported) {
+            if (last_reported_angle >= 10.0f && !door_closed_reported) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -296,7 +297,7 @@ int main(int argc, char **argv)
               
                 std::ostringstream oss;
              
-                pic_id = (pic_id + 1) & 0xFF;
+                pic_id = (pic_id + 1) % 0x41;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
                 oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
@@ -322,6 +323,7 @@ int main(int argc, char **argv)
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
                     clearFile(mydata::action_id_txt_name);
+                    action_id_record.clear();
                 } 
            
                door_closed_reported = false;
@@ -342,6 +344,9 @@ int main(int argc, char **argv)
 
 	rk_param_deinit();
 	qjy_photo_deinit();
+
+    hd_uart_deinit();
+
 
 	rk_isp_deinit(0);
 	

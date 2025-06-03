@@ -34,7 +34,13 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         return data_.count(val) > 0;
     }
+
+    void clear() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        data_.clear();
+    }
 };
+
 
 void take_video(const std::string& save_path);
 
