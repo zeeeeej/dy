@@ -797,7 +797,10 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         cv::Mat cropped = img(roi);
 
         std::string img_name = std::filesystem::path(img_path).stem().string();
-        std::string save_path = save_dir + "/" + img_name + "_cls" + std::to_string(cls_id) + "_crop_" + std::to_string(i) + ".jpg";
+        
+        // std::string save_path = save_dir + "/" + img_name + "_cls" + std::to_string(cls_id) + "_crop_" + std::to_string(i) + ".jpg";
+        std::string save_path = save_dir + "/" + std::to_string(i) + "_" + img_name + ".jpg";
+
         if (cv::imwrite(save_path, cropped)) {
             std::cout << "截图完成: " << save_path << std::endl;
             ++saved_count;

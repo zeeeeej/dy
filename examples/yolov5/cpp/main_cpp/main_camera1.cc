@@ -178,6 +178,26 @@ void rkipc_get_opt(int argc, char *argv[]) {
 }
 
 
+void writeStringToFileAfterDelay(const std::string& file_path, const std::string& content, int delay_seconds) {
+    // 延迟 delay_seconds 秒
+    std::this_thread::sleep_for(std::chrono::seconds(delay_seconds));
+
+    // 打开文件（覆盖写入）
+    std::ofstream outfile(file_path, std::ios::out);
+    if (!outfile) {
+        std::cerr << "无法打开文件: " << file_path << std::endl;
+        return;
+    }
+
+    // 写入内容
+    outfile << content;
+    outfile.close();
+
+    std::cout << "写入完成: " << file_path << std::endl;
+}
+
+
+
 int main(int argc, char **argv)
 {
 
@@ -310,7 +330,7 @@ int main(int argc, char **argv)
                     photo_names.insert(image_biu_path);
                 };
 
-                // writeStringToFileAfterDelay("/userdata/action_id.txt", "hhhhhh", 1);
+                writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
 				// std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 last_reported_angle = 1; 
                 door_closed_reported = true; // 关门后设置为true，防止重复报告
