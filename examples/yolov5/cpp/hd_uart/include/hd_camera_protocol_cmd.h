@@ -477,7 +477,7 @@ uint8_t hd_host_snapshot_decode(
 
 
 // 将hd_dynamic_pic_info列表转成字符数组
-uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info **infos,
+uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info *infos,
                                     size_t count,
                                     unsigned char **result,
                                     size_t *result_size,
@@ -527,7 +527,7 @@ uint8_t qjy_slave_pic_info_encode(
         unsigned char **protocol_data_out,
         uint32_t *protocol_data_size_out,
         uint8_t slave_addr_in,
-        hd_dynamic_pic_info **info_in,
+        hd_dynamic_pic_info *info_in,
         uint8_t info_size_in
 );
 
@@ -535,7 +535,7 @@ uint8_t hd_slave_pic_info_encode(
         unsigned char **protocol_data_out,
         uint32_t *protocol_data_size_out,
         uint8_t slave_addr_in,
-        hd_dynamic_pic_info **info_in,
+        hd_dynamic_pic_info *info_in,
         uint8_t info_size_in
 );
 

@@ -76,6 +76,26 @@ extern "C"{
 #include "dma_alloc.hpp"
 
 int addr_biu = 2;
+static int pic_id = 0;
+
+static int zero_count = 0;
+static int last_reported_angle = -9999;
+
+int width_original = 1080;
+int hight_original = 1920;
+
+int move_action = 0;
+int line_n10 = 10;
+int line_n5 = 5;
+
+
+static int g_main_run_ = 1;
+char *rkipc_ini_path_ = NULL;
+char *rkipc_iq_file_path_ = NULL;
+
+namespace mydata {
+    std::string action_id_txt_name = "/userdata/action_id.txt";
+}
 
 // enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
 
@@ -83,17 +103,16 @@ int addr_biu = 2;
 // int rkipc_log_level = LOG_INFO;
 
 void writeStringToFileAfterDelay(const std::string& file_path, const std::string& content, int delay_seconds) {
-    // 延迟 delay_seconds 秒
+    
     std::this_thread::sleep_for(std::chrono::seconds(delay_seconds));
 
-    // 打开文件（覆盖写入）
+ 
     std::ofstream outfile(file_path, std::ios::out);
     if (!outfile) {
         std::cerr << "无法打开文件: " << file_path << std::endl;
         return;
     }
 
-    // 写入内容
     outfile << content;
     outfile.close();
 
@@ -124,13 +143,6 @@ void print_meminfo() {
     pclose(pipe);
 }
 
-static int pic_id = 0;
-
-namespace mydata {
-    std::string action_id_txt_name = "/userdata/action_id.txt";
-}
-
-
 
 void action_id_collect(const char *action_id){
     if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
@@ -141,13 +153,7 @@ void action_id_collect(const char *action_id){
     outfile << action_id << std::endl;
 }
 
-static int zero_count = 0;
-// static bool door_closed_reported = false;
-static int last_reported_angle = -9999;
 
-static int g_main_run_ = 1;
-char *rkipc_ini_path_ = NULL;
-char *rkipc_iq_file_path_ = NULL;
 
 static void sig_proc(int signo) {
 	LOG_INFO("received signo %d \n", signo);
@@ -207,11 +213,6 @@ void rkipc_get_opt(int argc, char *argv[]) {
 
 
 
-int width_original = 1080;
-int hight_original = 1920;
-
-int move_action = 0;
-
 int main(int argc, char **argv)
 {
 
@@ -252,7 +253,6 @@ int main(int argc, char **argv)
 	rk_isp_set_from_ini(1);
 	RK_MPI_SYS_Init();
 	
-	// qjy_uart_init((void*)qjy_uart_parser);
     qjy_uart_init(&func, addr_biu);
 	gsensor_init();
 	qjy_photo_init();
@@ -260,51 +260,39 @@ int main(int argc, char **argv)
 
 
     
-
-
-
     const char *model_path = "/oem/usr/share/one_category_full.rknn";
     
 /*--------------判断图片路径是否存在并创建---------------------*/
-
-    // remove_folder_if_exists("/userdata/tmp_images_path");
-    remove_folder_if_exists("/userdata/images_dir_path");
-    remove_folder_if_exists("/userdata/crop_images");
-    ensure_path_exists("/userdata/crop_images");
-
-
     const char *image_tmp_path = "/userdata/tmp_images_path";
-    delete_specified_folder(image_tmp_path);
-    ensure_path_exists(image_tmp_path);
+    const char *images_dir_path = "/userdata/images_dir_path";
+    const char *images_original_dir_path = "/userdata/images_oridinal_dir_path";
+    const char* txt_dir = "/userdata/txt_dir_path";
+    std::string crop_img_dirs = "/userdata/crop_images";
 
    
+    
 
-    const char *images_dir_path = "/userdata/images_dir_path";
+    remove_folder_if_exists("/userdata/images_dir_path");
+    remove_folder_if_exists("/userdata/crop_images");
+    remove_folder_if_exists("/userdata/tmp_images_path");
+    remove_folder_if_exists("/userdata/txt_dir_path");
+   
+    ensure_path_exists(image_tmp_path);
     ensure_path_exists(images_dir_path);
-
-    const char *images_original_dir_path = "/userdata/images_oridinal_dir_path";
     ensure_path_exists(images_original_dir_path);
+    ensure_path_exists(crop_img_dirs.c_str());
+    ensure_path_exists(txt_dir);
+    
 
-    std::string crop_img_dirs = "/userdata/crop_images";
+    hd_uart_init(addr_biu, crop_img_dirs.c_str(), action_id_collect, on_event);
+
     std::string final_result;
 
-
-    hd_uart_init(addr_biu, "/userdata/crop_images", action_id_collect, on_event);
-
-    int line_n10 = 10;
-    int line_n5 = 5;
-
-    // std::string file = "/userdata/action_id.txt";
-    // std::string str = "hhhhhh";
-    // int delay = 2;  // 30 秒延迟
-
-    // writeStringToFileAfterDelay(file, str, delay);
-
+ 
 
 
 /*--------------陀螺仪检测并拍照------------------------------*/
-    // float angle1 = 20.0f;
-
+  
     ThreadSafeSet<std::string> photo_names;
     
     
@@ -315,22 +303,17 @@ int main(int argc, char **argv)
     std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            int angle1 = get_angle();
-            // std::cout << "***sssssssssssss***: " << angle1 << std::endl;
-            float result = tly_detect(angle1);
-            // std::cout << "******: " << result << std::endl;
 
+            int angle1 = get_angle();
+            float result = tly_detect(angle1);
+         
             if (result <= 0) {
                 zero_count++;
-                // 如果连续10个0以上，并且还没报告过关门
                 if (zero_count >= 40 ) {
-                    // std::cout << "检测到陀螺仪角度: 0 （确认关门）" << std::endl;
-                    // door_closed_reported = true;
                     last_reported_angle = 0;
                 }
             } else {
-                zero_count = 0;  // 非0则清零计数
-                // door_closed_reported = false;
+                zero_count = 0;  
                 if (result != last_reported_angle) {
                     std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
                 }
@@ -356,14 +339,11 @@ int main(int argc, char **argv)
                 oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
 
-               
                 
                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     photo_names.insert(image_biu_path);
                 };
-
-               
 
                 // writeStringToFileAfterDelay("/userdata/action_id.txt", "aaa",0);
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -385,7 +365,6 @@ int main(int argc, char **argv)
     });
 
 
-
     int ret;
     rknn_app_context_t rknn_app_ctx;
     memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
@@ -405,23 +384,21 @@ int main(int argc, char **argv)
         }
     }
 
-    const char* txt_dir = "/userdata/txt_dir_path";
-    ensure_path_exists(txt_dir);
+ 
    
 
 
     while (g_main_run_) {
-        // std::lock_guard<std::mutex> lock(swap_mutex);
-        // std::swap(action_id_record, action_id_record_read);
 		delete_oldest_folders(images_dir_path);
         delete_oldest_folders(crop_img_dirs);
         delete_oldest_folders(images_original_dir_path);
+       
         std::string action_id_path_biu;
         while (action_id_record.try_pop(action_id_path_biu)) {
         std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
         resize_images_in_folder(action_id_path_biu, 960);
         std::vector<std::string> frames = get_image_paths(action_id_path_biu);
-        // std::vector<std::string> frames = get_image_paths(action_id_path_biu);
+
 /*--------------事件id检测的文件夹------------------------------*/
         std::string txt1_name_path;
         std::string txt2_name_path;
@@ -450,7 +427,6 @@ int main(int argc, char **argv)
                     memset(&src_image, 0, sizeof(image_buffer_t));
                     ret = read_image(img_path.c_str(), &src_image);
 
-                
                     //RV1106 rga requires that input and output bufs are memory allocated by dma
                     ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
                                     (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
@@ -522,12 +498,11 @@ int main(int argc, char **argv)
 
                         std::string frame_number_str = action_id_biu + "_" + frame_id + "_" + std::to_string(i);
 
-                        // std::cout << "od_results.count: " << od_results.count << std::endl;
-
+        
 
                         if (od_results.count >= 1 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
                             txt1_name_path = std::string(txt_dir) + "/" + action_id_biu + "_1" + ".txt";
-                            // create_empty_txt(txt1_name_path);
+
                             std::ofstream outfile(txt1_name_path, std::ios::app); 
                             if (outfile.is_open()) {
                                 outfile << new_path << " "     //***2222222 */
@@ -594,7 +569,6 @@ int main(int argc, char **argv)
 
 
         } else {
-            // std::cout << "7777777" << std::endl;
             // final_result = analyse_one(txt1_name_path);
            
             std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
@@ -616,16 +590,11 @@ int main(int argc, char **argv)
         }  
        
     }
-           
-        
+               
     std::this_thread::sleep_for(std::chrono::seconds(5));
-    
-       
+        
     } 
 
-    // while (g_main_run_) {
-	// 	usleep(1000 * 1000);
-	// }
 
 
 	rk_param_deinit();

@@ -52,8 +52,8 @@ void hd_uart_deinit();
 
 char * hd_uart_version();
 
-void hd_uart_debug_recv(const unsigned char *raw, size_t raw_size);
-void hd_uart_debug_write_self(int write_outside);
+//void hd_uart_debug_recv(const unsigned char *raw, size_t raw_size);
+//void hd_uart_debug_write_self(int write_outside);
 
 #ifdef __cplusplus
 }

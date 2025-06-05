@@ -265,8 +265,7 @@ void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest
 
         std::filesystem::path src(src_path_biu);
         std::filesystem::path dest = std::filesystem::path(dest_folder) / src.filename();
-        // 目标路径  /userdata/image_path/action_id/005_时间戳_picid.jpg
-
+       
         std::error_code ec;
         std::filesystem::rename(src, dest, ec);  // 尝试移动文件
         if (!ec) {
@@ -684,6 +683,19 @@ std::string analyse_two(const std::string& file_path) {
 }
 
 
+bool delete_txt_file(const std::string& file_path) {
+    std::error_code ec;
+    if (std::filesystem::remove(file_path, ec)) {
+        std::cout << "文件已删除: " << file_path << std::endl;
+        return true;
+    } else {
+        std::cerr << "删除失败: " << ec.message() << std::endl;
+        return false;
+    }
+}
+
+
+
 void keepTopSharpImages(const std::string& save_dir, size_t keep_top_n = 5) {
     struct ImageInfo {
         std::string path;
@@ -813,13 +825,15 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
 
     std::cout << "处理完成。" << std::endl;
 
-    delete_specified_folder(file_path_biu.parent_path().string());
-
     std::string original_path = replace_folder_name_in_path(file_path_biu, "images_oridinal_dir_path", "images_dir_path");   //***4444444 */
     
     std::filesystem::path original_path1(original_path);
+
+    delete_specified_folder(file_path_biu.parent_path().string());
+
     delete_specified_folder(original_path1.parent_path().string());
 
+    delete_txt_file(txt_path);
 
     return saved_count > 0;
 }
