@@ -1,4 +1,4 @@
-/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles/ipc_app_0605_camera2_only_sdk.dir
+/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles/ipc_app_0605_camera1.dir
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles/edit_cache.dir
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles/rebuild_cache.dir
 /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/build/build_rknn_yolov5_demo_rv1106_linux_armhf_Release/CMakeFiles/list_install_components.dir

@@ -92,6 +92,15 @@ static int pic_action_id = 0; // 用于标识拍照的动作ID
 
 int addr_biu = 1;
 
+static int g_main_run_ = 1;
+char *rkipc_ini_path_ = NULL;
+char *rkipc_iq_file_path_ = NULL;
+
+
+static int zero_count = 0;
+static int last_reported_angle = -9999;
+
+
 namespace mydata {
     std::string action_id_txt_name = "/userdata/action_id.txt";
 }
@@ -113,14 +122,7 @@ void *on_event(int event_id, void *event_value, size_t event_value_size) {
 }
     
 
-static int g_main_run_ = 1;
-char *rkipc_ini_path_ = NULL;
-char *rkipc_iq_file_path_ = NULL;
 
-
-static int zero_count = 0;
-// static bool door_closed_reported = false;
-static int last_reported_angle = -9999;
 
 static void sig_proc(int signo) {
 	LOG_INFO("received signo %d \n", signo);
@@ -244,67 +246,53 @@ int main(int argc, char **argv)
 	heat_pwm_init();
 
 
-    
-
-
 
 
 /*--------------判断图片路径是否存在并创建---------------------*/
 
     const char *image_tmp_path = "/userdata/tmp_images_path";
-    delete_specified_folder(image_tmp_path);
-    ensure_path_exists(image_tmp_path);
-
     const char *images_dir_path = "/userdata/images_dir_path";
+
+    delete_specified_folder(image_tmp_path);
+    delete_specified_folder(images_dir_path);
+
+    ensure_path_exists(image_tmp_path);
     ensure_path_exists(images_dir_path);
 
-	hd_uart_init(addr_biu, "/userdata/images_dir_path", action_id_collect, on_event);
+	hd_uart_init(addr_biu, images_dir_path, action_id_collect, on_event);
 
     
-
-	int line_n10 = 10;
-    int line_n5 = 5;
- 
 /*--------------陀螺仪检测并拍照------------------------------*/
-    // float angle1 = 20.0f;
 
     ThreadSafeSet<std::string> photo_names;
-    
-    
     ThreadSafeSet<std::string> action_id_record;
 
     bool door_closed_reported = false;
 
-  
-
-
-
     std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &door_closed_reported]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            int angle1 = get_angle();
-            // std::cout << "***sssssssssssss***: " << angle1 << std::endl;
+
+            int angle1 = get_angle();  
             float result = tly_detect(angle1);
-            // std::cout << "******: " << result << std::endl;
+        
 
             if (result <= 0) {
                 zero_count++;
-                // 如果连续10个0以上，并且还没报告过关门
-                if (zero_count >= 30 ) {
-                    // std::cout << "检测到陀螺仪角度: 0 （确认关门）" << std::endl;
-                    // door_closed_reported = true;
+                
+                if (zero_count >= 40 ) {
                     last_reported_angle = 0;
                 }
             } else {
                 zero_count = 0;  // 非0则清零计数
-                // door_closed_reported = false;
+               
                 if (result != last_reported_angle) {
                     std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
                 }
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 10.0f && !door_closed_reported) {
+            if (last_reported_angle >= 40.0f && !door_closed_reported) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -323,14 +311,13 @@ int main(int argc, char **argv)
                 oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
 
-               
                 
                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     photo_names.insert(image_biu_path);
                 };
 
-                writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
+                // writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
 				// std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 last_reported_angle = 1; 
                 door_closed_reported = true; // 关门后设置为true，防止重复报告
@@ -351,9 +338,6 @@ int main(int argc, char **argv)
             }
         }
     });
-
-
-
 
 
     while (g_main_run_) {
