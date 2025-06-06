@@ -18,6 +18,51 @@
 
 
 
+void trim_folder_images(const std::filesystem::path& parent_path, size_t max_images_per_folder) {
+    for (const auto& entry : std::filesystem::directory_iterator(parent_path)) {
+        if (!std::filesystem::is_directory(entry)) continue;
+
+        std::vector<std::pair<std::filesystem::path, std::filesystem::file_time_type>> image_files;
+
+        // 遍历子文件夹内的所有图片
+        for (const auto& file : std::filesystem::directory_iterator(entry)) {
+            if (file.is_regular_file()) {
+                std::string ext = file.path().extension().string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);  // 转小写
+                if (ext == ".jpg" || ext == ".jpeg" || ext == ".png") {
+                    try {
+                        auto time = std::filesystem::last_write_time(file);
+                        image_files.emplace_back(file.path(), time);
+                    } catch (const std::exception& e) {
+                        std::cerr << "获取文件时间失败: " << file.path() << " - " << e.what() << std::endl;
+                    }
+                }
+            }
+        }
+
+        // 如果图片数量不超过限制，就跳过
+        if (image_files.size() <= max_images_per_folder) continue;
+
+        // 按时间升序排序，最旧的在前
+        std::sort(image_files.begin(), image_files.end(), [](const auto& a, const auto& b) {
+            return a.second < b.second;
+        });
+
+        // 删除多余的旧图片
+        size_t num_to_delete = image_files.size() - max_images_per_folder;
+        for (size_t i = 0; i < num_to_delete; ++i) {
+            std::cout << "删除旧图片: " << image_files[i].first << std::endl;
+            std::error_code ec;
+            std::filesystem::remove(image_files[i].first, ec);
+            if (ec) {
+                std::cerr << "删除失败: " << image_files[i].first << " - " << ec.message() << std::endl;
+            }
+        }
+    }
+}
+
+
+
 
 bool isImageBlurry(const cv::Mat& image, double& variance_out) {
     if (image.empty()) {

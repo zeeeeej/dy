@@ -10,18 +10,39 @@
 template <typename T>
 class ThreadSafeSet {
     std::set<T> data_;
+    std::list<T> insertion_order_;  // 保留插入顺序
     std::mutex mutex_;
+    size_t max_size_;
+
 public:
+    explicit ThreadSafeSet(size_t max_size) : max_size_(max_size) {}
+
     void insert(const T& val) {
         std::lock_guard<std::mutex> lock(mutex_);
+        
+        // 如果已存在，忽略插入
+        if (data_.count(val) > 0) return;
+
+        // 超过最大限制，删除最旧的一个
+        if (data_.size() >= max_size_) {
+            const T& oldest = insertion_order_.front();
+            data_.erase(oldest);
+            insertion_order_.pop_front();
+        }
+
+        // 插入新元素
         data_.insert(val);
+        insertion_order_.push_back(val);
     }
 
     bool try_pop(T& val) {
         std::lock_guard<std::mutex> lock(mutex_);
         if (data_.empty()) return false;
         val = *data_.begin();
-        data_.erase(data_.begin());
+        data_.erase(val);
+
+        // 同时移除插入顺序记录
+        insertion_order_.remove(val);
         return true;
     }
 
@@ -38,6 +59,16 @@ public:
     void clear() {
         std::lock_guard<std::mutex> lock(mutex_);
         data_.clear();
+        insertion_order_.clear();
+    }
+
+    size_t size() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return data_.size();
+    }
+
+    size_t capacity() const {
+        return max_size_;
     }
 };
 
@@ -105,5 +136,6 @@ bool isImageBlurry(const cv::Mat& image, double& variance_out);
 
 bool delete_txt_file(const std::string& file_path);
 bool is_folder_empty(const std::filesystem::path& folder_path);
+void trim_folder_images(const std::filesystem::path& parent_path, size_t max_images_per_folder = 10);
 
 #endif

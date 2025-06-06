@@ -293,10 +293,10 @@ int main(int argc, char **argv)
 
 /*--------------陀螺仪检测并拍照------------------------------*/
   
-    ThreadSafeSet<std::string> photo_names;
+    ThreadSafeSet<std::string> photo_names(10);
     
     
-    ThreadSafeSet<std::string> action_id_record;
+    ThreadSafeSet<std::string> action_id_record(12);
     
 
 
@@ -322,6 +322,8 @@ int main(int argc, char **argv)
           
             if (last_reported_angle >= 20.0f) {
 
+               
+
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
                 auto now = std::chrono::system_clock::now();
@@ -345,7 +347,8 @@ int main(int argc, char **argv)
                     photo_names.insert(image_biu_path);
                 };
 
-                // writeStringToFileAfterDelay("/userdata/action_id.txt", "aaa",0);
+                trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
+
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 last_reported_angle = 1; 
                

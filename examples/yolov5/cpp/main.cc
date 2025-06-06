@@ -77,7 +77,6 @@ extern "C"{
 
 int addr_biu = 2;
 static int pic_id = 0;
-bool door_closed_reported = false;
 
 static int zero_count = 0;
 static int last_reported_angle = -9999;
@@ -276,7 +275,6 @@ int main(int argc, char **argv)
     remove_folder_if_exists("/userdata/images_dir_path");
     remove_folder_if_exists("/userdata/crop_images");
     remove_folder_if_exists("/userdata/tmp_images_path");
-    remove_folder_if_exists("/userdata/images_oridinal_dir_path");
     remove_folder_if_exists("/userdata/txt_dir_path");
    
     ensure_path_exists(image_tmp_path);
@@ -284,9 +282,6 @@ int main(int argc, char **argv)
     ensure_path_exists(images_original_dir_path);
     ensure_path_exists(crop_img_dirs.c_str());
     ensure_path_exists(txt_dir);
-
-    create_empty_txt(mydata::action_id_txt_name);
-    clearFile(mydata::action_id_txt_name);
     
 
     hd_uart_init(addr_biu, crop_img_dirs.c_str(), action_id_collect, on_event);
@@ -298,10 +293,10 @@ int main(int argc, char **argv)
 
 /*--------------陀螺仪检测并拍照------------------------------*/
   
-    ThreadSafeSet<std::string> photo_names;
+    ThreadSafeSet<std::string> photo_names(10);
     
     
-    ThreadSafeSet<std::string> action_id_record;
+    ThreadSafeSet<std::string> action_id_record(12);
     
 
 
@@ -311,7 +306,6 @@ int main(int argc, char **argv)
 
             int angle1 = get_angle();
             float result = tly_detect(angle1);
-            // std::cout << "陀螺仪角度: " << result << std::endl;
          
             if (result <= 0) {
                 zero_count++;
@@ -327,6 +321,8 @@ int main(int argc, char **argv)
             }
           
             if (last_reported_angle >= 20.0f) {
+
+               
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -351,7 +347,8 @@ int main(int argc, char **argv)
                     photo_names.insert(image_biu_path);
                 };
 
-                // writeStringToFileAfterDelay("/userdata/action_id.txt", "aaa",0);
+                trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
+
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 last_reported_angle = 1; 
                
@@ -606,7 +603,6 @@ int main(int argc, char **argv)
 	qjy_photo_deinit();
 
 	rk_isp_deinit(0);
-    hd_uart_deinit();
 	
 	RK_MPI_SYS_Exit();
 	

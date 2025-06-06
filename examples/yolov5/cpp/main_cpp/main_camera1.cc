@@ -264,8 +264,8 @@ int main(int argc, char **argv)
     
 /*--------------陀螺仪检测并拍照------------------------------*/
 
-    ThreadSafeSet<std::string> photo_names;
-    ThreadSafeSet<std::string> action_id_record;
+    ThreadSafeSet<std::string> photo_names(10);
+    ThreadSafeSet<std::string> action_id_record(12);
 
     bool door_closed_reported = false;
 
