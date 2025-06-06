@@ -104,5 +104,6 @@ bool delete_specified_folder(const std::string& folder_path);
 bool isImageBlurry(const cv::Mat& image, double& variance_out);
 
 bool delete_txt_file(const std::string& file_path);
+bool is_folder_empty(const std::filesystem::path& folder_path);
 
 #endif

@@ -274,7 +274,9 @@ void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest
         } else {
             std::cerr << "移动失败: " << src_path_biu << " 错误: " << ec.message() << std::endl;
         }
+        clearFile("/userdata/action_id.txt");
     }
+
 }
 
 
@@ -836,6 +838,19 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
     delete_txt_file(txt_path);
 
     return saved_count > 0;
+}
+
+bool is_folder_empty(const std::filesystem::path& folder_path) {
+    try {
+        if (!std::filesystem::exists(folder_path) || !std::filesystem::is_directory(folder_path)) {
+            return true; // 不存在或不是目录，视为“空”
+        }
+
+        return std::filesystem::directory_iterator(folder_path) == std::filesystem::directory_iterator();
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "检查文件夹时出错: " << e.what() << std::endl;
+        return true; // 出错也当空处理
+    }
 }
 
 

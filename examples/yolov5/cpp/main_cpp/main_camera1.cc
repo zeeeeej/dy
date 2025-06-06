@@ -292,7 +292,7 @@ int main(int argc, char **argv)
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 40.0f && !door_closed_reported) {
+            if (last_reported_angle >= 10.0f && !door_closed_reported) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -329,7 +329,6 @@ int main(int argc, char **argv)
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
-                    clearFile(mydata::action_id_txt_name);
                     action_id_record.clear();
                 } 
            

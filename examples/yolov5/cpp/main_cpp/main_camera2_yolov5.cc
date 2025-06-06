@@ -356,7 +356,6 @@ int main(int argc, char **argv)
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
-                    clearFile(mydata::action_id_txt_name);
                     copy_folder_to(action_id_image_path_finall, images_original_dir_path);      //*****1111111 */
                 } 
                
