@@ -319,7 +319,6 @@ void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest
         } else {
             std::cerr << "移动失败: " << src_path_biu << " 错误: " << ec.message() << std::endl;
         }
-        clearFile("/userdata/action_id.txt");
     }
 
 }

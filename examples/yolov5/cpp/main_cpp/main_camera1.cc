@@ -87,6 +87,7 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
+std::string app_version = "V1.0";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
@@ -202,7 +203,7 @@ void writeStringToFileAfterDelay(const std::string& file_path, const std::string
 
 int main(int argc, char **argv)
 {
-
+    std::cout << "app_version:" << app_version << std::endl;
     const char* path = "/userdata/jpeg";
 	LOG_DEBUG("main begin\n");
 	rkipc_version_dump();
@@ -265,7 +266,7 @@ int main(int argc, char **argv)
 /*--------------陀螺仪检测并拍照------------------------------*/
 
     ThreadSafeSet<std::string> photo_names(10);
-    ThreadSafeSet<std::string> action_id_record(12);
+    ThreadSafeSet<std::string> action_id_record(10);
 
     bool door_closed_reported = false;
 
@@ -286,9 +287,9 @@ int main(int argc, char **argv)
             } else {
                 zero_count = 0;  // 非0则清零计数
                
-                if (result != last_reported_angle) {
-                    std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
-                }
+                // if (result != last_reported_angle) {
+                std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
+                // }
                 last_reported_angle = result;
             }
           
@@ -322,9 +323,10 @@ int main(int argc, char **argv)
                 last_reported_angle = 1; 
                 door_closed_reported = true; // 关门后设置为true，防止重复报告
                
-            } else if (last_reported_angle <= 0.0f ) {
+            } else if (last_reported_angle <= 0.0f && door_closed_reported) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                // std ::cout << "读取到的action_id: " << action_id << std::endl;
+                std ::cout << "读取到的action_id: " << action_id << std::endl;
+                clearFile(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());

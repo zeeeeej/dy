@@ -1,5 +1,5 @@
-CMakeFiles/ipc_app_0606_camera2.dir/utils_biu.cpp.o: \
- /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/utils_biu.cpp \
+CMakeFiles/ipc_app_0609_camera2.dir/main.cc.o: \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/main.cc \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include/stdint.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/stdint.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/features.h \
@@ -142,6 +142,8 @@ CMakeFiles/ipc_app_0606_camera2.dir/utils_biu.cpp.o: \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/bits/vector.tcc \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/image_utils.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/common.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/file_utils.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils/image_drawing.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/filesystem \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/bits/fs_fwd.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/system_error \
@@ -413,9 +415,88 @@ CMakeFiles/ipc_app_0606_camera2.dir/utils_biu.cpp.o: \
  /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/opencv2/video.hpp \
  /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/opencv2/video/tracking.hpp \
  /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/opencv2/video/background_segm.hpp \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/utils_biu.hpp \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/fstream \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/arm-rockchip830-linux-uclibcgnueabihf/bits/basic_file.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/arm-rockchip830-linux-uclibcgnueabihf/bits/c++io.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/include/c++/8.3.0/bits/fstream.tcc \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_uart_parser.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/input.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/ioctl.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/ioctls.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm/ioctls.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm-generic/ioctls.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/ioctl.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm/ioctl.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm-generic/ioctl.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/ioctl-types.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/ttydefaults.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/input-event-codes.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/param.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_mpi_sys.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_type.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_debug.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_common.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_defines.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_comm_sys.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_errno.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_comm_video.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rk_comm_mb.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/isp.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/log.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/network.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/net/if.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/socket.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/uio.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/socket.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/socket_type.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/sockaddr.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm/socket.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm-generic/socket.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm/sockios.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/asm-generic/sockios.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/arpa/inet.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/netinet/in.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/in.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/ethtool.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/const.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/if_ether.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/netlink.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/socket.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/rtnetlink.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/if_link.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/if_addr.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/neighbour.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/linux/sockios.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rockiva.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rockiva/rockiva_ba_api.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rockiva/rockiva_common.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/storage.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/dirent.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/dirent.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/inotify.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/inotify.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/mount.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/vfs.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/statfs.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/statfs.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/common.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/rkmuxer.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/system.h \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/photo.h \
- /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/utils_biu.hpp
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/uart.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/uart_parser.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/data.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/mpu6887p.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include/heat.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/../../../3rdparty/allocator/dma/dma_alloc.hpp \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/mman.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mman.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mman-linux.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/mman-shared.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/poll.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/poll.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/sys/eventfd.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/eventfd.h \
+ /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/memory.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/3rdparty/librga/include/RgaUtils.h

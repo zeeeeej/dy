@@ -75,6 +75,8 @@ extern "C"{
 
 #include "dma_alloc.hpp"
 
+
+std::string app_version = "V1.0";
 int addr_biu = 2;
 static int pic_id = 0;
 
@@ -215,7 +217,7 @@ void rkipc_get_opt(int argc, char *argv[]) {
 
 int main(int argc, char **argv)
 {
-
+    std::cout << "app_version:" << app_version << std::endl;
     const char* path = "/userdata/jpeg";
 	LOG_DEBUG("main begin\n");
 	rkipc_version_dump();
@@ -296,11 +298,13 @@ int main(int argc, char **argv)
     ThreadSafeSet<std::string> photo_names(10);
     
     
-    ThreadSafeSet<std::string> action_id_record(12);
+    ThreadSafeSet<std::string> action_id_record(10);
+
+    bool door_closed_reported = false;
     
 
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path,&door_closed_reported]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -320,9 +324,7 @@ int main(int argc, char **argv)
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 20.0f) {
-
-               
+            if (last_reported_angle >= 20.0f && !door_closed_reported) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -352,16 +354,17 @@ int main(int argc, char **argv)
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 last_reported_angle = 1; 
                
-            } else if (last_reported_angle <= 0.0f) {
+            } else if (last_reported_angle <= 0.0f && door_closed_reported) {
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                // std ::cout << "读取到的action_id: " << action_id << std::endl;
+                std ::cout << "读取到的action_id: " << action_id << std::endl;
+                clearFile(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
                     copy_folder_to(action_id_image_path_finall, images_original_dir_path);      //*****1111111 */
                 } 
-               
+                door_closed_reported = false;       
             }
         }
     });
