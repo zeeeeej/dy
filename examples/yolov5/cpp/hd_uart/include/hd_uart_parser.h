@@ -10,9 +10,10 @@ extern "C" {
 
 /**
  * 收到3.17 广播门开事件（0x1E）
+ * @param status 0:关闭；1：开启。
  * @param action_id_str action_id（时间戳（4字节）+序号（1字节））转成的字符串格式：时间戳（单位：秒）+序号（3位的10进制，范围0～255）
  */
-typedef void (*hd_on_action_id_changed)(const char *action_id_str);
+typedef void (*hd_on_action_id_changed)(uint8_t status,const char *action_id_str);
 
 typedef void* (*hd_on_event)(int  event_id,void * event_value,size_t event_value_size);
 
@@ -25,7 +26,7 @@ typedef void* (*hd_on_event)(int  event_id,void * event_value,size_t event_value
  *      recv_callback_func func = {qjy_uart_parser, hd_uart_recv};
  *      qjy_uart_init(&func, addr);
  * 2.初始化hd_uart_init
- *      hd_uart_init(addr,"/userdata/jpeg",on_action_id_changed);
+ *      hd_uart_init(addr,"/userdata/jpeg",on_action_id_changed,on_event);
  *
  * @param addr                  从机地址。01:静态摄像头；02：动态摄像头。
  * @param pic_dir_path          图片保存的地址
@@ -51,9 +52,6 @@ void hd_uart_recv(uint8_t byte);
 void hd_uart_deinit();
 
 char * hd_uart_version();
-
-//void hd_uart_debug_recv(const unsigned char *raw, size_t raw_size);
-//void hd_uart_debug_write_self(int write_outside);
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,19 @@
 
 
 
+void createBlankImage(const std::string& filename) {
+   
+    cv::Mat image(6, 6, CV_8UC3, cv::Scalar(255, 255, 255));
+
+    if (!cv::imwrite(filename, image)) {
+        std::cerr << "保存图像失败: " << filename << std::endl;
+    } else {
+        std::cout << "图像已保存: " << filename << std::endl;
+    }
+}
+
+
+
 void trim_folder_images(const std::filesystem::path& parent_path, size_t max_images_per_folder) {
     for (const auto& entry : std::filesystem::directory_iterator(parent_path)) {
         if (!std::filesystem::is_directory(entry)) continue;

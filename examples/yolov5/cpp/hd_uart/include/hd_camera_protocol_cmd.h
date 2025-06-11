@@ -551,11 +551,13 @@ uint8_t hd_host_action_id_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
+        uint8_t in_status,
         uint32_t in_action_id_timestamps,
         uint8_t in_action_id_index
 );
 
 uint8_t hd_slave_action_id_decode(
+        uint8_t *out_status,
         uint32_t *out_action_id_timestamps,
         uint8_t *out_action_id_index,
         const unsigned char *in_payload_data,

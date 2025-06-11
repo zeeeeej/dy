@@ -87,11 +87,13 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.0";
+std::string app_version = "V1.1";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
 int addr_biu = 1;
+
+static uint8_t door_status = 2;  // 默认日志级别为INFO
 
 static int g_main_run_ = 1;
 char *rkipc_ini_path_ = NULL;
@@ -108,15 +110,18 @@ namespace mydata {
 
 
 
-void action_id_collect(const char *action_id){
-    if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+void action_id_collect(uint8_t status, const char *action_id){
+    door_status = status;
+    if (status==1){ 
+        if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+        std::ofstream outfile(mydata::action_id_txt_name); 
+        if (!outfile.is_open()) return;
+        outfile << action_id << std::endl;
 
-    std::ofstream outfile(mydata::action_id_txt_name); 
-    if (!outfile.is_open()) return;
-    std::cout << "action_id: " << action_id << std::endl;
-
-    outfile << std::string(action_id) << std::endl;
+    }
+    
 }
+
 
 void *on_event(int event_id, void *event_value, size_t event_value_size) {
     return NULL;
@@ -287,13 +292,13 @@ int main(int argc, char **argv)
             } else {
                 zero_count = 0;  // 非0则清零计数
                
-                // if (result != last_reported_angle) {
+                if (result != last_reported_angle) {
                 std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
-                // }
+                }
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 10.0f && !door_closed_reported) {
+            if (last_reported_angle >= 50.0f && !door_closed_reported && door_status == 1) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -323,9 +328,10 @@ int main(int argc, char **argv)
                 last_reported_angle = 1; 
                 door_closed_reported = true; // 关门后设置为true，防止重复报告
                
-            } else if (last_reported_angle <= 0.0f && door_closed_reported) {
+            } else if (last_reported_angle <= 20.0f && door_closed_reported && door_status == 0) {
+                door_closed_reported = false;
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                std ::cout << "读取到的action_id: " << action_id << std::endl;
+                // std ::cout << "读取到的action_id: " << action_id << std::endl;
                 clearFile(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
@@ -334,7 +340,7 @@ int main(int argc, char **argv)
                     action_id_record.clear();
                 } 
            
-               door_closed_reported = false;
+               
               
             }
         }

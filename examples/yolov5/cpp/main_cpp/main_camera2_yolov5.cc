@@ -76,9 +76,10 @@ extern "C"{
 #include "dma_alloc.hpp"
 
 
-std::string app_version = "V1.0";
+std::string app_version = "V1.1";
 int addr_biu = 2;
-static int pic_id = 0;
+static int pic_id = 65;
+static uint8_t door_status = 2;  // 默认日志级别为INFO
 
 static int zero_count = 0;
 static int last_reported_angle = -9999;
@@ -97,6 +98,7 @@ char *rkipc_iq_file_path_ = NULL;
 
 namespace mydata {
     std::string action_id_txt_name = "/userdata/action_id.txt";
+    std::string status_txt_name = "/userdata/status.txt";
 }
 
 // enum { LOG_ERROR, LOG_WARN, LOG_INFO, LOG_DEBUG };
@@ -146,14 +148,18 @@ void print_meminfo() {
 }
 
 
-void action_id_collect(const char *action_id){
-    if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+void action_id_collect(uint8_t status, const char *action_id){
+    door_status = status;
+    if (status==1){ 
+        if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+        std::ofstream outfile(mydata::action_id_txt_name); 
+        if (!outfile.is_open()) return;
+        outfile << action_id << std::endl;
 
-    std::ofstream outfile(mydata::action_id_txt_name); 
-    if (!outfile.is_open()) return;
-
-    outfile << action_id << std::endl;
+    }
+    
 }
+
 
 
 
@@ -304,7 +310,7 @@ int main(int argc, char **argv)
     
 
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path,&door_closed_reported]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path, &door_closed_reported]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -318,13 +324,13 @@ int main(int argc, char **argv)
                 }
             } else {
                 zero_count = 0;  
-                if (result != last_reported_angle) {
-                    std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
-                }
+                // if (result != last_reported_angle) {
+                std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
+                // }
                 last_reported_angle = result;
             }
           
-            if (last_reported_angle >= 20.0f && !door_closed_reported) {
+            if (last_reported_angle >= 20.0f && door_status == 1) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -337,7 +343,7 @@ int main(int argc, char **argv)
               
                 std::ostringstream oss;
              
-                pic_id = (pic_id < 255) ? (pic_id + 1) : 65;
+                pic_id = (pic_id < 240) ? (pic_id + 1) : 65;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
                 oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
@@ -352,19 +358,22 @@ int main(int argc, char **argv)
                 trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                last_reported_angle = 1; 
+                last_reported_angle = 1;   
+                door_closed_reported = true;  // 标记门已关闭，避免重复报告
+                
                
-            } else if (last_reported_angle <= 0.0f && door_closed_reported) {
+            } else if (last_reported_angle < 20.0f && door_status == 0 && door_closed_reported) {
+                door_closed_reported = false;  
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                std ::cout << "读取到的action_id: " << action_id << std::endl;
+                // std ::cout << "读取到的action_id: " << action_id << std::endl;
                 clearFile(mydata::action_id_txt_name);
                 if (!action_id.empty()) {
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
                     copy_folder_to(action_id_image_path_finall, images_original_dir_path);      //*****1111111 */
-                } 
-                door_closed_reported = false;       
+                }   
+                
             }
         }
     });
@@ -582,6 +591,8 @@ int main(int argc, char **argv)
                 std::cout << "有截图保存成功" << std::endl;
             } else {
                 std::cout << "没有任何截图保存成功" << std::endl;
+                std::filesystem::create_directories(crop_img_path);
+                createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
             }
 
             

@@ -48,7 +48,7 @@ public:
 
     bool empty() {
         std::lock_guard<std::mutex> lock(mutex_);
-        return data_.empty();
+         return data_.empty() && insertion_order_.empty();
     }
 
     bool contains(const T& val) {
@@ -137,5 +137,6 @@ bool isImageBlurry(const cv::Mat& image, double& variance_out);
 bool delete_txt_file(const std::string& file_path);
 bool is_folder_empty(const std::filesystem::path& folder_path);
 void trim_folder_images(const std::filesystem::path& parent_path, size_t max_images_per_folder = 10);
+void createBlankImage(const std::string& filename);
 
 #endif
