@@ -117,9 +117,7 @@ void action_id_collect(uint8_t status, const char *action_id){
         std::ofstream outfile(mydata::action_id_txt_name); 
         if (!outfile.is_open()) return;
         outfile << action_id << std::endl;
-
-    }
-    
+    }  
 }
 
 

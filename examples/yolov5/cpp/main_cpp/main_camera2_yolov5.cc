@@ -262,7 +262,7 @@ int main(int argc, char **argv)
 	RK_MPI_SYS_Init();
 	
     qjy_uart_init(&func, addr_biu);
-	gsensor_init();
+	gsensor_init(1);
 	qjy_photo_init();
 	heat_pwm_init();
 
@@ -284,6 +284,7 @@ int main(int argc, char **argv)
     remove_folder_if_exists("/userdata/crop_images");
     remove_folder_if_exists("/userdata/tmp_images_path");
     remove_folder_if_exists("/userdata/txt_dir_path");
+    remove_folder_if_exists("/userdata/images_oridinal_dir_path");
    
     ensure_path_exists(image_tmp_path);
     ensure_path_exists(images_dir_path);
