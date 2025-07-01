@@ -23,7 +23,7 @@
 
 #include <set>
 #include <vector>
-#define LABEL_NALE_TXT_PATH "/userdata/one_category_label_0514.txt"
+#define LABEL_NALE_TXT_PATH "/oem/usr/share/one_category_label_0514.txt"
 
 static char *labels[OBJ_CLASS_NUM];
 

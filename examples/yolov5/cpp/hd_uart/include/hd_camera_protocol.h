@@ -17,10 +17,11 @@ extern "C" {
 #define PROTOCOL_HEADER_1               0xAA                        // 协议头标识1
 #define PROTOCOL_SLAVE_STATIC           0x01                        // 静态摄像头从机地址
 #define PROTOCOL_SLAVE_DYNAMIC          0x02                        // 动态摄像头从机地址
+#define PROTOCOL_BROADCAST              0xFF                        // 广播地址
 #define PROTOCOL_RATE_DEFAULT           460800                      // 默认485串口波特率
 #define PROTOCOL_UART_SUCCESS           0                           // result 成功
 #define PROTOCOL_UART_FAIL              1                           // result 失败
-#define PROTOCOL_MAX_FRAME_LEN          8192                        // 定义最大帧长度
+#define PROTOCOL_MAX_FRAME_LEN          (10240+256)                 // 定义最大帧长度
 
 uint16_t hd_crc16(const uint8_t *data, uint32_t length);
 

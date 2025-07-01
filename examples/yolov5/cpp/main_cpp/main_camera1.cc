@@ -245,7 +245,7 @@ int main(int argc, char **argv)
 	RK_MPI_SYS_Init();
 	
 	qjy_uart_init(&func, addr_biu);
-	gsensor_init();
+	gsensor_init(0);
 	qjy_photo_init();
 	heat_pwm_init();
 
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             int angle1 = get_angle();  
-            float result = tly_detect(angle1);
+            float result = tly_detect1(angle1);
         
 
             if (result <= 0) {

@@ -18,6 +18,8 @@
 
 
 
+
+
 void createBlankImage(const std::string& filename) {
    
     cv::Mat image(6, 6, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -106,6 +108,26 @@ bool isImageBlurry(const cv::Mat& image, double& variance_out) {
 }
 
 
+
+
+bool delete_folder_contents_only(const std::string& folder_path) {
+    try {
+        if (std::filesystem::exists(folder_path) && std::filesystem::is_directory(folder_path)) {
+            std::uintmax_t count = 0;
+            for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
+                count += std::filesystem::remove_all(entry.path());
+            }
+            std::cout << "成功删除文件夹内内容，共删除了 " << count << " 个文件/文件夹" << std::endl;
+            return true;
+        } else {
+            std::cerr << "路径不存在或不是文件夹：" << folder_path << std::endl;
+            return false;
+        }
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "删除文件夹内容时异常：" << e.what() << std::endl;
+        return false;
+    }
+}
 
 
 bool delete_specified_folder(const std::string& folder_path) {
@@ -489,13 +511,22 @@ std::vector<std::string> get_complete_videos(const std::string& dir_path) {
 // }
 
 
-float tly_detect(int angle1) {
+float tly_detect1(int angle1) {
     // float detect_angle = (float)angle1;
     // float therold = 20.0f;
     // if (detect_angle >= therold) {
     //     return detect_angle;
     // }
     return float(angle1);
+}
+
+float tly_detect2(int angle1) {
+    // float detect_angle = (float)angle1;
+    // float therold = 20.0f;
+    // if (detect_angle >= therold) {
+    //     return detect_angle;
+    // }
+    return -float(angle1);
 }
 
 // void* worker(void* arg) {
@@ -807,7 +838,7 @@ void keepTopSharpImages(const std::string& save_dir, size_t keep_top_n = 5) {
 
 
 
-bool process_last_n_lines(const std::string& txt_path, const std::string& save_dir, int keep_last_n) {
+bool process_last_n_lines(const std::string& txt_path, const std::string& save_dir, int keep_last_n, int& pic_id) {
     std::ifstream infile(txt_path);
     if (!infile.is_open()) {
         std::cerr << "无法打开文件: " << txt_path << std::endl;
@@ -868,9 +899,11 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
         cv::Mat cropped = img(roi);
 
         std::string img_name = std::filesystem::path(img_path).stem().string();
+
+        pic_id = (pic_id < 240) ? (pic_id + 1) : 65;
         
         // std::string save_path = save_dir + "/" + img_name + "_cls" + std::to_string(cls_id) + "_crop_" + std::to_string(i) + ".jpg";
-        std::string save_path = save_dir + "/" + std::to_string(i) + "_" + img_name + ".jpg";
+        std::string save_path = save_dir + "/" + std::to_string(i) + "_" + img_name + "_" + std::to_string(pic_id) + ".jpg";
 
         if (cv::imwrite(save_path, cropped)) {
             std::cout << "截图完成: " << save_path << std::endl;
@@ -888,9 +921,9 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
     
     std::filesystem::path original_path1(original_path);
 
-    delete_specified_folder(file_path_biu.parent_path().string());
+    // delete_specified_folder(file_path_biu.parent_path().string());
 
-    delete_specified_folder(original_path1.parent_path().string());
+    // delete_specified_folder(original_path1.parent_path().string());
 
     delete_txt_file(txt_path);
 

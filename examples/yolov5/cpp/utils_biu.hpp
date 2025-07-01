@@ -84,7 +84,9 @@ std::vector<std::string> get_complete_videos(const std::string& dir_path);
 
 void watch_for_takevideo_signal();
 
-float tly_detect(int angle1);
+float tly_detect1(int angle1);
+
+float tly_detect2(int angle1);
 
 
 
@@ -105,7 +107,7 @@ std::string analyse_one(const std::string& file_path);
 std::string analyse_two(const std::string& file_path);
 
 
-bool process_last_n_lines(const std::string& txt_path, const std::string& save_dir, int keep_last_n);
+bool process_last_n_lines(const std::string& txt_path, const std::string& save_dir, int keep_last_n, int& pic_id);
 
 std::string read_txt_file(const std::string& file_path);
 
@@ -138,5 +140,7 @@ bool delete_txt_file(const std::string& file_path);
 bool is_folder_empty(const std::filesystem::path& folder_path);
 void trim_folder_images(const std::filesystem::path& parent_path, size_t max_images_per_folder = 10);
 void createBlankImage(const std::string& filename);
+
+bool delete_folder_contents_only(const std::string& folder_path);
 
 #endif

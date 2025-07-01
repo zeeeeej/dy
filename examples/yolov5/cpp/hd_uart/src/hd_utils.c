@@ -21,6 +21,10 @@ void hd_logger_print(HDLoggerLevel level, const char *tag, const char *msg, ...)
     if (level < g_HDLoggerLevel) {
         return;
     }
+    if (tag != NULL){
+        printf("[%s]",tag);
+    }
+
     va_list args;
     va_start(args, msg);     // 初始化 args，指向 msg 之后的参数
     vprintf(msg, args);     // 使用 vprintf 打印格式化字符串和可变参数
@@ -79,6 +83,7 @@ int hd_md5(const char *file_path, unsigned char result[16]) {
 
 
 void hd_printf_buff(const unsigned char *buf, size_t buf_size, const char *tag, int full) {
+
 //    printf("打印开始<%s> \n", tag);
     size_t size = buf_size;
     if (buf_size > 64) {
@@ -108,11 +113,11 @@ void hd_printf_buff(const unsigned char *buf, size_t buf_size, const char *tag, 
     }
     printf("[%s][v]", tag);
     for (int i = 0; i < size; ++i) {
-        if (i > 0xff) {
-            printf("%-1s%04x", "", buf[i]);
-        } else {
+//        if (i > 0xff) {
+//            printf("%-1s%04x", "", buf[i]);
+//        } else {
             printf("%-1s%02x", "", buf[i]);
-        }
+//        }
     }
     printf("\n");
     if (full) {
@@ -129,5 +134,27 @@ void hd_sleep_ms(uint32_t milliseconds) {
     ts.tv_sec = milliseconds / 1000;
     ts.tv_nsec = (milliseconds % 1000) * 1000000;
     nanosleep(&ts, NULL);  // POSIX API
+}
+
+int hd_array_cmp(const unsigned char *a1, size_t len1,
+              const unsigned char *a2, size_t len2) {
+    // 检查指针有效性
+    if (a1 == NULL || a2 == NULL) {
+        return 1; // NULL指针与任何数组都不相等
+    }
+
+    // 首先比较长度
+    if (len1 != len2) {
+        return 2; // 长度不同直接返回不相等
+    }
+
+    // 逐个字节比较内容
+    for (size_t i = 0; i < len1; i++) {
+        if (a1[i] != a2[i]) {
+            return 3; // 发现不相等字节
+        }
+    }
+
+    return 0; // 长度和内容都相等
 }
 

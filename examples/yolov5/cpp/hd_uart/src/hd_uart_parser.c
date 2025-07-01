@@ -12,17 +12,25 @@
 #include "hd_camera_protocol_cmd.h"
 #include "hd_utils.h"
 #include <errno.h>
-#include <limits.h>
 #include <sys/time.h>
+#include <fcntl.h>
 #include "uart.h"
-#include "485.h"
-#include "uart_parser.h"
+#include "rs485.h"
 #include "hd_camera_protocol_property.h"
+#include "hd_camera_shell.h"
+#include "hd_camera_protocol_extra_cmd.h"
 
-#define HD_UART_PARSER_VERSION_INTERNAL "0.1.9"
-// 帧头定义
-#define FRAME_HEADER_H PROTOCOL_HEADER_1
-#define FRAME_HEADER_L PROTOCOL_HEADER_0
+#define HD_UART_PARSER_DEBUG                    0
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.2.37.4"
+#define FRAME_HEADER_H                          PROTOCOL_HEADER_1
+#define FRAME_HEADER_L                          PROTOCOL_HEADER_0
+#define MAX_FILE_SIZE                           (512*1024)
+#define JPG_SUFFIX                              ".jpg"                      // 图片格式
+#define JPG_SUFFIX_LEN                          4                           // 图片格式长度
+//#define SERIAL_FACTORY_MODE                     1
+//#define SERIAL_NORMAL_MODE                      0
+//#define SERIAL_PUSH_MODE                        2
+//#define SERIAL_PULL_MODE                        3
 
 // 状态机状态定义
 typedef enum {
@@ -39,41 +47,60 @@ typedef enum {
     STATE_WAIT_CRC_L,
 } ParserState;
 
-// 当前从机地址
-static volatile uint8_t g_addr = 0;
-static volatile uint32_t g_delay = 0;
-// 当前照片存储目录
-static const char *g_pic_dir_path = NULL;
-static volatile int g_running = 0;
-static pthread_t g_uart_t;
-static hd_on_action_id_changed g_hd_on_action_id_changed = NULL;
-static hd_on_event g_hd_on_event = NULL;
+typedef enum {
+    HD_SERIAL_NORMAL_MODE = 0,   // 串口传输模式
+    HD_SERIAL_SHELL_MODE,       // SHELL模式
+    HD_SERIAL_PUSH_MODE,        // PUSH模式
+    HD_SERIAL_PULL_MODE         // PULL模式
+} HD_SERIAL_MODE;
 
-static uint8_t g_frame_buffer[PROTOCOL_MAX_FRAME_LEN];
 
-// 待上传的文件缓冲
-#define MAX_FILE_SIZE (400*1024)
-static unsigned g_file_buffer[MAX_FILE_SIZE] = {0};
-static unsigned g_file_buffer_size = -1;
-static uint8_t g_file_pic_id = 0;
-static int g_file_pulling = 0;
+static volatile uint8_t g_addr = 0;                     // 当前从机地址
+static volatile uint8_t g_serial_mode = HD_SERIAL_NORMAL_MODE;
+static volatile uint32_t g_delay = 0;                   // 485帧间隔delay
+static char g_pic_dir_path[2048];                       // 当前照片存储目录
+static volatile int g_running = 0;                      // 程序是否在运行
+static hd_on_action_id_changed g_hd_on_action_id_changed = NULL;    // 收到action_id回调
+static hd_on_event g_hd_on_event = NULL;                // 收到event回调
+static uint8_t g_frame_buffer[PROTOCOL_MAX_FRAME_LEN];  // 串口帧缓冲区
+static uint32_t g_frame_length = 0;                     // 一个完整帧的数据长度
+unsigned char shell_resp_buff[MAX_RESULT_LENGTH];       // shell回复缓冲区
+static unsigned g_file_buffer[MAX_FILE_SIZE] = {0};     // 图片文件缓冲区
+static unsigned int g_file_buffer_size = -1;                // 当前上传文件大小
+static unsigned int g_file_buffer_offset = 0;                // 当前上传文件大小
+static uint8_t g_file_pic_id = 0;                       // 当前上传文件pic_id
+static int g_file_pulling = 0;                          // 当前上传文件中
 
-static uint16_t g_frame_length = 0;
+static char *g_push_mode_file_path[1024];                    // push文件path
+static uint64_t g_push_mode_file_size = -1;                  // push文件size
+static unsigned char g_push_mode_file_md5[16];               // push文件md5
+static FILE *g_push_mode_file = NULL;
 
-static int g_write_outside = 0;
+static char *g_pull_mode_file_path[1024];                    // pull文件path
+static uint64_t g_pull_mode_file_size = -1;                  // pull文件size
+static unsigned char g_pull_mode_file_md5[16];               // pull文件md5
+static unsigned char PULL_MODE_FILE_HEADER_TAIL[8] = {
+        'h', 'a', 'd', 'l', 'i', 'n', 'k', 's'
+};
+static FILE *g_pull_mode_file = NULL;
 
 // 隐藏的实现 a
+
+static void on_serial_mode_changed(HD_SERIAL_MODE mode);
+
 static int do_uart_write(const unsigned char *raw, size_t raw_size);
 
-//static void do_uart_recv(uint8_t str);
+static void do_uart_recv(uint8_t str);
 
 static int do_parse_pic_info(const char *file_name, uint32_t *snapshot_timestamps, uint8_t *pic_id);
 
-static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint16_t *frame_length);
+static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint32_t *frame_length);
 
 static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_timestamps, uint8_t *action_id_index);
 
-static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *pic_infos_size);
+static int do_collect_all_pic_infos(hd_dynamic_pic_info **pic_infos, uint32_t *pic_infos_size);
+
+static int do_collect_all_pic_infos_v2(hd_dynamic_pic_info *pic_infos, uint32_t *pic_infos_size);
 
 static int do_find_pic_by_pic_id(uint8_t pic_id, char **file_path);
 
@@ -91,7 +118,8 @@ static void resetFileBuffer() {
     g_file_pic_id = 0;
     g_file_pulling = 0;
     g_file_buffer_size = -1;
-    memset(g_file_buffer, 0, MAX_FILE_SIZE);
+    g_file_buffer_offset = 0;
+    //memset(g_file_buffer, 0, MAX_FILE_SIZE);
 }
 
 static int do_uart_write(const unsigned char *raw, size_t raw_size) {
@@ -101,32 +129,46 @@ static int do_uart_write(const unsigned char *raw, size_t raw_size) {
     if (raw == NULL || raw_size <= 0) {
         return -1;
     }
-    if (g_write_outside) { // 由外部来实现写操作。
-        if (g_hd_on_event != NULL) {
-            g_hd_on_event(EVENT_DEBUG_WRITE, (void *) raw, raw_size);
-        }
-        return 0;
-    }
+
+//     hd_printf_buff(raw,raw_size,"-",0);
+
+//    for (int i = 0; i < raw_size; ++i) {
+//
+//        rs485_pwr_on();
+//        usleep(g_delay*4);
+//	rk_uart_sendbyte(raw[i]);
+//        usleep(g_delay*4);
+//        rs485_pwr_off();
+//        usleep(g_delay*4);
+//    }
 
     rs485_pwr_on();
+    usleep(9000);
     for (int i = 0; i < raw_size; ++i) {
+        if (!g_running)break;
         rk_uart_sendbyte(raw[i]);
-        usleep(g_delay);
+        usleep(16);
     }
+    usleep(4000);
     rs485_pwr_off();
+    if (HD_UART_PARSER_DEBUG) {
+        LOGI("do_uart_write over \n");
+    }
     return 0;
 }
 
 // 帧解析函数
-static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint16_t *frame_length) {
-    //LOGI("parse_serial_frame\n");
+static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint32_t *frame_length) {
     static ParserState state = STATE_WAIT_HEADER_H;
     static uint16_t data_index = 0;
     static uint32_t data_len = 0;
     static uint16_t expected_crc = 0;
     static uint16_t calculated_crc = 0;
     static uint16_t current_pos = 0;
-
+    if (!g_running) {
+        state = STATE_WAIT_HEADER_H;
+        return 5;
+    }
     switch (state) {
         case STATE_WAIT_HEADER_H:
             if (byte == FRAME_HEADER_H) {
@@ -142,12 +184,19 @@ static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint16_t *fra
                 current_pos = 2;
                 state = STATE_WAIT_ADDR;
             } else {
+                current_pos = 0;
                 state = STATE_WAIT_HEADER_H;
             }
             break;
 
         case STATE_WAIT_ADDR:
             frame_buffer[2] = byte;
+            // 判断addr
+            if ((frame_buffer[2] != g_addr) && (frame_buffer[2] != PROTOCOL_BROADCAST)) {
+                current_pos = 0;
+                state = STATE_WAIT_HEADER_H;
+                return -4;
+            }
             current_pos = 3;
             state = STATE_WAIT_CMD;
             break;
@@ -185,7 +234,13 @@ static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint16_t *fra
                        (uint32_t) frame_buffer[5] << 8 |
                        frame_buffer[4];
 
-            if (data_len > PROTOCOL_MAX_FRAME_LEN - 10) { // 10 = 帧头(2)+地址(1)+命令(1)+长度(4)+CRC(2)
+            if (data_len > PROTOCOL_MAX_FRAME_LEN-10) {
+                LOGW("data_len = %d ,frame_length = %d\n", data_len,frame_length);
+                LOGW("frame_buffer[7] = %02x \n", frame_buffer[7]);
+                LOGW("frame_buffer[6] = %02x \n", frame_buffer[6]);
+                LOGW("frame_buffer[5] = %02x \n", frame_buffer[5]);
+                LOGW("frame_buffer[4] = %02x \n", frame_buffer[4]);
+                current_pos = 0;
                 state = STATE_WAIT_HEADER_H;
                 return -3;
             }
@@ -228,19 +283,205 @@ static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint16_t *fra
             if (calculated_crc == expected_crc) {
                 *frame_length = current_pos;
                 state = STATE_WAIT_HEADER_H;
+                current_pos = 0;
                 return 0;
             } else {
                 state = STATE_WAIT_HEADER_H;
+                current_pos = 0;
                 return -2;
             }
             break;
 
         default:
             state = STATE_WAIT_HEADER_H;
+            current_pos = 0;
             break;
     }
 
     return -1;
+}
+
+// 创建目录（如果不存在）
+static int create_directory_if_not_exists(const char *path) {
+    char *dir_path = strdup(path);
+    char *p = strrchr(dir_path, '/');
+
+    if (p != NULL) {
+        *p = '\0'; // 截断文件名，只保留目录路径
+
+        // 检查目录是否存在
+        struct stat st;
+        if (stat(dir_path, &st) != 0) {
+            // 目录不存在，尝试创建
+            if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+                free(dir_path);
+                return -1; // 创建失败
+            }
+        }
+    }
+
+    free(dir_path);
+    return 0;
+}
+
+static void resetPushMode() {
+    if (g_push_mode_file != NULL) {
+        fclose(g_push_mode_file);
+        g_push_mode_file = NULL;
+    }
+    memset(g_push_mode_file_path, 0, sizeof(g_push_mode_file_path));
+    memset(g_push_mode_file_md5, 0, sizeof(g_push_mode_file_md5));
+    g_push_mode_file_size = -1;
+    on_serial_mode_changed(HD_SERIAL_NORMAL_MODE);
+}
+
+static void resetPullMode() {
+    if (g_push_mode_file != NULL) {
+        fclose(g_pull_mode_file);
+        g_pull_mode_file = NULL;
+    }
+    memset(g_pull_mode_file_path, 0, sizeof(g_pull_mode_file_path));
+    memset(g_pull_mode_file_md5, 0, sizeof(g_pull_mode_file_md5));
+    g_pull_mode_file_size = -1;
+    on_serial_mode_changed(HD_SERIAL_NORMAL_MODE);
+}
+
+static void on_push_delete_and_reply(int success) {
+    unsigned char *out_protocol_data = NULL;
+    uint32_t out_protocol_data_size;
+    uint8_t in_slave_addr;
+    uint8_t in_property_id;
+    uint8_t in_result;
+    int ret = hd_slave_property_set_encode(&out_protocol_data, &out_protocol_data_size,
+                                           g_addr, PROPERTY_HD_ID_PUSH, success);
+    if (ret)return;
+    do_uart_write(out_protocol_data, out_protocol_data_size);
+    free(out_protocol_data);
+}
+
+static void do_uart_recv_with_pull(uint8_t str) {
+
+}
+
+static void do_uart_recv_with_push(uint8_t str) {
+    if (g_push_mode_file == NULL)return;
+    //LOGD("<do_uart_recv_to_file> %02x \n",str);
+    static ssize_t file_size = 0;
+    unsigned char uc = str;
+    size_t written = fwrite(&uc, 1, 1, g_push_mode_file);
+    if (written != 1) {
+        perror("Failed to write byte\n");
+        // todo 删除文件
+        resetPushMode();
+        on_push_delete_and_reply(1);
+        return;
+    }
+    file_size++;
+    if (file_size == g_push_mode_file_size) {
+        fclose(g_push_mode_file);
+        g_push_mode_file = NULL;
+        sync();
+        LOGI("push 完毕！文件：%s ，大小：%d\n", g_push_mode_file_path, file_size);
+        // 校验md5
+        unsigned char result[16];
+        int ret = hd_md5(g_push_mode_file_path, result);
+        if (ret) {
+            LOGW("md5生成 fail :%d\n", ret);
+            // todo 删除文件
+            resetPushMode();
+            on_push_delete_and_reply(2);
+            return;
+        }
+        if (hd_array_cmp(result, 16, g_push_mode_file_md5, 16) == 0) {
+            LOGI("文件push成功！\n");
+            resetPushMode();
+            on_push_delete_and_reply(0);
+        } else {
+            LOGW("md5不同");
+            resetPushMode();
+            // todo 删除文件
+            on_push_delete_and_reply(3);
+        }
+    }
+}
+
+static void do_uart_recv_with_shell(uint8_t str) {
+    if (str == 0x00 || str == 0x0d) { // 消除空格键、回车键
+        return;
+    }
+    LOGD("[do_uart_recv_str]收到字符：%02x\n", str);
+    static unsigned char shell_buff[MAX_COMMAND_LENGTH];
+
+    static int do_uart_recv_str_index = 0;
+    int ret;
+
+    // 检查是否接收到回车换行符（假设'\n'表示结束）
+    if (str == '\n') {
+        // 确保字符串以null结尾
+        if (do_uart_recv_str_index < MAX_COMMAND_LENGTH - 1) {
+            shell_buff[do_uart_recv_str_index] = '\0';
+        } else {
+            shell_buff[MAX_COMMAND_LENGTH - 1] = '\0';
+        }
+
+        // 打印接收到的字符串
+        LOGI("Received Shell: %s\n", shell_buff);
+        // 处理命令
+        if (strcmp(shell_buff, "#exit#") == 0) {
+            if (g_serial_mode == HD_SERIAL_NORMAL_MODE) {
+                LOGI("已经取消工厂模式%d\n");
+                unsigned char buf[] = {g_serial_mode};
+                do_uart_write(buf, sizeof(buf));
+                return;
+            }
+            on_serial_mode_changed(HD_SERIAL_NORMAL_MODE);
+            LOGI("取消工厂模式成功！\n");
+            // 回复
+            const char *resp = "取消工厂模式成功!\n";
+
+            // 复制数据（包括 '\0' 结束符）
+            unsigned long size = strlen(resp) + 1;
+            LOGI("发送shell命令长度=%d\n", size);
+            memcpy(shell_resp_buff, resp, size);
+            do_uart_write(shell_resp_buff, size);
+
+            // 重置索引以便接收下一条命令
+            do_uart_recv_str_index = 0;
+        } else {
+            LOGI("shell命令 shell_buff=[%s] index=%d\n", shell_buff, do_uart_recv_str_index);
+            for (int i = 0; i < do_uart_recv_str_index; ++i) {
+                printf("%02x\n", shell_buff[i]);
+            }
+            char buff[1024];
+            for (int i = 0; i <= do_uart_recv_str_index; ++i) {
+                buff[i] = shell_buff[i];
+            }
+            ret = hd_camera_shell_exec(buff, shell_resp_buff);
+            if (ret) {
+                LOGW("hd_camera_shell_exec error:%d\n", ret);
+                // 重置索引以便接收下一条命令
+                do_uart_recv_str_index = 0;
+                return;
+            }
+            printf("执行结束！\n");
+            LOGI("exec result :\n");
+            LOGI("%s", shell_resp_buff);
+            LOGI("\n");
+            do_uart_write(shell_resp_buff, strlen(shell_resp_buff));
+        }
+
+        // 重置索引以便接收下一条命令
+        do_uart_recv_str_index = 0;
+    } else {
+        // 将字符添加到缓冲区，但不要超过缓冲区大小
+        if (do_uart_recv_str_index < MAX_COMMAND_LENGTH - 1) {
+            shell_buff[do_uart_recv_str_index++] = str;
+        } else {
+            // 缓冲区已满，可以在这里处理错误或重置缓冲区
+            printf("Error: Command too long!\n");
+            do_uart_recv_str_index = 0;
+        }
+    }
 }
 
 static void do_uart_recv(uint8_t str) {
@@ -263,29 +504,34 @@ static void do_uart_recv(uint8_t str) {
 
     // 目标：按照一个字节一个字节解析 从数据流中解析出：aa 5a 01 1e 05 00 00 00 78 56 34 12 00 9c dd整条数据。
 
-
     int ret;
     ret = parse_serial_frame(str, g_frame_buffer, &g_frame_length);
     if (ret == 0) {
-        LOGI("收到完整帧.......\n");
-        hd_printf_buff(g_frame_buffer, g_frame_length, "收到完整帧", 0);
+        //LOGI("收到完整帧.......\n");
+        hd_printf_buff(g_frame_buffer, g_frame_length, "收到", 0);
         // 处理数据
-        handle_uart_data(g_frame_buffer, g_frame_length);
+        ret = handle_uart_data(g_frame_buffer, g_frame_length);
         g_frame_length = 0;
         memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
     } else if (ret == -1) {
-
+        // 处理中。。。
+    } else if (ret == 5) {
+        g_frame_length = 0;
+        memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
     } else if (ret == -2) {
         LOGW("CRC error \n");
+        g_frame_length = 0;
+        memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
     } else if (ret == -3) {
         LOGW("len error\n");
+        g_frame_length = 0;
+        memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
+    } else {
+        // 处理中。。。
     }
 
-}
 
-#define MAX_TOKENS 20  // 最大分割数量
-#define JPG_SUFFIX ".jpg"
-#define JPG_SUFFIX_LEN 4  // ".jpg"的长度
+}
 
 // 验证字符串是否以.jpg结尾
 static int ends_with_jpg(const char *str) {
@@ -328,10 +574,10 @@ static int load_file_to_buffer(const char *filename) {
     // 读取文件内容
     size_t bytes_read = fread(g_file_buffer, 1, file_size, file);
     if (bytes_read != (size_t) file_size) {
-        fprintf(stderr, "读取文件不完全，期望 %ld字节，实际读取 %zu字节\n",
-                file_size, bytes_read);
-        fclose(file);
-        return -1;
+        LOGW("读取文件不完全，期望 %ld字节，实际读取 %zu字节\n",
+             file_size, bytes_read);
+//        fclose(file);
+//        return -1;
     }
 
     g_file_buffer_size = bytes_read;
@@ -403,61 +649,55 @@ static int parse_filename(const char *filename, char *tokens[], int max_tokens) 
 // 例子：解析字符串xxxxx_1747878695_112.jpg 解析为snapshot_timestamps：1747878695  pic_id：112
 */
 static int do_parse_pic_info(const char *file_name, uint32_t *snapshot_timestamps, uint8_t *pic_id) {
-    if (!file_name || !snapshot_timestamps || !pic_id) {
-        return -1;
+    char *copy = strdup(file_name);
+    if (!copy) {
+        return -1; // 内存分配失败
     }
-    char cpy[256];
 
-    snprintf(cpy, sizeof(cpy), "%s", file_name);  // 安全复制
-//
-//    // 查找第一个和第二个'_'
-//    const char *first_underscore = strchr(file_name, '_');
-//    const char *second_underscore = first_underscore ? strchr(first_underscore + 1, '_') : NULL;
-//    const char *last_dot = strrchr(file_name, '.');
-//
-//    // 基础格式检查
-//    if (!first_underscore || !second_underscore || !last_dot ||
-//        second_underscore >= last_dot) {
-//        return -2;
-//    }
-//
-//    /* 解析时间戳（第一个_和第二个_之间的部分） */
-//    char *timestamp_end;
-//    errno = 0;
-//    long timestamp = strtol(first_underscore + 1, &timestamp_end, 10);
-//
-//    // 检查时间戳转换结果
-//    if ((errno == ERANGE && (timestamp == LONG_MAX || timestamp == LONG_MIN))) {
-//        return -3; // 数值溢出
-//    }
-//    if (timestamp_end != second_underscore) {  // 关键修改点
-//        return -4; // 时间戳未正确终止于第二个_
-//    }
-//    if (timestamp < 0 || timestamp > UINT32_MAX) {
-//        return -5;
-//    }
-//
-//    /* 解析图片ID（第二个_和.之间的部分） */
-//    char *pic_id_end;
-//    errno = 0;
-//    long id = strtol(second_underscore + 1, &pic_id_end, 10);
-//
-//    if ((errno == ERANGE && (id == LONG_MAX || id == LONG_MIN)) ||
-//        pic_id_end != last_dot ||  // 关键修改点
-//        id < 0 || id > UINT8_MAX) {
-//        return -6;
-//    }
-    char *tokens[MAX_TOKENS];
-    int token_count = 0;
-    token_count = parse_filename(file_name, tokens, MAX_TOKENS);
-    if (token_count <= 2)return -1;
-    char *snapshot_timestamps_str = tokens[token_count - 2];
-    char *id_str = tokens[token_count - 1];
-    *snapshot_timestamps = (uint32_t) atoi(snapshot_timestamps_str);
-    *pic_id = (uint8_t) atoi(id_str);
-    LOGD("==>解析结果 时间 ：<%s> \n", snapshot_timestamps_str);
-    LOGD("==>解析结果 id  ：<%s> \n", id_str);
-    return 0;
+    char *token;
+    char *last_token = NULL;
+    char *second_last_token = NULL;
+
+    // 第一次分割
+    token = strtok(copy, "_");
+    while (token != NULL) {
+        second_last_token = last_token;
+        last_token = token;
+        token = strtok(NULL, "_");
+    }
+
+    // 检查是否至少有2个下划线分隔的部分
+    if (!second_last_token || !last_token) {
+        free(copy);
+        return -1; // 格式不正确
+    }
+
+    // 处理时间戳部分
+    char *endptr;
+    unsigned long timestamp = strtoul(second_last_token, &endptr, 10);
+    if (*endptr != '\0' || timestamp > UINT32_MAX) {
+        free(copy);
+        return -2; // 无效的时间戳
+    }
+    *snapshot_timestamps = (uint32_t) timestamp;
+
+    // 处理图片ID部分（需要去掉.jpg后缀）
+    char *dot = strchr(last_token, '.');
+    if (!dot) {
+        free(copy);
+        return -3; // 没有文件扩展名
+    }
+    *dot = '\0'; // 截断.jpg部分
+
+    unsigned long id = strtoul(last_token, &endptr, 10);
+    if (*endptr != '\0' || id > UINT8_MAX) {
+        free(copy);
+        return -4; // 无效的图片ID
+    }
+    *pic_id = (uint8_t) id;
+
+    free(copy);
+    return 0; // 成功
 }
 
 /*
@@ -477,16 +717,16 @@ static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_tim
     size_t len = strlen(action_id_str);
 
     // 检查是否全是数字
-    for (size_t i = 0; i < len; i++) {
-        if (!isdigit(action_id_str[i])) {
-            return -1;
-        }
-    }
+//    for (size_t i = 0; i < len; i++) {
+//        if (!isdigit(action_id_str[i])) {
+//            return -1;
+//        }
+//    }
 
     // 时间戳部分至少需要10位（可以表示到2286年）
-    if (len < 10) {
-        return -1;
-    }
+//    if (len < 10) {
+//        return -1;
+//    }
 
     // 分离时间戳和索引
     char ts_str[11] = {0};  // 10位时间戳 + null终止符
@@ -524,12 +764,146 @@ static int do_action_id_2_str(char *str, size_t str_size, uint32_t action_id_tim
     return 0;
 }
 
-static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *pic_infos_size) {
-    /* 一、搜索目录 */
-    if (g_pic_dir_path == NULL) {
-        LOGD("目录未设置\n");
+static int do_collect_all_pic_infos_v2(hd_dynamic_pic_info *pic_infos, uint32_t *pic_infos_size) {
+    DIR *dir = opendir(g_pic_dir_path);
+    if (!dir) {
+        LOGW("无法打开目录 %s \n", g_pic_dir_path);
         return -1;
     }
+
+    char action_id_name_temp[1024]; // action_id目录名称temp
+    struct dirent *action_id_dir_entry; // action_id目录文件信息
+    int total = 0;
+    while ((action_id_dir_entry = readdir(dir)) != NULL) {
+        snprintf(action_id_name_temp, sizeof(action_id_name_temp), "%s", action_id_dir_entry->d_name);
+        if (HD_UART_PARSER_DEBUG) {
+            LOGD("%-20s %-4d %s\n", action_id_dir_entry->d_name,
+                 action_id_dir_entry->d_type,
+                 action_id_name_temp);
+        }
+        // 跳过 "." 和 ".." 目录
+        if (strcmp(action_id_dir_entry->d_name, ".") == 0 || strcmp(action_id_dir_entry->d_name, "..") == 0 ||
+            (action_id_dir_entry->d_type != DT_DIR)) {
+
+            continue;
+        }
+        int ret;
+        uint32_t temp_action_id_timestamps = 0; // 当前temp_action_id_timestamps
+        uint8_t temp_action_id_index = 0;             // 当前temp_action_id_index
+        ret = do_str_2_action_id(action_id_name_temp,
+                                 &temp_action_id_timestamps, &temp_action_id_index);
+        if (ret) {
+            LOGW("      解析action_id失败 ： %s %d\n", action_id_name_temp, ret);
+            continue;
+        }
+
+        // 继续校验名称
+        // 分别打开文件夹查询pic_id匹配的图片
+        struct dirent *pic_file_entry;  //   图片文件信息
+        char pic_file_name[1024];       //   图片名称
+        char result[1024];              //   图片path
+        char action_id_path[1024];      //   action_id目录路径temp
+        char file_path_tmp[1024];       //
+        unsigned char md5_result_tmp[16];
+
+        uint32_t snapshot_timestamps_temp;
+        uint8_t pic_id_temp;
+        snprintf(action_id_path, sizeof(action_id_path), "%s/%s", g_pic_dir_path, action_id_name_temp);
+        DIR *action_id_dir = opendir(action_id_path);
+        if (!action_id_dir) {
+            LOGW("无法打开目录 %s \n", action_id_path);
+            continue;
+        }
+        while ((pic_file_entry = readdir(action_id_dir)) != NULL) {
+            if (strcmp(pic_file_entry->d_name, ".") == 0 || strcmp(pic_file_entry->d_name, "..") == 0) {
+                continue;
+            }
+            if (total >= 1024) {
+                LOGW("Too many pictures, maximum is 1024");
+                break;
+            }
+            // 根据文件名称 解析pic_id
+            snprintf(pic_file_name, sizeof(pic_file_name), "%s", pic_file_entry->d_name);
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("开始解析图片文件:<%s> \n", pic_file_name);
+            }
+            //char * debug_pic_file_name = "xxx22222xx_1747878695_2.jpg";
+            ret = do_parse_pic_info(pic_file_name, &snapshot_timestamps_temp, &pic_id_temp);
+            if (ret) {
+                LOGW("解析图片文件失败 error( %d) :  %s \n", ret, pic_file_name);
+                continue;
+            }
+            // 创建图片信息。。。。。。。。。。开始
+
+            if (HD_UART_PARSER_DEBUG) {
+                LOGW("解析图片文件成功  snapshot_timestamps:%d ，pic_id_temp=%d \n", snapshot_timestamps_temp, pic_id_temp);
+            }
+            snprintf(file_path_tmp, sizeof(file_path_tmp), "%s/%s", action_id_path, pic_file_name);
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("获取图片md5...%s\n", file_path_tmp);
+            }
+            ret = hd_md5(file_path_tmp, md5_result_tmp);
+
+            if (ret) {
+                LOGE("hd_md5 fail.\n");
+                continue;
+            }
+
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("获取图片大小...\n");
+            }
+            struct stat st_tmp;
+            if (stat(file_path_tmp, &st_tmp) != 0) {
+                LOGE("stat fail\n");
+                //return 1;//st_tmp.st_size;  // 返回文件大小（字节）
+                break;
+            }
+
+            uint32_t size = st_tmp.st_size;
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("图片信息：\n");
+                LOGD("name                    =          %s\n", pic_file_name);
+                LOGD("id                      =          %hhu\n", pic_id_temp);
+                LOGD("size                    =          %u\n", size);
+                LOGD("action_id_timestamps    =          %d\n", temp_action_id_timestamps);
+                LOGD("action_id_index         =          %d\n", temp_action_id_index);
+                LOGD("snapshot_timestamps     =          %u\n", temp_action_id_timestamps);
+                LOGD("md5                     =          ");
+
+                for (int j = 0; j < 16; ++j) {
+                    printf("%02x ", md5_result_tmp[j]);
+                }
+                LOGD("\n");
+            }
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("创建图片信息\n");
+            }
+            hd_dynamic_pic_info info;//= (hd_dynamic_pic_info *) malloc(sizeof(hd_dynamic_pic_info));
+            info.action_id_index = temp_action_id_index;
+            info.action_id_timestamps = temp_action_id_timestamps;
+            info.snapshot_timestamps = snapshot_timestamps_temp;
+            info.size = size;
+            info.id = pic_id_temp;
+
+            memcpy(info.md5, md5_result_tmp, sizeof(info.md5));
+
+            pic_infos[total] = info;
+            total++;
+
+
+            // 创建图片信息。。。。。。。。。。。。。。。结束
+
+        }
+        closedir(action_id_dir);
+    }
+    closedir(dir);
+    *pic_infos_size = total;
+    return 0;
+}
+
+static int do_collect_all_pic_infos(hd_dynamic_pic_info **pic_infos, uint32_t *pic_infos_size) {
+    LOGD(">>>>>>>>>>>>>>>>>>>>>>\n");
+    /* 一、搜索目录 */
     LOGD("1.搜索目录[%s]\n", g_pic_dir_path);
     // 获取所有的action_id的目录
     // 比如
@@ -538,7 +912,7 @@ static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *p
     // 2    1747814636003
     DIR *dir = opendir(g_pic_dir_path);
     if (!dir) {
-        LOGD("无法打开目录 %s \n", g_pic_dir_path);
+        LOGW("无法打开目录 %s \n", g_pic_dir_path);
         return -1;
     }
 
@@ -548,9 +922,12 @@ static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *p
     int action_id_count = 0;
     while ((action_id_dir_entry = readdir(dir)) != NULL) {
         snprintf(action_id_name_temp, sizeof(action_id_name_temp), "%s", action_id_dir_entry->d_name);
-        LOGI("%-20s %-4d %s\n", action_id_dir_entry->d_name,
-             action_id_dir_entry->d_type,
-             action_id_name_temp);
+        if (HD_UART_PARSER_DEBUG) {
+            LOGD("%-20s %-4d %s\n", action_id_dir_entry->d_name,
+                 action_id_dir_entry->d_type,
+                 action_id_name_temp);
+        }
+
         // 跳过 "." 和 ".." 目录
         if (strcmp(action_id_dir_entry->d_name, ".") == 0 || strcmp(action_id_dir_entry->d_name, "..") == 0 ||
             (action_id_dir_entry->d_type != DT_DIR)) {
@@ -560,20 +937,26 @@ static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *p
         action_id_dir_names[action_id_count] = strdup(action_id_name_temp);
         action_id_count++;
     }
-    LOGD("2.搜索目录完毕！aciont_id目录数量为：%d\n", action_id_count);
+    LOGI("2.搜索目录完毕！aciont_id目录数量为：%d\n", action_id_count);
+    if (action_id_count > 0) {
+        for (int i = 0; i < action_id_count; ++i) {
+            LOGI("%s,", action_id_dir_names[i]);
+        }
+        LOGI("\n");
+    }
 
 
-    uint8_t total = 0; // 所有的图片
+    uint32_t total = 0; // 所有的图片
     if (action_id_count == 0) {
         *pic_infos = NULL;
         *pic_infos_size = 0;
-        LOGD("解析文件夹完毕！！！图片为空\n ");
+        LOGW("4.解析文件夹完毕！！！图片为空\n");
     } else {
         /* 二、遍历action_id目录，搜索图片文件 */
-        uint8_t MAX = 0xff; // 不超过255
+        uint32_t MAX = 0xff; // 不超过255
         char action_id_path[1024]; // action_id目录路径temp
-        size_t temp_size = sizeof(hd_dynamic_pic_info **) * MAX;
-        hd_dynamic_pic_info **infos = (hd_dynamic_pic_info **) malloc(temp_size);
+        size_t temp_size = sizeof(hd_dynamic_pic_info) * MAX;
+        hd_dynamic_pic_info *infos = (hd_dynamic_pic_info *) malloc(temp_size);
         memset(infos, 0, temp_size);
         LOGD("3.遍历action_id目录，搜索图片文件。\n");
         uint32_t temp_action_id_timestamps = 0; // 当前temp_action_id_timestamps
@@ -582,21 +965,23 @@ static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *p
         for (int i = 0; i < action_id_count; ++i) {
             // 解析action_id
             LOGD("------------------------------\n");
-            LOGD("<%d>解析文件夹[%s]\n ", i, action_id_dir_names[i]);
+            LOGD("<%d>解析文件夹[%s]\n", i, action_id_dir_names[i]);
             ret = do_str_2_action_id(action_id_dir_names[i],
                                      &temp_action_id_timestamps, &temp_action_id_index);
             if (ret) {
-                //LOGD("      解析action_id失败 ： %s %d\n ",action_id_dirs[i],ret);
+                LOGW("      解析action_id失败 ： %s %d\n", action_id_dir_names[i], ret);
                 continue;
             }
-            LOGD("解析文件夹[%s]成功! timestamps：%d ,index：%d \n", action_id_dir_names[i], temp_action_id_timestamps,
-                 temp_action_id_index);
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("解析文件夹[%s]成功! timestamps：%d ,index：%d \n", action_id_dir_names[i], temp_action_id_timestamps,
+                     temp_action_id_index);
+            }
             snprintf(action_id_path, sizeof(action_id_path), "%s/%s", g_pic_dir_path, action_id_dir_names[i]);
             struct dirent *pic_file_entry;  //   图片文件信息
             char pic_file_name[1024];       //   图片名称
             DIR *action_id_dir = opendir(action_id_path);
             if (!action_id_dir) {
-                LOGD("无法打开目录 %s \n", action_id_path);
+                LOGW("无法打开目录 %s \n", action_id_path);
                 return -1;
             }
             // 遍历action_id目录下的图片
@@ -611,84 +996,86 @@ static int do_collect_all_pic_infos(hd_dynamic_pic_info ***pic_infos, uint8_t *p
                 }
                 // 根据文件名称 解析pic_id
                 snprintf(pic_file_name, sizeof(pic_file_name), "%s", pic_file_entry->d_name);
-                LOGD("开始解析图片文件:<%s> \n", pic_file_name);
+                LOGD("-->开始解析图片文件:<%s> \n", pic_file_name);
                 //char * debug_pic_file_name = "xxx22222xx_1747878695_2.jpg";
                 ret = do_parse_pic_info(pic_file_name, &snapshot_timestamps_temp, &pic_id_temp);
                 if (ret) {
-                    LOGD("解析图片文件失败 error( %d) :  %s \n", ret, pic_file_name);
+                    LOGW("解析图片文件失败 error( %d) :  %s \n", ret, pic_file_name);
                     continue;
                 }
-
+                LOGW("解析图片文件成功  snapshot_timestamps:%d ，pic_id_temp=%d \n", snapshot_timestamps_temp, pic_id_temp);
 
                 snprintf(file_path_tmp, sizeof(file_path_tmp), "%s/%s", action_id_path, pic_file_name);
                 LOGD("获取图片md5...%s\n", file_path_tmp);
                 ret = hd_md5(file_path_tmp, md5_result_tmp);
 
                 if (ret) {
-                    fprintf(stderr, "hd_md5 fail.\n");
+                    LOGE("hd_md5 fail.\n");
                     continue;
                 }
 
                 LOGD("获取图片大小...\n");
                 struct stat st_tmp;
                 if (stat(file_path_tmp, &st_tmp) != 0) {
-                    fprintf(stderr, "stat fail\n");
+                    LOGE("stat fail\n");
                     return 1;//st_tmp.st_size;  // 返回文件大小（字节）
                 }
 
                 uint32_t size = st_tmp.st_size;
-                LOGD("图片信息：\n");
+                if (HD_UART_PARSER_DEBUG) {
+                    LOGD("图片信息：\n");
+                    LOGD("name                    =          %s\n", pic_file_name);
+                    LOGD("id                      =          %hhu\n", pic_id_temp);
+                    LOGD("size                    =          %u\n", size);
+                    LOGD("action_id_timestamps    =          %d\n", temp_action_id_timestamps);
+                    LOGD("action_id_index         =          %d\n", temp_action_id_index);
+                    LOGD("snapshot_timestamps     =          %u\n", temp_action_id_timestamps);
+                    LOGD("md5                     =          ");
 
-
-                LOGD("name                    =          %s\n", pic_file_name);
-                LOGD("id                      =          %hhu\n", pic_id_temp);
-                LOGD("size                    =          %u\n", size);
-                LOGD("action_id_timestamps    =          %d\n", temp_action_id_timestamps);
-                LOGD("action_id_index         =          %d\n", temp_action_id_index);
-                LOGD("snapshot_timestamps     =          %u\n", temp_action_id_timestamps);
-                LOGD("md5                     =          ");
-                for (int j = 0; j < 16; ++j) {
-                    LOGD("%02x ", md5_result_tmp[j]);
+                    for (int j = 0; j < 16; ++j) {
+                        printf("%02x ", md5_result_tmp[j]);
+                    }
+                    LOGD("\n");
                 }
-                LOGD("\n");
 
                 LOGD("创建图片信息\n");
-                hd_dynamic_pic_info *info = (hd_dynamic_pic_info *) malloc(sizeof(hd_dynamic_pic_info));
-                info->action_id_index = temp_action_id_index;
-                info->action_id_timestamps = temp_action_id_timestamps;
-                info->snapshot_timestamps = snapshot_timestamps_temp;
-                info->size = size;
-                info->id = pic_id_temp;
+                hd_dynamic_pic_info info;//= (hd_dynamic_pic_info *) malloc(sizeof(hd_dynamic_pic_info));
+                info.action_id_index = temp_action_id_index;
+                info.action_id_timestamps = temp_action_id_timestamps;
+                info.snapshot_timestamps = snapshot_timestamps_temp;
+                info.size = size;
+                info.id = pic_id_temp;
 
-                memcpy(info->md5, md5_result_tmp, sizeof(info->md5));
+                memcpy(info.md5, md5_result_tmp, sizeof(info.md5));
 
                 infos[total] = info;
                 total++;
             }
 
-
             closedir(action_id_dir);
+            if (action_id_dir_names[i] != NULL) {
+                free(action_id_dir_names[i]);
+            }
         }
 
         // 赋值
         *pic_infos = infos;
         *pic_infos_size = total;
 
-        LOGD("解析文件夹完毕！！！图片结果大小：%d\n ", total);
+        LOGI("4.解析文件夹完毕！！！结果：%d张图片。\n", total);
     }
     closedir(dir);
 
     LOGD("查找所有pic完毕！！！\n");
+    LOGI("<<<<<<<<<<<<<<<<<<<<<<\n");
     return 0;
 }
 
 static int do_find_pic_by_pic_id(uint8_t pic_id, char **file_path) {
-    /* 一、搜索目录 */
-    if (g_pic_dir_path == NULL) {
-        LOGD("目录未设置\n");
-        return -1;
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("do_find_pic_by_pic_id pic_id = %d,g_pic_dir_path=%s\n", pic_id, g_pic_dir_path);
+        LOGD("1.搜索目录[%s]\n", g_pic_dir_path);
     }
-    LOGD("1.搜索目录[%s]\n", g_pic_dir_path);
     // 获取所有的action_id的目录
     // 比如
     // 0    1747814636001
@@ -696,35 +1083,39 @@ static int do_find_pic_by_pic_id(uint8_t pic_id, char **file_path) {
     // 2    1747814636003
     DIR *dir = opendir(g_pic_dir_path);
     if (!dir) {
-        LOGD("无法打开目录 %s \n", g_pic_dir_path);
+        LOGW("无法打开目录 %s \n", g_pic_dir_path);
         return -1;
     }
 
     char action_id_name_temp[1024]; // action_id目录名称temp
     struct dirent *action_id_dir_entry; // action_id目录文件信息
+
     while ((action_id_dir_entry = readdir(dir)) != NULL) {
         snprintf(action_id_name_temp, sizeof(action_id_name_temp), "%s", action_id_dir_entry->d_name);
-        LOGD("%-20s %-4d %s\n", action_id_dir_entry->d_name,
-             action_id_dir_entry->d_type,
-             action_id_name_temp);
+        if (HD_UART_PARSER_DEBUG) {
+            LOGD("%-20s %-4d %s\n", action_id_dir_entry->d_name,
+                 action_id_dir_entry->d_type,
+                 action_id_name_temp);
+        }
         // 跳过 "." 和 ".." 目录
         if (strcmp(action_id_dir_entry->d_name, ".") == 0 || strcmp(action_id_dir_entry->d_name, "..") == 0 ||
             (action_id_dir_entry->d_type != DT_DIR)) {
+
             continue;
         }
         // 继续校验名称
         // 分别打开文件夹查询pic_id匹配的图片
         struct dirent *pic_file_entry;  //   图片文件信息
         char pic_file_name[1024];       //   图片名称
-        char result[1024];       // 图片path
-        char action_id_path[1024]; // action_id目录路径temp
+        char result[1024];              // 图片path
+        char action_id_path[1024];      // action_id目录路径temp
         int ret;
         uint32_t snapshot_timestamps_temp;
         uint8_t pic_id_temp;
         snprintf(action_id_path, sizeof(action_id_path), "%s/%s", g_pic_dir_path, action_id_name_temp);
         DIR *action_id_dir = opendir(action_id_path);
         if (!action_id_dir) {
-            LOGD("无法打开目录 %s \n", action_id_path);
+            LOGW("无法打开目录 %s \n", action_id_path);
             continue;
         }
         while ((pic_file_entry = readdir(action_id_dir)) != NULL) {
@@ -733,14 +1124,20 @@ static int do_find_pic_by_pic_id(uint8_t pic_id, char **file_path) {
             }
             // 根据文件名称 解析pic_id
             snprintf(pic_file_name, sizeof(pic_file_name), "%s", pic_file_entry->d_name);
-            LOGD("开始解析图片文件:<%s> \n", pic_file_name);
+            if (HD_UART_PARSER_DEBUG) {
+                LOGD("开始解析图片文件:<%s> \n", pic_file_name);
+            }
             //char * debug_pic_file_name = "xxx22222xx_1747878695_2.jpg";
             ret = do_parse_pic_info(pic_file_name, &snapshot_timestamps_temp, &pic_id_temp);
             if (ret) {
-                LOGD("解析图片文件失败 error( %d) :  %s \n", ret, pic_file_name);
+                LOGW("解析图片文件失败 error( %d) :  %s \n", ret, pic_file_name);
                 continue;
             }
+
             if (pic_id_temp == pic_id) {
+                if (HD_UART_PARSER_DEBUG) {
+                    LOGI("解析图片文件成功  snapshot_timestamps:%d ，pic_id_temp=%d \n", snapshot_timestamps_temp, pic_id_temp);
+                }
                 snprintf(result, sizeof(result), "%s/%s", action_id_path, pic_file_name);
                 *file_path = strdup(result);
                 closedir(action_id_dir);
@@ -750,8 +1147,9 @@ static int do_find_pic_by_pic_id(uint8_t pic_id, char **file_path) {
         }
         closedir(action_id_dir);
     }
+    LOGW("解析图片文件 没有找到：%d\n", pic_id);
     closedir(dir);
-    return -2;
+    return 2;
 }
 
 /*
@@ -868,26 +1266,29 @@ handle_property_get(
 }
 
 static int
-handle_property_set(
-        const unsigned char *payload_data, uint32_t payload_data_size,
-        unsigned char **protocol_data_out,
-        uint32_t *protocol_data_size_out
-) {
+handle_property_set(const unsigned char *payload_data, uint32_t payload_data_size) {
+
     if (g_addr == 0)return -1;
     LOGD("handle_property_set\n");
+    uint8_t ret;
+    unsigned char *protocol_data_out = NULL;
+    uint32_t protocol_data_size_out;
+
     hd_printf_buff(payload_data, payload_data_size, "event-raw", 0);
     uint8_t property_id_out;
     unsigned char *result_value_out;
-    uint32_t result_value_size_out;
-    uint8_t ret = hd_slave_property_set_decode(&property_id_out, &result_value_out, &result_value_size_out,
-                                               payload_data, payload_data_size);
+    uint32_t result_value_size_out = 0;
+    // 解析
+    ret = hd_slave_property_set_decode(&property_id_out, &result_value_out, &result_value_size_out,
+                                       payload_data, payload_data_size);
     if (ret) {
-        LOGD("hd_slave_property_set_decode error\n");
+        LOGW("hd_slave_property_set_decode error\n");
         return -1;
     }
     hd_printf_buff(result_value_out, result_value_size_out, "event", 0);
-    LOGD("开始处理event\n");
-
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("开始处理event\n");
+    }
     switch (property_id_out) {
         case PROPERTY_HD_ID_DEBUG: {
             LOGI("[%d设置属性]%02x DEBUG开关\n", g_addr, PROPERTY_HD_ID_DEBUG);
@@ -896,13 +1297,102 @@ handle_property_set(
                 if (on >= HD_LOGGER_LEVEL_DEBUG && on <= HD_LOGGER_LEVEL_ERROR) {
                     hd_logger_set_level(on);
                     LOGI("设置开关成功:%d\n", on);
-                    hd_slave_property_set_encode(protocol_data_out, protocol_data_size_out,
-                                                 g_addr, property_id_out, 1);
-                    return 0;
+                    ret = hd_slave_property_set_encode(&protocol_data_out, &protocol_data_size_out,
+                                                       g_addr, property_id_out, 1);
+                    if (ret == 0) {
+                        ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+                        if (ret) {
+                            LOGD("do_uart_write error \n");
+                        } else {
+                            // 如果是pull 继续拉取文件
+                        }
+                    }
+                }
+            }
+
+            break;
+        }
+
+        case PROPERTY_HD_ID_FACTORY_MODE: {
+            LOGI("[%设置工厂模式]%02x FACTORY_MODE\n", g_addr, PROPERTY_HD_ID_FACTORY_MODE);
+            if (result_value_size_out == 1) {
+                uint8_t on = result_value_out[0];
+                g_serial_mode = on ? HD_SERIAL_SHELL_MODE : HD_SERIAL_NORMAL_MODE;
+                LOGI("设置工厂模式成功:%d\n", on);
+                ret = hd_slave_property_set_encode(&protocol_data_out, &protocol_data_size_out,
+                                                   g_addr, property_id_out, 1);
+                if (ret == 0) {
+                    ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+                    if (ret) {
+                        LOGD("do_uart_write error \n");
+                    } else {
+                        // 如果是pull 继续拉取文件
+                    }
                 }
             }
             break;
         }
+
+        case PROPERTY_HD_ID_PUSH: {
+            LOGI("[%d push]%02x PUSH\n", g_addr, PROPERTY_HD_ID_FACTORY_MODE);
+            if (result_value_size_out <= 0) {
+
+            } else {
+                // 获取file_path
+                // 获取md5
+                LOGD("payload_data_size=%d\n", payload_data_size);
+                ret = hd_slave_property_set_push_decode(g_push_mode_file_md5, &g_push_mode_file_size,
+                                                        g_push_mode_file_path,
+                                                        payload_data + 1,
+                                                        payload_data_size - 1);
+                if (ret) {
+                    LOGW("hd_slave_property_set_push_decode error ret = %d\n", ret);
+                    ret = hd_slave_property_set_encode(&protocol_data_out, &protocol_data_size_out,
+                                                       g_addr, property_id_out, ret);
+                    if (ret == 0) {
+                        ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+                    }
+                    break;
+                }
+                LOGD("解析结果：\n");
+                LOGD("file_size = %zu\n", g_push_mode_file_size);
+                LOGD("md5 = [");
+                for (int i = 0; i < 16; ++i) {
+                    printf("%02x ", g_push_mode_file_md5[i]);
+                }
+                printf("]\n");
+                LOGD("file_path = %s\n", g_push_mode_file_path);
+                ret = hd_slave_property_set_encode(&protocol_data_out, &protocol_data_size_out,
+                                                   g_addr, property_id_out, g_serial_mode);
+
+
+                // 创建文件夹，接受数据
+                char *tmp = strdup(g_push_mode_file_path);
+                ret = create_directory_if_not_exists(tmp);
+                if (ret) {
+                    free(tmp);
+                    perror("create_directory_if_not_exists fail.\n");
+                    break;
+                }
+                g_push_mode_file = fopen(tmp, "wb");  // 二进制写入模式
+                if (!g_push_mode_file) {
+                    free(tmp);
+                    perror("Failed to open file");
+                    break;
+                }
+                free(tmp);
+                LOGI("<<<<打开文件成功 准备接受数据>>>>\n");
+                // 写入数据...
+                // fwrite(data, 1, size, file);
+                // fclose(file);  // 关闭文件
+                LOGI("<<<<切换到接受文件模式>>>>\n");
+                on_serial_mode_changed(HD_SERIAL_PUSH_MODE);
+                break;
+            }
+
+            break;
+        }
+
         case PROPERTY_HD_ID_DEBUG_ACTION_ID: {
             LOGI("[%d设置属性]%02x DEBUG action_id\n", g_addr, PROPERTY_HD_ID_DEBUG);
             break;
@@ -928,11 +1418,23 @@ handle_property_set(
             break;
         }
     }
-    return -1;
+
+//    if (ret == 0) {
+//        ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+//        if (ret) {
+//            LOGD("do_uart_write error \n");
+//        } else {
+//            // 如果是pull 继续拉取文件
+//        }
+//    }
+    if (protocol_data_out != NULL) {
+        free(protocol_data_out);
+    }
+
+    return 0;
 }
 
-static u_int8_t
-handle_snapshot_pic(
+static u_int8_t handle_snapshot_pic(
         unsigned char **protocol_data_out,
         uint32_t *protocol_data_size_out
 ) {
@@ -953,35 +1455,60 @@ handle_snapshot_pic(
 /* 处理 3.9拉取图片（0x09）*/
 
 static int read_from_buffer(unsigned char in_dest[], size_t in_size,
-                     size_t in_offset, size_t *out_read_size) {
+                            size_t in_offset, size_t *out_read_size
+//                            ,const unsigned  char * src,size_t src_size
+) {
+
+    if (HD_UART_PARSER_DEBUG) {
+        LOGI("[read_from_buffer] g_file_buffer_size = %d\n", g_file_buffer_size);
+    }
     // 参数检查
     if (in_dest == NULL) {
         fprintf(stderr, "错误：目标数组不能为NULL\n");
         return 1;
     }
-
-    // 检查请求是否超出缓冲区范围
-    if (in_offset >= g_file_buffer_size) {
-        fprintf(stderr, "错误：偏移量 %zu 超出文件大小 %u\n",
-                in_offset, g_file_buffer_size);
-        return 1;
-    }
-
     // 检查读取长度是否合理
     if (in_size == 0) {
         fprintf(stderr, "警告：请求读取0字节\n");
-        return 1;
+        *out_read_size = 0;
+        return 2;
     }
+    size_t real_offset = in_offset;
 
+    // 检查请求是否超出缓冲区范围
+    if (in_offset >= g_file_buffer_size) {
+        LOGE("[read_from_buffer] in_offset 大于文件最大大小<%d/%d> insize=%d\n", in_offset, g_file_buffer_size, in_size);
+        return -2;
+    }
     size_t real_read_size = in_size;
+    LOGI("[read_from_buffer] in_offset = %d \n", in_offset);
+    LOGI("[read_from_buffer] in_size = %d \n", in_size);
+    LOGI("[read_from_buffer] g_file_buffer_size = %d \n", g_file_buffer_size);
+    LOGI("[read_from_buffer] in_offset + in_size - g_file_buffer_size = %d \n", in_offset + in_size - g_file_buffer_size);
     if (in_offset + in_size > g_file_buffer_size) {
-        real_read_size = in_offset + in_size - g_file_buffer_size;
+            real_read_size = in_offset + in_size - g_file_buffer_size;
+    }
+    if (HD_UART_PARSER_DEBUG) {
+        LOGI("[read_from_buffer] real_read_size = %d \n", real_read_size);
+    }
+    if (real_read_size <= 0) {
+        LOGW("real_read_size==0,没有数据可读了\n");
+        return 1;
     }
     *out_read_size = real_read_size;
     memcpy(in_dest, (unsigned char *) g_file_buffer + in_offset, real_read_size);
     return 0;
 }
 
+
+// AA 5A 01 C9 05 09 00 00 00 2A A3 BB B7 D2 A8 2E 5C 8D C2 AF 26 AD 25 E6 CE 7B D6 47 CE 48 A0 B3
+// AA 5A 01 C9 01 00 00 00 01 0D 59
+// 319748
+// +10240
+//---------
+// 329998
+// 325372
+// aa 5a 01 c9  09 00 00 00  01  00 a0 05 00  00 28 00 00  54 da
 
 static int
 handle_pull_pic(const unsigned char *payload_data,
@@ -995,76 +1522,101 @@ handle_pull_pic(const unsigned char *payload_data,
 
     // 1.解析收到的协议
     uint8_t out_pic_id;
-    uint32_t out_offset;
+    uint32_t out_offset = 0;
     uint32_t out_read_len;
     int ret = hd_slave_pull_pic_decode(&out_pic_id, &out_offset, &out_read_len, payload_data, payload_data_size);
     if (ret) {
-        LOGD("hd_slave_pull_pic_decode error \n");
+        LOGW("hd_slave_pull_pic_decode error \n");
         return -1;
     }
-    LOGD("解析到需要拉取的图片信息：\n");
-    LOGD("pic_id        :       %d(0x%02x)\n", out_pic_id, out_pic_id);
-    LOGD("offset        :       %d(0x%02x)\n", out_offset, out_offset);
-    LOGD("read_len      :       %d(0x%02x)\n", out_read_len, out_read_len);
-
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("解析到需要拉取的图片信息：\n");
+        LOGD("pic_id            :       %d(0x%02x)\n", out_pic_id, out_pic_id);
+        LOGD("offset            :       %d(0x%02x)\n", out_offset, out_offset);
+        LOGD("read_len          :       %d(0x%02x)\n", out_read_len, out_read_len);
+    }
     int goon = 0;
     if (g_file_pulling) { // 正在上传
         if (out_pic_id == g_file_pic_id) {
             //继续
-            LOGI("继续pull！\n");
+            if (HD_UART_PARSER_DEBUG) {
+                LOGI("继续pull！\n");
+            }
             goon = 1;
         } else {
             //清除掉 重新开始
             LOGI("pic不相等 重新开始新的pull！\n");
+            goon = 0;
         }
     } else { // 新的上传
         LOGI("开始新的pull\n");
+        goon = 0;
     }
 
     if (goon) {
         //ignore
     } else {
-        // 查找图片
-        char *filePath;
-        ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
-        if (ret) {
-            LOGD("拉取的图片数据信息失败\n");
-            return -1;
+        // aa 5a 01 c9  09 00 00 00  01  81 29 05 00  00 28 00 00  33 e0  // 338305
+
+        //                                                                // 347775
+        // aa 5a 01 c9  09 00 00 00  01  81 29 05 00  00 28 00 00  33 e0
+        if (out_offset == 0) { // 确保一开始从第0个位置拉取
+            //查找图片
+            char *filePath = NULL;
+            ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
+            if (ret) {
+                LOGW("拉取的图片数据信息失败 %d\n", ret);
+                return -1;
+            }
+            // 加载图片到缓存
+            ret = load_file_to_buffer(filePath);
+            if (ret) {
+                LOGW("加载图片数据失败\n");
+                return -2;
+            }
+            if (filePath != NULL) {
+                free(filePath);
+            }
+            g_file_pic_id = out_pic_id;
+            g_file_pulling = 1;
+        }else{
+            LOGW("从新拉取的数据:offset=%d应该从0开始\n", out_offset);
+            return 10;
         }
-        // 加载图片到缓存
-        ret = load_file_to_buffer(filePath);
-        if (ret) {
-            LOGD("加载图片数据失败\n");
-            return -1;
-        }
-        g_file_pic_id = out_pic_id;
-        g_file_pulling = 1;
     }
 
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("当前上传的文件pic_id   :      %d(0x%02x)\n", g_file_pic_id, g_file_pic_id);
+        LOGD("当前上传的文件大小      :      %d(0x%02x)\n", g_file_buffer_size, g_file_buffer_size);
+    }
     // 加载图片，从buff offset中读 read_len 数据
-    unsigned char read_data[out_read_len];
+    unsigned char read_data[PROTOCOL_MAX_FRAME_LEN];
     size_t offset = out_offset;
     size_t read_len = sizeof(read_data);
     size_t real_read_len = 0;
     ret = read_from_buffer(read_data, read_len, offset, &real_read_len);
     if (ret) {
-        return -1;
-    }
-
-    LOGD("实际读取的文件数据大小size        :       %zu(0x%02zx)\n", real_read_len, real_read_len);
-    if (real_read_len == 0) {
-        LOGI("[从机%d]文件读完了。\n", g_addr);
+        LOGW("[从机%d]读文件异常。\n", g_addr);
         resetFileBuffer();
-        return -1;
+        return 4;
     }
-    if (real_read_len < out_read_len) {
-        LOGI("[从机%d]文件读到结尾了。\n", g_addr);
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("实际读取的文件数据大小size        :       %zu(0x%02zx)\n", real_read_len, real_read_len);
+    }
+    if (real_read_len == 0) {
+        LOGW("[从机%d]读取文件大小为0。\n", g_addr);
+        resetFileBuffer();
+        return 5;
     }
 
     ret = hd_slave_pull_pic_encode(protocol_data_out, protocol_data_size_out, g_addr, 0, read_data, real_read_len);
     if (ret) {
-        LOGD("hd_slave_pull_pic_encode fail！\n");
-        return -1;
+        LOGW("hd_slave_pull_pic_encode fail！\n");
+        return -5;
+    }
+    if (real_read_len < out_read_len) {
+        LOGW("[从机%d]文件读到结尾了。%d,%d\n", g_addr,real_read_len,out_read_len);
+        resetFileBuffer();
     }
 
     clock_gettime(CLOCK_MONOTONIC, &end);
@@ -1077,57 +1629,59 @@ handle_pull_pic(const unsigned char *payload_data,
     return 0;
 }
 
-/* 处理 3.9拉取图片（0x09）*/
-static int
-handle_pull_pic_v1(const unsigned char *payload_data,
-                   uint32_t payload_data_size,
-                   unsigned char **protocol_data_out,
-                   uint32_t *protocol_data_size_out
-) {
-    uint8_t out_pic_id;
-    uint32_t out_offset;
-    uint32_t out_read_len;
-    int ret = hd_slave_pull_pic_decode(&out_pic_id, &out_offset, &out_read_len, payload_data, payload_data_size);
-    if (ret) {
-        LOGD("hd_slave_pull_pic_decode error \n");
-        return -1;
-    }
-    LOGD("需要拉取的图片信息：\n");
-    LOGD("pic_id        :       %d(0x%02x)\n", out_pic_id, out_pic_id);
-    LOGD("offset        :       %d(0x%02x)\n", out_offset, out_offset);
-    LOGD("read_len      :       %d(0x%02x)\n", out_read_len, out_read_len);
-    char *filePath;
-    ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
-    if (ret) {
-        LOGD("拉取的图片数据信息失败\n");
-        return -1;
-    }
-    LOGI("查找到的图片名称：%s\n", filePath);
-    unsigned char *result;
-    size_t size;
-
-//    ret = do_cut_file_data(filePath, &result, &size, 246*1024, out_read_len);
-    ret = do_cut_file_data(filePath, &result, &size, out_offset, out_read_len);
-    if (ret) {
-        return -1;
-    }
-    LOGD("需要拉取的图片数据信息：\n");
-    LOGD("实际读取的文件数据大小size        :       %zu(0x%02zx)\n", size, size);
-    if (size == 0) {
-        LOGI("[从机%d]文件读完了。\n", g_addr);
-        return -1;
-    }
-    if (size < out_read_len) {
-        LOGI("[从机%d]文件读到结尾了。\n", g_addr);
-    }
-
-    ret = hd_slave_pull_pic_encode(protocol_data_out, protocol_data_size_out, g_addr, 0, result, size);
-    if (ret) {
-        LOGD("hd_slave_pull_pic_encode fail！\n");
-        return -1;
-    }
-    return 0;
-}
+///* 处理 3.9拉取图片（0x09）*/
+//static int
+//handle_pull_pic_v1(const unsigned char *payload_data,
+//                   uint32_t payload_data_size,
+//                   unsigned char **protocol_data_out,
+//                   uint32_t *protocol_data_size_out
+//) {
+//    uint8_t out_pic_id;
+//    uint32_t out_offset;
+//    uint32_t out_read_len;
+//    int ret = hd_slave_pull_pic_decode(&out_pic_id, &out_offset, &out_read_len, payload_data, payload_data_size);
+//    if (ret) {
+//        LOGW("hd_slave_pull_pic_decode error \n");
+//        return -1;
+//    }
+//    if (HD_UART_PARSER_DEBUG) {
+//        LOGD("需要拉取的图片信息：\n");
+//        LOGD("pic_id        :       %d(0x%02x)\n", out_pic_id, out_pic_id);
+//        LOGD("offset        :       %d(0x%02x)\n", out_offset, out_offset);
+//        LOGD("read_len      :       %d(0x%02x)\n", out_read_len, out_read_len);
+//    }
+//    char *filePath;
+//    ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
+//    if (ret) {
+//        LOGW("拉取的图片数据信息失败\n");
+//        return -1;
+//    }
+//    LOGI("查找到的图片名称：%s\n", filePath);
+//    unsigned char *result;
+//    size_t size;
+//
+////    ret = do_cut_file_data(filePath, &result, &size, 246*1024, out_read_len);
+//    ret = do_cut_file_data(filePath, &result, &size, out_offset, out_read_len);
+//    if (ret) {
+//        return -1;
+//    }
+//    LOGD("需要拉取的图片数据信息：\n");
+//    LOGD("实际读取的文件数据大小size        :       %zu(0x%02zx)\n", size, size);
+//    if (size == 0) {
+//        LOGI("[从机%d]文件读完了。\n", g_addr);
+//        return -1;
+//    }
+//    if (size < out_read_len) {
+//        LOGI("[从机%d]文件读到结尾了。\n", g_addr);
+//    }
+//
+//    ret = hd_slave_pull_pic_encode(protocol_data_out, protocol_data_size_out, g_addr, 0, result, size);
+//    if (ret) {
+//        LOGD("hd_slave_pull_pic_encode fail！\n");
+//        return -1;
+//    }
+//    return 0;
+//}
 
 /* 处理 3.16 查询摄像头图片信息（0x1D）*/
 static int
@@ -1136,60 +1690,52 @@ handle_pic_infos(const unsigned char *payload_data, uint32_t payload_data_size, 
 ) {
     int ret = hd_slave_pic_info_decode(payload_data, payload_data_size);
     if (ret) {
-        LOGD("hd_slave_pic_info_decode error \n");
+        LOGW("hd_slave_pic_info_decode error \n");
         return -1;
     }
     // 获取g_addr下所有action_id图片
-    hd_dynamic_pic_info **pic_infos;
-    uint8_t pic_infos_size;
-    ret = do_collect_all_pic_infos(&pic_infos, &pic_infos_size);
+    hd_dynamic_pic_info pic_infos[1024] = {0};
+    uint32_t pic_infos_size;
+//    ret = do_collect_all_pic_infos(&pic_infos, &pic_infos_size);
+    ret = do_collect_all_pic_infos_v2(pic_infos, &pic_infos_size);
     if (ret) {
-        LOGD("do_collect_all_pic_infos error \n");
+        LOGW("do_collect_all_pic_infos error \n");
         return -1;
     }
+    LOGI("搜索图片结果，大小=(%d):\n", pic_infos_size);
     if (pic_infos_size > 0) {
-        LOGD("打印搜索结果(%d):\n", pic_infos_size);
-        for (int i = 0; i < pic_infos_size; ++i) {
-            LOGD("******\n");
-            LOGD("id                    =   %d\n", pic_infos[i]->id);
-            LOGD("size                  =   %d\n", pic_infos[i]->size);
-            LOGD("action_id_index       =   %d\n", pic_infos[i]->action_id_index);
-            LOGD("action_id_timestamps  =   %d\n", pic_infos[i]->action_id_timestamps);
-            LOGD("snapshot_timestamps   =   %d\n", pic_infos[i]->snapshot_timestamps);
-            LOGD("md5                   =   ");
-            for (int j = 0; j < 16; ++j) {
-                LOGD("%02x ", pic_infos[i]->md5[j]);
+        if (HD_UART_PARSER_DEBUG) {
+            LOGD("打印搜索结果(%d):\n", pic_infos_size);
+            for (int i = 0; i < pic_infos_size; ++i) {
+                LOGD("******\n");
+                LOGD("id                    =   %d\n", pic_infos[i].id);
+                LOGD("size                  =   %d\n", pic_infos[i].size);
+                LOGD("action_id_index       =   %d\n", pic_infos[i].action_id_index);
+                LOGD("action_id_timestamps  =   %d\n", pic_infos[i].action_id_timestamps);
+                LOGD("snapshot_timestamps   =   %d\n", pic_infos[i].snapshot_timestamps);
+                LOGD("md5                   =   ");
+                for (int j = 0; j < 16; ++j) {
+                    printf("%02x ", pic_infos[i].md5[j]);
+                }
+                LOGD("\n");
             }
-            LOGD("\n");
-
         }
     }
 
-    unsigned char *protocol_data_out;
-    uint32_t protocol_data_size_out;
-    ret = hd_slave_pic_info_encode(&protocol_data_out, &protocol_data_size_out, g_addr, pic_infos,
+    ret = hd_slave_pic_info_encode(result, result_size, g_addr, pic_infos,
                                    pic_infos_size);
+//    if (pic_infos != NULL) {
+//        LOGW(" free(pic_infos %p \n", pic_infos);
+//        free(pic_infos);
+//        LOGW(" free(pic_infos end! \n");
+//    }
 
-    if (pic_infos) {
-        free(pic_infos);
-    }
-    *result = protocol_data_out;
-    *result_size = protocol_data_size_out;
-    // AA 5A
-    // 01
-    // 1D
-    // 79 00 00 00
-    // 04
-    // 01   D4 88 2D 68 03  27 83 2E 68     20 D8 03 00     0B 51 31 EA 3B 30 A7 CD 3F 7A 7B 4B E9 36 1F FF
-    // 03   D4 88 2D 68 03  27 83 2E 68     20 D8 03 00     0B 51 31 EA 3B 30 A7 CD 3F 7A 7B 4B E9 36 1F FF
-    // 04   EC 88 2D 68 01  27 83 2E 68     20 D8 03 00     0B 51 31 EA 3B 30 A7 CD 3F 7A 7B 4B E9 36 1F FF
-    // 05   EC 88 2D 68 01  27 83 2E 68     20 D8 03 00     0B 51 31 EA 3B 30 A7 CD 3F 7A 7B 4B E9 36 1F FF
-    // 98 17
     if (ret) {
-        LOGD("hd_slave_pic_info_encode error \n");
+        LOGW("hd_slave_pic_info_encode error %d \n", ret);
         return -1;
     }
 
+//    LOGI("hd_slave_pic_info_encode end! pic_infos_size = %d\n", pic_infos_size);
     return 0;
 }
 
@@ -1198,25 +1744,28 @@ static int handle_delete_pic(const unsigned char *payload_data, uint32_t payload
     uint8_t out_pic_id;
     int ret = hd_slave_delete_pic_decode(&out_pic_id, payload_data, payload_data_size);
     if (ret) {
-        LOGD("hd_slave_delete_pic_decode error \n");
+        LOGW("hd_slave_delete_pic_decode error \n");
         return -1;
 
     }
     LOGD("需要删除的图片pic_id : <%d> \n", out_pic_id);
     // 遍历文件夹依次查询图片id
-    char *filePath;
+    char *filePath = NULL;
     ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
     if (ret != 0) {
-        LOGD("do_find_pic_by_pic_id error \n");
+        LOGW("do_find_pic_by_pic_id error \n");
         return -1;
     }
-    LOGD("查询结果：图片地址=%s\n", filePath);
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("查询结果：图片地址=%s\n", filePath);
+    }
 
     // 删除文件
     ret = remove(filePath);
     // 检查当前文件夹是否为空 是则删除文件夹
-
-    free(filePath);
+    if (filePath != NULL) {
+        free(filePath);
+    }
 
     return ret == 0 ? 0 : -2;
 }
@@ -1228,8 +1777,132 @@ static int handlePullPicComplete(const unsigned char *payload_data, uint32_t pay
     return 0;
 }
 
+static void handle_extra_pull(const unsigned char *payload_data, uint32_t payload_data_size) {
+    int ret;
+    int success = 0;
+    unsigned char *protocol_data_out = NULL;
+    uint32_t protocol_data_size_out;
+    while (1) {
+        LOGD("[handle_extra_pull] \n");
+        ret = hd_slave_pull_decode(g_pull_mode_file_path,
+                                   payload_data,
+                                   payload_data_size);
+
+        if (ret) {
+            LOGW("[handle_extra_pull] hd_slave_pull_decode error ret = %d\n", ret);
+            success = 1;
+            break;
+        }
+        LOGD("[handle_extra_pull] 解析结果：\n");
+        LOGD("[handle_extra_pull] 需要拉取的文件file_path = %s\n", g_pull_mode_file_path);
+        LOGD("[handle_extra_pull] 获取文件信息\n");
+        unsigned char md5[16];
+        LOGD("[handle_extra_pull] 获取文件信息 md5\n");
+        ret = hd_md5(g_pull_mode_file_path, md5);
+        if (ret) {
+            LOGW("[handle_extra_pull]  hd_md5 error ret = %d\n", ret);
+            success = 2;
+            break;
+        }
+        LOGD("[handle_extra_pull] 获取文件信息 md5成功！\n");
+        LOGD("[handle_extra_pull] 获取文件信息 file_size\n");
+        int fd;
+        fd = open(g_pull_mode_file_path, O_RDWR);
+        if (fd == -1) {
+            LOGD("[handle_extra_pull] 打开文件失败:%s 原因：%d->%s \n ", g_pull_mode_file_path, errno, strerror(errno));
+            success = 3;
+            break;
+        }
+        struct stat file_stat;
+        if (fstat(fd, &file_stat) == -1) {
+            LOGD("[handle_extra_pull] 获取文件大小失败。fd:%d\n", fd);
+            success = 4;
+            close(fd);
+            break;
+        }
+        off_t file_size = file_stat.st_size;
+        LOGD("[handle_extra_pull] 获取文件信息 file_size成功！\n");
+
+        LOGD("[handle_extra_pull] file_size   :  < %d >bytes\n", file_size);
+        LOGD("[handle_extra_pull] file_md5    :  ");
+        for (int i = 0; i < sizeof(md5); ++i) {
+            printf("%02x ", md5[i]);
+        }
+        printf("\n");
+
+        LOGD("[handle_extra_pull] 准备应答... \n");
+        ret = hd_slave_pull_encode(&protocol_data_out, &protocol_data_size_out, g_addr,
+                                   0, md5, file_size, (const char *) g_pull_mode_file_path);
+        if (ret) {
+            close(fd);
+            success = 5;
+            break;
+        }
+        close(fd);
+        hd_printf_buff(protocol_data_out, protocol_data_size_out, "pull应答", 0);
+        ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+        if (protocol_data_out != NULL) {
+            free(protocol_data_out);
+        }
+
+        LOGD("[handle_extra_pull] 应答完毕! \n");
+        g_pull_mode_file = fopen(g_pull_mode_file_path, "rb");
+        if (g_pull_mode_file == NULL) {
+            success = 6;
+            fprintf(stderr, "[handle_extra_pull] 无法打开文件 %s: %s\n", g_pull_mode_file_path, strerror(errno));
+            break;
+        }
+        // 先发送一个文件头：
+        do_uart_write(PULL_MODE_FILE_HEADER_TAIL, sizeof(PULL_MODE_FILE_HEADER_TAIL));
+        unsigned char buffer[1024];
+        size_t bytes_read;
+        LOGI("[handle_extra_pull] 开始pull文件...\n");
+        LOGI("----------------------------\n");
+        rs485_pwr_on();
+        usleep(9000);
+        while ((bytes_read = fread(buffer, 1, 1024, g_pull_mode_file)) > 0) {
+            if (!g_running)break;
+
+            for (size_t i = 0; i < bytes_read; i++) {
+                printf("%02X ", buffer[i]);  // 处理每个字节
+
+                rk_uart_sendbyte(buffer[i]);
+//                usleep(16);
+//                    do_uart_write(buffer, bytes_read);
+
+            }
+        }
+        LOGI("\n----------------------------\n");
+        LOGI("[handle_extra_pull] pull文件结束！\n");
+        usleep(4000);
+        rs485_pwr_off();
+        do_uart_write(PULL_MODE_FILE_HEADER_TAIL, sizeof(PULL_MODE_FILE_HEADER_TAIL));
+
+        on_serial_mode_changed(HD_SERIAL_NORMAL_MODE);
+        LOGI("[handle_extra_pull] pull文件完毕！应答...\n");
+        ret = hd_slave_pull_encode(&protocol_data_out, &protocol_data_size_out, g_addr, 0xff,
+                                   md5, file_size, (const char *) g_pull_mode_file_path);
+
+        resetPullMode();
+        if (ret) {
+            success = 7;
+            break;
+        }
+        LOGI("[handle_extra_pull] pull文件完毕！应答成功！\n");
+        hd_printf_buff(protocol_data_out, protocol_data_size_out, "pull完毕", 0);
+        do_uart_write(protocol_data_out, protocol_data_size_out);
+
+        break;
+    }
+
+    if (protocol_data_out) {
+        free(protocol_data_out);
+    }
+}
+
 static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
     if (NULL == raw) {
+        LOGW("handle_uart_data raw == NULL\n");
         return 0;
     }
     LOGD("------------------------------handle_uart_data------------------------------\n");
@@ -1237,18 +1910,20 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
     uint8_t slave_addr_out;
     uint8_t cmd_out;
     uint32_t payload_data_size_out;
-    unsigned char *payload_data_out;
+    unsigned char *payload_data_out = NULL;
     // 可以只先解析addr
     ret = hd_camera_protocol_decode(raw, raw_size, &slave_addr_out, &cmd_out, &payload_data_size_out,
                                     &payload_data_out);
     if (ret) {
-        LOGD("hd_camera_protocol_decode error \n");
+        LOGW("hd_camera_protocol_decode error \n");
         return 0;
     }
-    LOGD("slave_addr         :           %d \n", slave_addr_out);
-    LOGD("cmd_out            :           %02x \n", cmd_out);
-    if (g_addr == 0 || g_addr != slave_addr_out) {
-        LOGD("从机地址错误。当前地址：%d , 接收到的数据地址:%d \n", g_addr, slave_addr_out);
+    if (HD_UART_PARSER_DEBUG) {
+        LOGD("slave_addr         :           %d \n", slave_addr_out);
+        LOGD("cmd_out            :           %02x \n", cmd_out);
+    }
+    if (g_addr == 0 || (g_addr != slave_addr_out && slave_addr_out != PROTOCOL_BROADCAST)) {
+        LOGW("从机地址错误。当前地址：%d , 接收到的数据地址:%d \n", g_addr, slave_addr_out);
         return -1;
     }
 
@@ -1259,42 +1934,32 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 
         case CMD_HD_PROPERTY_GET: {
             LOGI("[从机%d] HD查询属性（0xC2）预留\n", g_addr);
-            unsigned char *out_protocol_data;
-            uint32_t out_protocol_data_size;
+            unsigned char *out_protocol_data = NULL;
+            uint32_t out_protocol_data_size = 0;
             ret = handle_property_get(payload_data_out, payload_data_size_out, &out_protocol_data,
                                       &out_protocol_data_size);
             if (ret == 0) {
                 ret = do_uart_write(out_protocol_data, out_protocol_data_size);
                 if (ret) {
                     LOGD("do_uart_write error \n");
-                    break;
                 }
             }
-            break;
-        }
-
-        case CMD_HD_PROPERTY_SET: {
-            LOGI("HD设置属性（0xC3）预留\n", g_addr);
-            unsigned char *out_protocol_data;
-            uint32_t out_protocol_data_size;
-            ret = handle_property_set(payload_data_out, payload_data_size_out, &out_protocol_data,
-                                      &out_protocol_data_size);
-            if (ret == 0) {
-                ret = do_uart_write(out_protocol_data, out_protocol_data_size);
-                if (ret) {
-                    LOGD("do_uart_write error \n");
-                }
-            }
-            if (out_protocol_data != NULL) {
+            if (out_protocol_data) {
                 free(out_protocol_data);
             }
             break;
         }
 
+        case CMD_HD_PROPERTY_SET: {
+            LOGI("[从机%d] HD设置属性（0xC3）预留\n", g_addr);
+            handle_property_set(payload_data_out, payload_data_size_out);
+            break;
+        }
+
         case CMD_HD_CAMERA_SNAPSHOT: {
             LOGI("[从机%d] HD主动抓图（0xC6）\n", g_addr);
-            unsigned char *out_protocol_data;
-            uint32_t out_protocol_data_size;
+            unsigned char *out_protocol_data = NULL;
+            uint32_t out_protocol_data_size = 0;
             ret = handle_snapshot_pic(&out_protocol_data, &out_protocol_data_size);
             LOGI("主动抓图ret:%d\n", ret);
             if (ret == 0) {
@@ -1307,11 +1972,13 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
                                                0);
                 if (ret) {
                     LOGD("hd_slave_snapshot_encode error \n");
+                } else {
+                    ret = do_uart_write(out_protocol_data, out_protocol_data_size);
+                    if (ret) {
+                        LOGD("do_uart_write error \n");
+                    }
                 }
-                ret = do_uart_write(out_protocol_data, out_protocol_data_size);
-                if (ret) {
-                    LOGD("do_uart_write error \n");
-                }
+
             }
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
@@ -1321,20 +1988,23 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 
         case CMD_HD_PIC_INFO: {
             LOGI("[从机%d] HD查询摄像头存储的图片信息（0xC7）\n", g_addr);
-            unsigned char *protocol_data_out;
-            uint32_t protocol_data_size_out;
+            unsigned char *protocol_data_out = NULL;
+            uint32_t protocol_data_size_out = 0;
             ret = handle_pic_infos(payload_data_out, payload_data_size_out, &protocol_data_out,
                                    &protocol_data_size_out);
-            LOGI("查询图片信息结果：");
-            hd_printf_buff(protocol_data_out, protocol_data_size_out, "-", 0);
             if (ret == 0) {
+                // hd_printf_buff(protocol_data_out, protocol_data_size_out, "-", 1);
                 ret = do_uart_write(protocol_data_out, protocol_data_size_out);
                 if (ret) {
-                    LOGD("do_uart_write error \n");
+                    LOGW("do_uart_write error \n");
                 }
+            } else {
+                LOGW("handle_pic_infos error \n");
             }
             if (protocol_data_out != NULL) {
+                LOGD("free(protocol_data_out) start... \n");
                 free(protocol_data_out);
+                LOGD("free(protocol_data_out) end \n");
             }
             break;
         }
@@ -1342,14 +2012,16 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
         case CMD_HD_PIC_DELETE: {
             LOGI("[从机%d] HD删除图片（0xC8））\n", g_addr);
             int delete_ret = handle_delete_pic(payload_data_out, payload_data_size_out);
-            unsigned char *out_protocol_data;
-            uint32_t out_protocol_data_size;
+            unsigned char *out_protocol_data = NULL;
+            uint32_t out_protocol_data_size = 0;
             ret = hd_slave_delete_pic_encode(&out_protocol_data, &out_protocol_data_size, slave_addr_out,
                                              delete_ret == 0 ? PROTOCOL_UART_SUCCESS : PROTOCOL_UART_FAIL);
             if (ret) {
-                LOGD("hd_slave_delete_pic_encode error\n");
+                LOGW("hd_slave_delete_pic_encode error\n");
+            } else {
+                do_uart_write(out_protocol_data, out_protocol_data_size);
             }
-            do_uart_write(out_protocol_data, out_protocol_data_size);
+
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
             }
@@ -1358,23 +2030,25 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 
         case CMD_HD_PIC_PULL: {
             LOGI("[从机%d] HD拉取图片（0xC9）\n", g_addr);
-            unsigned char *protocol_data_out;
+            unsigned char *protocol_data_out = NULL;
             uint32_t protocol_data_size_out;
             ret = handle_pull_pic(payload_data_out, payload_data_size_out, &protocol_data_out, &protocol_data_size_out);
             if (ret == 0) {
                 ret = do_uart_write(protocol_data_out, protocol_data_size_out);
                 if (ret) {
-                    LOGD("do_uart_write error \n");
+                    LOGW("do_uart_write error \n");
                 }
             } else {
+                LOGW("handle_pull_pic fail ! ret = %d \n", ret);
                 ret = hd_slave_pull_pic_encode(&protocol_data_out, &protocol_data_size_out, g_addr, PROTOCOL_UART_FAIL,
                                                NULL, 0);
                 if (ret) {
-                    break;
-                }
-                ret = do_uart_write(protocol_data_out, protocol_data_size_out);
-                if (ret) {
-                    LOGD("do_uart_write error \n");
+                    LOGW("hd_slave_pull_pic_encode error %d\n", ret);
+                } else {
+                    ret = do_uart_write(protocol_data_out, protocol_data_size_out);
+                    if (ret) {
+                        LOGW("do_uart_write error \n");
+                    }
                 }
             }
             if (protocol_data_out != NULL) {
@@ -1386,14 +2060,18 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
         case CMD_HD_PIC_PULL_COMPLETED: {
             LOGI("[从机%d] HD图片拉取完成（0xCA）\n", g_addr);
             ret = handlePullPicComplete(payload_data_out, payload_data_size_out);
-            unsigned char *out_protocol_data;
+            unsigned char *out_protocol_data = NULL;
             uint32_t out_protocol_data_size;
             int result = hd_slave_pull_pic_complete_encode(&out_protocol_data, &out_protocol_data_size, slave_addr_out,
                                                            ret == 0 ? PROTOCOL_UART_SUCCESS : PROTOCOL_UART_FAIL);
             if (result) {
-                LOGD("hd_slave_pull_pic_complete_encode error\n");
+                LOGW("hd_slave_pull_pic_complete_encode error\n");
+            } else {
+                ret = do_uart_write(out_protocol_data, out_protocol_data_size);
+                if (ret) {
+                    LOGW("do_uart_write error \n");
+                }
             }
-            do_uart_write(out_protocol_data, out_protocol_data_size);
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
             }
@@ -1404,19 +2082,26 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             LOGI("[从机%d] HD广播门开事件（0xCD）\n", g_addr);
             uint32_t out_action_id_timestamps;
             uint8_t out_action_id_index;
-            ret = hd_slave_action_id_decode(&out_action_id_timestamps, &out_action_id_index, payload_data_out,
+            uint8_t status;
+            ret = hd_slave_action_id_decode(&status, &out_action_id_timestamps, &out_action_id_index, payload_data_out,
                                             payload_data_size_out);
             if (ret) {
-                LOGD("hd_slave_action_id_decode error \n");
+                LOGD("hd_slave_action_id_decode error:%d \n", ret);
                 break;
             }
             if (g_hd_on_action_id_changed != NULL) {
 
                 do_action_id_2_str(buff, sizeof(buff), out_action_id_timestamps, out_action_id_index);
                 LOGI("action_id = %s\n", buff);
-                g_hd_on_action_id_changed(buff);
+                g_hd_on_action_id_changed(status, buff);
             }
             // 广播不需要响应
+            break;
+        }
+
+        case CMD_HD_EXTRA_PULL: {
+            LOGI("[从机%d] PULL（0x%02x）\n", g_addr, CMD_HD_EXTRA_PULL);
+            handle_extra_pull(payload_data_out, payload_data_size_out);
             break;
         }
 
@@ -1432,47 +2117,67 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 
 /************ handles a **************/
 
-static void *work_thread(void *arg) {
-    while (g_running) {
-        sleep(2);
-    }
-    LOGI("hd_uart_work_over...\n");
-    return NULL;
-}
-
 int hd_uart_init(
         uint8_t addr,
         const char *pic_dir_path,
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event
 ) {
-    hd_logger_set_level(HD_LOGGER_LEVEL_DEBUG);
-    LOGI("do_uart_write...\n");
+    hd_logger_set_level(HD_LOGGER_LEVEL_INFO);
     uint32_t delay = calculate_3_5_char_time(PROTOCOL_RATE_DEFAULT, 8, 0, 1);
+    snprintf(g_pic_dir_path, sizeof(g_pic_dir_path), "%s", pic_dir_path);
     LOGI("calculate_3_5_char_time = %d\n", delay);
     LOGI(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
     LOGI("hd_uart_init\n");
     LOGI("hd_uart_init version              :       <%s>   \n", hd_uart_version());
     LOGI("hd_uart_init protocol_version     :       <%s>   \n", PROTOCOL_VERSION);
     LOGI("hd_uart_init addr                 :       <%d> \n", addr);
-    LOGI("hd_uart_init pic_dir_path         :       <%s> \n", pic_dir_path);
+    LOGI("hd_uart_init pic_dir_path         :       <%s> \n", g_pic_dir_path);
     LOGI("hd_uart_init delay                :       <%d> \n", delay);
+    LOGI("hd_uart_max               	    :       <%d> \n", PROTOCOL_MAX_FRAME_LEN);
+    for (int i = 0; i < sizeof(PULL_MODE_FILE_HEADER_TAIL); ++i) {
+        printf("%02x ", PULL_MODE_FILE_HEADER_TAIL[i]);
+    }
+    printf("\n");
     LOGI(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-    g_pic_dir_path = pic_dir_path;
+
     g_addr = addr;
     g_hd_on_action_id_changed = on_action_id_changed;
     g_hd_on_event = on_event;
     g_delay = delay;
+    hd_camera_shell_init(addr);
     g_running = 1;
-    pthread_create(&g_uart_t, NULL, work_thread, NULL);
     LOGI("hd_uart_init completed !!!\n");
     return 0;
 }
 
 void hd_uart_recv(uint8_t byte) {
-    //LOGI("|%02x", byte);
     if (g_running == 0)return;
-    do_uart_recv(byte);
+    switch (g_serial_mode) {
+        case HD_SERIAL_SHELL_MODE: {
+            do_uart_recv_with_shell(byte);
+            break;
+        }
+        case HD_SERIAL_NORMAL_MODE: {
+            do_uart_recv(byte);
+            break;
+        }
+
+        case HD_SERIAL_PULL_MODE: {
+            do_uart_recv_with_pull(byte);
+            break;
+        }
+
+        case HD_SERIAL_PUSH_MODE: {
+            // 接受文件
+            do_uart_recv_with_push(byte);
+            break;
+        }
+        default:
+            break;
+
+    }
+
 }
 
 void hd_uart_deinit() {
@@ -1480,17 +2185,17 @@ void hd_uart_deinit() {
     g_hd_on_action_id_changed = NULL;
     g_hd_on_event = NULL;
     g_running = 0;
-    pthread_join(g_uart_t, NULL);
+    on_serial_mode_changed(HD_SERIAL_NORMAL_MODE);
+    hd_camera_shell_deinit();
 }
 
 char *hd_uart_version() {
     return HD_UART_PARSER_VERSION_INTERNAL;
 }
 
-void hd_uart_debug_recv(const unsigned char *raw, size_t raw_size) {
-    handle_uart_data(raw, raw_size);
-}
-
-void hd_uart_debug_write_self(int write_outside) {
-    g_write_outside = write_outside;
+static void on_serial_mode_changed(HD_SERIAL_MODE mode) {
+    g_serial_mode = mode;
+    LOGI("############################################## \n", mode);
+    LOGI("############# serial_mode : [%d] ############## \n", mode);
+    LOGI("############################################## \n", mode);
 }

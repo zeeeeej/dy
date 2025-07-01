@@ -37,6 +37,7 @@ extern "C" {
 #define CMD_HD_BROADCAST_ACTION_ID      0xCD
 
 
+
 typedef struct {
     /** pic_id 1BYTE */
     uint8_t id;
@@ -508,7 +509,7 @@ uint8_t hd_host_pic_info_encode(
 
 uint8_t hd_host_pic_info_decode(
         hd_dynamic_pic_info ***pic_info_out,
-        uint8_t *pic_info_size_out,
+        uint32_t *pic_info_size_out,
         const unsigned char *payload_data_in,
         uint32_t payload_data_size_in
 );
@@ -528,7 +529,7 @@ uint8_t qjy_slave_pic_info_encode(
         uint32_t *protocol_data_size_out,
         uint8_t slave_addr_in,
         hd_dynamic_pic_info *info_in,
-        uint8_t info_size_in
+        uint32_t info_size_in
 );
 
 uint8_t hd_slave_pic_info_encode(
@@ -536,7 +537,7 @@ uint8_t hd_slave_pic_info_encode(
         uint32_t *protocol_data_size_out,
         uint8_t slave_addr_in,
         hd_dynamic_pic_info *info_in,
-        uint8_t info_size_in
+        uint32_t info_size_in
 );
 
 uint8_t hd_slave_pic_info_decode(

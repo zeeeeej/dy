@@ -70,15 +70,47 @@ extern "C"{
 #undef LOG_TAG
 #endif
 #define LOG_TAG "rkipc.c"
-
+#include <atomic>
 
 
 #include "dma_alloc.hpp"
 
 
+#include <signal.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+#include <dlfcn.h>
+#include <unistd.h>
+
+void segfault_handler(int sig, siginfo_t* info, void* ucontext) {
+    void* addr = info->si_addr;  // 出错地址
+    Dl_info dlinfo;
+
+    if (dladdr(addr, &dlinfo) && dlinfo.dli_fname) {
+        fprintf(stderr, "Segmentation fault at address: %p\n", addr);
+        fprintf(stderr, "In shared object: %s\n", dlinfo.dli_fname);
+        if (dlinfo.dli_sname)
+            fprintf(stderr, "Symbol: %s\n", dlinfo.dli_sname);
+    } else {
+        fprintf(stderr, "Segmentation fault at address: %p (no symbol info)\n", addr);
+    }
+    _exit(1);  // 直接退出，避免死循环
+}
+
+void setup_segv_handler() {
+    struct sigaction sa;
+    sa.sa_sigaction = segfault_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_SIGINFO | SA_RESTART;
+    sigaction(SIGSEGV, &sa, NULL);
+}
+
+
+
+
 std::string app_version = "V1.1";
 int addr_biu = 2;
-static int pic_id = 65;
+int pic_id = 65;
 static uint8_t door_status = 2;  // 默认日志级别为INFO
 
 static int zero_count = 0;
@@ -221,8 +253,16 @@ void rkipc_get_opt(int argc, char *argv[]) {
 
 
 
+
+
+
+
+
 int main(int argc, char **argv)
 {
+
+    setup_segv_handler();
+
     std::cout << "app_version:" << app_version << std::endl;
     const char* path = "/userdata/jpeg";
 	LOG_DEBUG("main begin\n");
@@ -308,21 +348,31 @@ int main(int argc, char **argv)
     ThreadSafeSet<std::string> action_id_record(10);
 
     bool door_closed_reported = false;
+
+    std::atomic<bool> video_flag(false);
+
+    std::string action_id_add_ = "0";
+
+    
     
 
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path, &door_closed_reported]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path, &door_closed_reported, &video_flag, &crop_img_dirs, &action_id_add_]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
             int angle1 = get_angle();
-            float result = tly_detect(angle1);
+            float result = tly_detect2(angle1);
          
             if (result <= 0) {
                 zero_count++;
                 if (zero_count >= 40 ) {
                     last_reported_angle = 0;
                 }
+                // if (result !=0) {
+                //     std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl; 
+                // }
+               
             } else {
                 zero_count = 0;  
                 // if (result != last_reported_angle) {
@@ -330,8 +380,17 @@ int main(int argc, char **argv)
                 // }
                 last_reported_angle = result;
             }
+
+            std::string action_id_add = read_txt_file(mydata::action_id_txt_name);
+
+            if (last_reported_angle >= 20.0f && door_status == 1 && video_flag.load() == true && action_id_add_!= action_id_add) {
+                action_id_add_ = action_id_add;
+                std::string crop_img_path = crop_img_dirs + "/" + action_id_add_;
+                std::filesystem::create_directories(crop_img_path);
+                createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
+            }
           
-            if (last_reported_angle >= 20.0f && door_status == 1) {
+            if (last_reported_angle >= 20.0f && door_status == 1 && video_flag.load() == false) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -344,10 +403,11 @@ int main(int argc, char **argv)
               
                 std::ostringstream oss;
              
-                pic_id = (pic_id < 240) ? (pic_id + 1) : 65;
+                // pic_id = (pic_id < 240) ? (pic_id + 1) : 65;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
+                // oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
+                oss << "_" << "2" << "_" << time_now << ".jpg";
                 std::string image_biu_name_path = oss.str();
 
                 
@@ -358,12 +418,12 @@ int main(int argc, char **argv)
 
                 trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 last_reported_angle = 1;   
                 door_closed_reported = true;  // 标记门已关闭，避免重复报告
                 
                
-            } else if (last_reported_angle < 20.0f && door_status == 0 && door_closed_reported) {
+            } else if (last_reported_angle < 20.0f && door_status == 0 && door_closed_reported && video_flag.load() == false) {
                 door_closed_reported = false;  
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
                 // std ::cout << "读取到的action_id: " << action_id << std::endl;
@@ -372,6 +432,7 @@ int main(int argc, char **argv)
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
+                    delete_folder_contents_only(image_tmp_path); // 清空临时图片目录
                     copy_folder_to(action_id_image_path_finall, images_original_dir_path);      //*****1111111 */
                 }   
                 
@@ -410,6 +471,9 @@ int main(int argc, char **argv)
        
         std::string action_id_path_biu;
         while (action_id_record.try_pop(action_id_path_biu)) {
+        
+        video_flag.store(true);
+        
         std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
         resize_images_in_folder(action_id_path_biu, 960);
         std::vector<std::string> frames = get_image_paths(action_id_path_biu);
@@ -419,6 +483,7 @@ int main(int argc, char **argv)
         std::string txt2_name_path;
         
         if (!frames.empty()) {
+            
             for (const std::string& img_path : frames) {
                     // print_meminfo();
                     std::cout << "图片路径: " << img_path << std::endl;
@@ -568,7 +633,7 @@ int main(int argc, char **argv)
      
             std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
         
-            if (process_last_n_lines(txt2_name_path, crop_img_path, line_n5)) {
+            if (process_last_n_lines(txt2_name_path, crop_img_path, line_n5, pic_id)) {
                 std::cout << "有截图保存成功" << std::endl;
             } else {
                 std::cout << "没有任何截图保存成功" << std::endl;
@@ -588,7 +653,7 @@ int main(int argc, char **argv)
            
             std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
           
-            if (process_last_n_lines(txt1_name_path, crop_img_path, line_n10)) {
+            if (process_last_n_lines(txt1_name_path, crop_img_path, line_n10, pic_id)) {
                 std::cout << "有截图保存成功" << std::endl;
             } else {
                 std::cout << "没有任何截图保存成功" << std::endl;
@@ -597,16 +662,17 @@ int main(int argc, char **argv)
             }
 
             
-            std::filesystem::path path(txt1_name_path);
-            if (std::filesystem::remove(path)) {
-                std::cout << "删除成功: " << txt1_name_path << std::endl;
-            } else {
-                std::cerr << "删除失败: " << txt1_name_path << std::endl;
-            }
+            // std::filesystem::path path(txt1_name_path);
+            // if (std::filesystem::remove(path)) {
+            //     std::cout << "删除成功: " << txt1_name_path << std::endl;
+            // } else {
+            //     std::cerr << "删除失败: " << txt1_name_path << std::endl;
+            // }
 
         }  
        
     }
+    video_flag.store(false);
                
     std::this_thread::sleep_for(std::chrono::seconds(5));
         

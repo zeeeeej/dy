@@ -47,6 +47,9 @@ void hd_printf_buff(const unsigned char *buf, size_t size, const char *tag, int 
 
 void hd_sleep_ms(uint32_t milliseconds);
 
+int hd_array_cmp(const unsigned char *a1, size_t len1,
+                 const unsigned char *a2, size_t len2);
+
 
 #ifdef __cplusplus
 }

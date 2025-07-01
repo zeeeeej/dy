@@ -36,6 +36,52 @@ extern "C" {
 #define PROPERTY_HD_ID_DEBUG_ACTION_ID          0xD2
 #define PROPERTY_HD_ID_DEBUG_ANGEL              0xD3
 #define PROPERTY_HD_ID_DEBUG_HD_UART_VERSION    0xD4
+#define PROPERTY_HD_ID_FACTORY_MODE             0xD5
+#define PROPERTY_HD_ID_PUSH                     0xD6
+#define PROPERTY_HD_ID_PULL                     0xD7
+
+/* push模式 */
+/**
+ * push 文件
+ * @param out_payload
+ * @param out_payload_size
+ * @param in_file_md5
+ * @param in_file_size
+ * @param in_file_path
+ * @return
+ */
+uint8_t hd_host_property_set_push_encode(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        const unsigned char in_file_md5[16],
+        uint64_t in_file_size,
+        const char *in_file_path
+);
+
+uint8_t hd_host_property_set_push_encode_ext(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        const char * src_file_path,
+        const char * dest_file_path
+);
+
+/**
+ * 解析 push 文件
+ * @param out_file_md5
+ * @param out_file_size
+ * @param out_file_path
+ * @param in_payload
+ * @param in_payload_size
+ * @return
+ */
+uint8_t hd_slave_property_set_push_decode(
+        unsigned char out_file_md5[16],
+        uint64_t *out_file_size,
+        char *out_file_path,
+        const unsigned char *in_payload,
+        uint32_t in_payload_size
+);
+
 
 
 #ifdef __cplusplus
