@@ -1,2 +1,2 @@
-# Empty dependencies file for ipc_app_0630_camera1.
+# Empty dependencies file for ipc_app_0702_camera1.
 # This may be replaced when dependencies are built.

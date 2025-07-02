@@ -1,4 +1,4 @@
-CMakeFiles/ipc_app_0630_camera1.dir/hd_uart/src/hd_camera_shell.c.o: \
+CMakeFiles/ipc_app_0702_camera1.dir/hd_uart/src/hd_camera_shell.c.o: \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_shell.c \
  /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_camera_shell.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include/stdint.h \

@@ -21,7 +21,7 @@
 #include "hd_camera_protocol_extra_cmd.h"
 
 #define HD_UART_PARSER_DEBUG                    0
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.2.37.4"
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.2.39"
 #define FRAME_HEADER_H                          PROTOCOL_HEADER_1
 #define FRAME_HEADER_L                          PROTOCOL_HEADER_0
 #define MAX_FILE_SIZE                           (512*1024)
@@ -63,6 +63,7 @@ static volatile int g_running = 0;                      // 程序是否在运行
 static hd_on_action_id_changed g_hd_on_action_id_changed = NULL;    // 收到action_id回调
 static hd_on_event g_hd_on_event = NULL;                // 收到event回调
 static uint8_t g_frame_buffer[PROTOCOL_MAX_FRAME_LEN];  // 串口帧缓冲区
+
 static uint32_t g_frame_length = 0;                     // 一个完整帧的数据长度
 unsigned char shell_resp_buff[MAX_RESULT_LENGTH];       // shell回复缓冲区
 static unsigned g_file_buffer[MAX_FILE_SIZE] = {0};     // 图片文件缓冲区
@@ -234,12 +235,20 @@ static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint32_t *fra
                        (uint32_t) frame_buffer[5] << 8 |
                        frame_buffer[4];
 
-            if (data_len > PROTOCOL_MAX_FRAME_LEN-10) {
-                LOGW("data_len = %d ,frame_length = %d\n", data_len,frame_length);
-                LOGW("frame_buffer[7] = %02x \n", frame_buffer[7]);
-                LOGW("frame_buffer[6] = %02x \n", frame_buffer[6]);
-                LOGW("frame_buffer[5] = %02x \n", frame_buffer[5]);
-                LOGW("frame_buffer[4] = %02x \n", frame_buffer[4]);
+            if (data_len > PROTOCOL_MAX_FRAME_LEN) {
+                LOGW("data_len = %u ,frame_length = %u,current_pos=%u\n", data_len, frame_length, current_pos);
+                for (int i = 0; i < 40; ++i) {
+                    LOGW("frame_buffer[%d] = %02x \n", frame_buffer[i]);
+                }
+                LOGW("全局信息：\n");
+                LOGW("data_index        =  %02x (%d)\n", data_index, data_index);
+                LOGW("data_len          =  %02x (%d)\n", data_len, data_len);
+                LOGW("expected_crc      =  %02x (%d)\n", expected_crc, expected_crc);
+                LOGW("calculated_crc    =  %02x (%d)\n", calculated_crc, calculated_crc);
+                LOGW("current_pos       =  %02x (%d)\n", current_pos, current_pos);
+                LOGW("state             =  %02x (%d)\n", state, state);
+                LOGW("frame_length      =  %02x (%d)\n", frame_length, frame_length);
+
                 current_pos = 0;
                 state = STATE_WAIT_HEADER_H;
                 return -3;
@@ -293,7 +302,13 @@ static int parse_serial_frame(uint8_t byte, uint8_t *frame_buffer, uint32_t *fra
             break;
 
         default:
+            LOGE("default current_pos = %d \n", current_pos);
             state = STATE_WAIT_HEADER_H;
+            current_pos = 0;
+            data_index = 0;
+            data_len = 0;
+            expected_crc = 0;
+            calculated_crc = 0;
             current_pos = 0;
             break;
     }
@@ -507,12 +522,14 @@ static void do_uart_recv(uint8_t str) {
     int ret;
     ret = parse_serial_frame(str, g_frame_buffer, &g_frame_length);
     if (ret == 0) {
-        //LOGI("收到完整帧.......\n");
-        hd_printf_buff(g_frame_buffer, g_frame_length, "收到", 0);
-        // 处理数据
-        ret = handle_uart_data(g_frame_buffer, g_frame_length);
+        uint32_t len = g_frame_length;
+        uint8_t tmp[PROTOCOL_MAX_FRAME_LEN];
+        memcpy(tmp, g_frame_buffer, len);
         g_frame_length = 0;
-        memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
+
+        //LOGI("收到完整帧.......%d....\n", len);
+        hd_printf_buff(tmp, len, "收到", 0);
+        ret = handle_uart_data(tmp, len);
     } else if (ret == -1) {
         // 处理中。。。
     } else if (ret == 5) {
@@ -525,7 +542,9 @@ static void do_uart_recv(uint8_t str) {
     } else if (ret == -3) {
         LOGW("len error\n");
         g_frame_length = 0;
+        LOGW("len error 1\n");
         memset(g_frame_buffer, 0, PROTOCOL_MAX_FRAME_LEN);
+        LOGW("len error 2\n");
     } else {
         // 处理中。。。
     }
@@ -1484,10 +1503,12 @@ static int read_from_buffer(unsigned char in_dest[], size_t in_size,
     LOGI("[read_from_buffer] in_offset = %d \n", in_offset);
     LOGI("[read_from_buffer] in_size = %d \n", in_size);
     LOGI("[read_from_buffer] g_file_buffer_size = %d \n", g_file_buffer_size);
-    LOGI("[read_from_buffer] in_offset + in_size - g_file_buffer_size = %d \n", in_offset + in_size - g_file_buffer_size);
-    if (in_offset + in_size > g_file_buffer_size) {
-            real_read_size = in_offset + in_size - g_file_buffer_size;
+    LOGI("[read_from_buffer] in_offset + in_size - g_file_buffer_size = %d \n", g_file_buffer_size - in_offset);
+
+    if (g_file_buffer_size - in_offset < in_size) {
+        real_read_size = g_file_buffer_size - in_offset;
     }
+
     if (HD_UART_PARSER_DEBUG) {
         LOGI("[read_from_buffer] real_read_size = %d \n", real_read_size);
     }
@@ -1579,7 +1600,7 @@ handle_pull_pic(const unsigned char *payload_data,
             }
             g_file_pic_id = out_pic_id;
             g_file_pulling = 1;
-        }else{
+        } else {
             LOGW("从新拉取的数据:offset=%d应该从0开始\n", out_offset);
             return 10;
         }
@@ -1592,7 +1613,7 @@ handle_pull_pic(const unsigned char *payload_data,
     // 加载图片，从buff offset中读 read_len 数据
     unsigned char read_data[PROTOCOL_MAX_FRAME_LEN];
     size_t offset = out_offset;
-    size_t read_len = sizeof(read_data);
+    size_t read_len = out_read_len;
     size_t real_read_len = 0;
     ret = read_from_buffer(read_data, read_len, offset, &real_read_len);
     if (ret) {
@@ -1615,7 +1636,7 @@ handle_pull_pic(const unsigned char *payload_data,
         return -5;
     }
     if (real_read_len < out_read_len) {
-        LOGW("[从机%d]文件读到结尾了。%d,%d\n", g_addr,real_read_len,out_read_len);
+        LOGW("[从机%d]文件读到结尾了。%d,%d\n", g_addr, real_read_len, out_read_len);
         resetFileBuffer();
     }
 
@@ -1749,6 +1770,7 @@ static int handle_delete_pic(const unsigned char *payload_data, uint32_t payload
 
     }
     LOGD("需要删除的图片pic_id : <%d> \n", out_pic_id);
+
     // 遍历文件夹依次查询图片id
     char *filePath = NULL;
     ret = do_find_pic_by_pic_id(out_pic_id, &filePath);
@@ -1901,11 +1923,11 @@ static void handle_extra_pull(const unsigned char *payload_data, uint32_t payloa
 }
 
 static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
-    if (NULL == raw) {
-        LOGW("handle_uart_data raw == NULL\n");
+    if (NULL == raw || raw_size <= 0) {
+        LOGW("handle_uart_data raw == NULL || raw_size == 0\n");
         return 0;
     }
-    LOGD("------------------------------handle_uart_data------------------------------\n");
+    LOGD("------------------------------handle_uart_data------------------------%d------\n", raw_size);
     uint8_t ret;
     uint8_t slave_addr_out;
     uint8_t cmd_out;

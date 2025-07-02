@@ -1,5 +1,5 @@
-CMakeFiles/ipc_app_0630_camera1.dir/hd_uart/src/hd_camera_protocol_property.c.o: \
- /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_property.c \
+CMakeFiles/ipc_app_0702_camera1.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.o: \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/src/hd_camera_protocol_extra_cmd.c \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/lib/gcc/arm-rockchip830-linux-uclibcgnueabihf/8.3.0/include/stdint.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/stdint.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/features.h \
@@ -47,4 +47,6 @@ CMakeFiles/ipc_app_0630_camera1.dir/hd_uart/src/hd_camera_protocol_property.c.o:
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/environments.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/confname.h \
  /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/arm-rockchip830-linux-uclibcgnueabihf/sysroot/usr/include/bits/getopt.h \
- /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_utils.h
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_utils.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_camera_protocol_extra_cmd.h \
+ /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include/hd_camera_protocol.h

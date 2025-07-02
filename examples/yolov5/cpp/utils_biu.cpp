@@ -18,6 +18,67 @@
 
 
 
+bool compressImageToTargetSize(const std::string& inputPath,
+                               const std::string& outputPath,
+                               int targetSizeKB,
+                               int minQuality,
+                               int maxQuality) {
+   
+    std::error_code ec;
+    auto fileSize = std::filesystem::file_size(inputPath, ec);
+    if (!ec && fileSize / 1024 <= targetSizeKB) {
+        std::cout << "原图已小于目标大小，直接复制: " << fileSize / 1024 << "KB\n";
+        std::ifstream src(inputPath, std::ios::binary);
+        std::ofstream dst(outputPath, std::ios::binary);
+        dst << src.rdbuf();
+        return true;
+    }
+
+    cv::Mat image = cv::imread(inputPath);
+    if (image.empty()) {
+        std::cerr << "读取图片失败: " << inputPath << std::endl;
+        return false;
+    }
+
+    std::vector<uchar> buf;
+    int quality = maxQuality;
+    bool success = false;
+
+    for (; quality >= minQuality; quality -= 5) {
+        std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, quality};
+        buf.clear();
+        if (!cv::imencode(".jpg", image, buf, params)) {
+            std::cerr << "图片编码失败\n";
+            return false;
+        }
+
+        size_t sizeKB = buf.size() / 1024;
+        std::cout << "当前质量: " << quality << ", 大小: " << sizeKB << "KB\n";
+
+        if (sizeKB <= targetSizeKB) {
+            success = true;
+            break;
+        }
+    }
+
+    if (!success) {
+        std::cerr << "无法压缩到目标大小以内\n";
+        return false;
+    }
+
+    std::ofstream ofs(outputPath, std::ios::binary);
+    ofs.write(reinterpret_cast<const char*>(buf.data()), buf.size());
+    ofs.close();
+    std::cout << "压缩成功，保存到: " << outputPath << std::endl;
+
+    return true;
+}
+
+
+
+
+
+
 
 
 void createBlankImage(const std::string& filename) {
@@ -921,9 +982,9 @@ bool process_last_n_lines(const std::string& txt_path, const std::string& save_d
     
     std::filesystem::path original_path1(original_path);
 
-    // delete_specified_folder(file_path_biu.parent_path().string());
+    delete_specified_folder(file_path_biu.parent_path().string());
 
-    // delete_specified_folder(original_path1.parent_path().string());
+    delete_specified_folder(original_path1.parent_path().string());
 
     delete_txt_file(txt_path);
 

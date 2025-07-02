@@ -314,11 +314,22 @@ int main(int argc, char **argv)
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
                 oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
+                std::string image_biu_name_path_change = "gai_1_" + std::to_string(time_now) + "_" + std::to_string(pic_id) + ".jpg";
 
                 
                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
-                    photo_names.insert(image_biu_path);
+                    std::string image_biu_path_change = std::string(image_tmp_path) + "/" + image_biu_name_path_change;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                    if (compressImageToTargetSize(image_biu_path, image_biu_path_change, 380)) {
+                        photo_names.insert(image_biu_path_change);
+                        std::filesystem::remove(image_biu_path); 
+                    } else {
+                        createBlankImage(image_biu_path_change);
+                        photo_names.insert(image_biu_path_change);
+                        std::filesystem::remove(image_biu_path); 
+                    }
+   
                 };
 
                 // writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
@@ -335,6 +346,7 @@ int main(int argc, char **argv)
                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
                     ensure_path_exists(action_id_image_path_finall.c_str());
                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
+                    delete_folder_contents_only(image_tmp_path);
                     action_id_record.clear();
                 } 
            
@@ -346,7 +358,7 @@ int main(int argc, char **argv)
 
 
     while (g_main_run_) {
-		delete_oldest_folders(images_dir_path);
+		delete_oldest_folders(images_dir_path, 10);
 		std::this_thread::sleep_for(std::chrono::minutes(1));
 	}
 

@@ -342,14 +342,14 @@ int main(int argc, char **argv)
 
 /*--------------陀螺仪检测并拍照------------------------------*/
   
-    ThreadSafeSet<std::string> photo_names(10);
+    ThreadSafeSet<std::string> photo_names(20);
     
     
-    ThreadSafeSet<std::string> action_id_record(10);
+    ThreadSafeSet<std::string> action_id_record(20);
 
     bool door_closed_reported = false;
 
-    std::atomic<bool> video_flag(false);
+    // std::atomic<bool> video_flag(false);
 
     std::string action_id_add_ = "0";
 
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
     
 
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path, &door_closed_reported, &video_flag, &crop_img_dirs, &action_id_add_]() {
+    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &images_original_dir_path, &door_closed_reported, &crop_img_dirs, &action_id_add_]() {
         while (g_main_run_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -383,14 +383,14 @@ int main(int argc, char **argv)
 
             std::string action_id_add = read_txt_file(mydata::action_id_txt_name);
 
-            if (last_reported_angle >= 20.0f && door_status == 1 && video_flag.load() == true && action_id_add_!= action_id_add) {
-                action_id_add_ = action_id_add;
-                std::string crop_img_path = crop_img_dirs + "/" + action_id_add_;
-                std::filesystem::create_directories(crop_img_path);
-                createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
-            }
+            // if (last_reported_angle >= 20.0f && door_status == 1 && video_flag.load() == true && action_id_add_!= action_id_add) {
+            //     action_id_add_ = action_id_add;
+            //     std::string crop_img_path = crop_img_dirs + "/" + action_id_add_;
+            //     std::filesystem::create_directories(crop_img_path);
+            //     createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
+            // }
           
-            if (last_reported_angle >= 20.0f && door_status == 1 && video_flag.load() == false) {
+            if (last_reported_angle >= 20.0f && door_status == 1) {
 
                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
@@ -416,14 +416,14 @@ int main(int argc, char **argv)
                     photo_names.insert(image_biu_path);
                 };
 
-                trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
+                trim_folder_images(image_tmp_path, 20); // 保持临时图片目录最多10张图片
 
-				std::this_thread::sleep_for(std::chrono::milliseconds(500));
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 last_reported_angle = 1;   
                 door_closed_reported = true;  // 标记门已关闭，避免重复报告
                 
                
-            } else if (last_reported_angle < 20.0f && door_status == 0 && door_closed_reported && video_flag.load() == false) {
+            } else if (last_reported_angle < 20.0f && door_status == 0 && door_closed_reported) {
                 door_closed_reported = false;  
                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
                 // std ::cout << "读取到的action_id: " << action_id << std::endl;
@@ -465,14 +465,14 @@ int main(int argc, char **argv)
 
 
     while (g_main_run_) {
-		delete_oldest_folders(images_dir_path);
-        delete_oldest_folders(crop_img_dirs);
-        delete_oldest_folders(images_original_dir_path);
+		delete_oldest_folders(images_dir_path, 5);
+        delete_oldest_folders(crop_img_dirs, 50);
+        delete_oldest_folders(images_original_dir_path, 5);
        
         std::string action_id_path_biu;
         while (action_id_record.try_pop(action_id_path_biu)) {
         
-        video_flag.store(true);
+        // video_flag.store(true);
         
         std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
         resize_images_in_folder(action_id_path_biu, 960);
@@ -672,7 +672,7 @@ int main(int argc, char **argv)
         }  
        
     }
-    video_flag.store(false);
+    // video_flag.store(false);
                
     std::this_thread::sleep_for(std::chrono::seconds(5));
         

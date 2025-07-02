@@ -19,18 +19,17 @@ public:
 
     void insert(const T& val) {
         std::lock_guard<std::mutex> lock(mutex_);
-        
-        // 如果已存在，忽略插入
+      
         if (data_.count(val) > 0) return;
 
-        // 超过最大限制，删除最旧的一个
+    
         if (data_.size() >= max_size_) {
             const T& oldest = insertion_order_.front();
             data_.erase(oldest);
             insertion_order_.pop_front();
         }
 
-        // 插入新元素
+
         data_.insert(val);
         insertion_order_.push_back(val);
     }
@@ -41,7 +40,6 @@ public:
         val = *data_.begin();
         data_.erase(val);
 
-        // 同时移除插入顺序记录
         insertion_order_.remove(val);
         return true;
     }
@@ -124,7 +122,7 @@ void create_empty_txt(const std::string& file_path);
 void remove_folder_if_exists(const std::string& folder_path);
 
 void movePhotos(ThreadSafeSet<std::string>& photo_names, const std::string& dest_folder, ThreadSafeSet<std::string>& action_id_record);
-void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders=10);
+void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_folders);
 
 bool copy_folder_to(const std::filesystem::path& src_folder, const std::filesystem::path& dst_root);
 
@@ -142,5 +140,11 @@ void trim_folder_images(const std::filesystem::path& parent_path, size_t max_ima
 void createBlankImage(const std::string& filename);
 
 bool delete_folder_contents_only(const std::string& folder_path);
+
+bool compressImageToTargetSize(const std::string& inputPath,
+                               const std::string& outputPath,
+                               int targetSizeKB,
+                               int minQuality = 10,
+                               int maxQuality = 95);
 
 #endif
