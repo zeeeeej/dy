@@ -50,6 +50,14 @@ void hd_sleep_ms(uint32_t milliseconds);
 int hd_array_cmp(const unsigned char *a1, size_t len1,
                  const unsigned char *a2, size_t len2);
 
+/**
+ *
+ * @param dir_path
+ * @param model_version  xxx.kn ->xxx
+ * @param prefix .rknn
+ */
+int hd_find_model_name(const char* dir_path, char * model_version,const char * prefix);
+
 
 #ifdef __cplusplus
 }

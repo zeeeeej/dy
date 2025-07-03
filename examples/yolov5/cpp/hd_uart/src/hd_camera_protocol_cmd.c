@@ -119,22 +119,21 @@ static uint8_t common_slave_property_get_encode(
     if (DEBUG_PROTOCOL_CMD) {
         LOGD("    len                     = %u\n", len);
     }
-    uint8_t payload_size = len + 1;
+    uint8_t payload_size = len;
     uint8_t *payload = (unsigned char *) malloc(payload_size);
     if (payload == NULL) {
         return -1; // 内存分配失败
     }
     memset(payload, 0, payload_size);
-    payload[0] = len;
-    payload[1] = in_property_id;
-    payload[2] = in_result;
+    payload[0] = in_property_id;
+    payload[1] = in_result;
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(in_property_value, in_property_value_size, "property_value_in");
         hd_camera_protocol_print_buffer(payload, len, "hd_slave_property_get_encode=1");
     }
     // 填充属性值
     if (in_property_value_size > 0 && in_property_value != NULL) {
-        memcpy(&payload[3], in_property_value, in_property_value_size);
+        memcpy(&payload[2], in_property_value, in_property_value_size);
     }
 
     if (DEBUG_PROTOCOL_CMD) {
@@ -155,7 +154,6 @@ static uint8_t common_slave_property_get_encode(
 }
 
 
-
 uint8_t qjy_host_property_get_decode(
         uint8_t *out_property_id,
         uint8_t *out_result,
@@ -164,7 +162,7 @@ uint8_t qjy_host_property_get_decode(
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 
-){
+) {
 
     // AA 5A | 01 | 02 | 08 00 00 00 | 0C 02 00 64 65 76 2D 30 | CC 47
 
@@ -681,7 +679,7 @@ uint8_t hd_slave_property_set_decode(
     // 5. 处理属性值数据
     if (*result_value_size_out > 0) {
         // 5.1 分配内存存放属性值
-        unsigned char *tmp = (unsigned char *)malloc(*result_value_size_out);
+        unsigned char *tmp = (unsigned char *) malloc(*result_value_size_out);
         if (tmp == NULL) {
             return 3; // 内存分配失败
         }
@@ -983,8 +981,8 @@ uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info *infos,
     if (infos == NULL || count == 0) return -1;
 
 
-    if(DEBUG){
-        hd_dynamic_pic_info_print( infos, count);
+    if (DEBUG) {
+        hd_dynamic_pic_info_print(infos, count);
     }
 
     const size_t real_size = hd_dynamic_pic_info_real_size();
@@ -1079,12 +1077,12 @@ static uint8_t common_slave_pic_info_encode(
         uint32_t info_size_in,
         int hd
 ) {
-    if (protocol_data_out == NULL || protocol_data_size_out == NULL ) {
+    if (protocol_data_out == NULL || protocol_data_size_out == NULL) {
         return -1;
     }
 
     if (info_size_in == 0 || info_in == NULL) {
-        unsigned char default_value[] = { 0};
+        unsigned char default_value[] = {0};
         return hd_camera_protocol_encode(
                 protocol_data_out,
                 protocol_data_size_out,
@@ -1118,7 +1116,7 @@ static uint8_t common_slave_pic_info_encode(
     // len + pic_num + hd_camera_protocol_pic_infos
     uint32_t payload_size = 1 + pic_info_size;
     unsigned char *payload = (unsigned char *) malloc(payload_size);
-    if (payload==NULL){
+    if (payload == NULL) {
         LOGW("malloc payload fail.\n");
         return 2;
     }
@@ -1133,7 +1131,7 @@ static uint8_t common_slave_pic_info_encode(
     if (DEBUG_PROTOCOL_CMD) {
         LOGD("hd_camera_protocol_encode ....\n");
     }
-    ret =  hd_camera_protocol_encode(
+    ret = hd_camera_protocol_encode(
             protocol_data_out,
             protocol_data_size_out,
             slave_addr_in,
@@ -1323,7 +1321,7 @@ common_host_pull_pic_encode(
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(payload, payload_size, "[hd_host_pull_pic_encode]");
     }
-    int ret =  hd_camera_protocol_encode(
+    int ret = hd_camera_protocol_encode(
             out_protocol_data,
             out_protocol_data_size,
             in_slave_addr,
@@ -1639,6 +1637,48 @@ hd_host_ota_encode(
     return ret;
 }
 
+uint8_t
+hd_host_ota_push_encode(
+        unsigned char **protocol_data_out,
+        uint32_t *protocol_data_size_out,
+        uint8_t slave_addr_in,
+        uint32_t in_offset,
+        uint32_t in_read_len,
+        const unsigned char *data
+) {
+    return 0;
+//
+//    if (protocol_data_out == NULL || protocol_data_size_out == NULL) {
+//        return 1;
+//    }
+//
+//    uint8_t payload_size = 0x14;
+//    uint8_t *payload = (unsigned char *) malloc(payload_size);
+//    if (payload == NULL) {
+//        return -1; // 内存分配失败
+//    }
+//    memset(payload, 0, payload_size);
+//
+//    // 填充数据长度 (小端模式)
+//    payload[0] = (file_size >> 0) & 0xFF;  // LSB
+//    payload[1] = (file_size >> 8) & 0xFF;
+//    payload[2] = (file_size >> 16) & 0xFF;
+//    payload[3] = (file_size >> 24) & 0xFF; // MSB
+//
+//    memcpy(&payload[4], file_md5, 16);
+//
+//    uint8_t ret = hd_camera_protocol_encode(
+//            protocol_data_out,
+//            protocol_data_size_out,
+//            slave_addr_in,
+//            CMD_OTA,
+//            payload_size,
+//            payload
+//    );
+//    free(payload);
+//    return ret;
+}
+
 uint8_t hd_camera_protocol_cmd_property_camera_ota_resp(uint8_t *slave_addr, uint8_t *result, uint32_t *offset) {
     return 0;
 }
@@ -1731,7 +1771,7 @@ uint8_t hd_host_action_id_encode(
         uint8_t in_action_id_index
 ) {
 
-    uint8_t size =  sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t);
+    uint8_t size = sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint8_t);
     unsigned char *default_value = (unsigned char *) malloc(size);
     default_value[0] = in_status;
     // 填充数据长度 (小端模式)
@@ -1781,4 +1821,173 @@ uint8_t hd_slave_action_id_decode(
                                 ((uint32_t) in_payload_data[1]);
     *out_action_id_index = in_payload_data[5];
     return 0;
+}
+
+
+uint8_t hd_host_file_encode(
+        unsigned char **out_protocol,
+        uint32_t *out_protocol_size,
+        uint8_t in_addr,
+        uint8_t type,
+        uint32_t file_size,
+        const unsigned char file_md5[16],
+        const char *file_name
+) {
+    // aa 5a 02 cb
+    // 1c 00 00 00
+    // 01
+    // 78 56 34 12
+    // f1 2a 28 42 d1 5c e4 2f 83 1d b8 87 8a e5 95 c2
+    // 61 62 63 64 65 66 67
+    // 18 48
+    unsigned char *out_payload;
+    uint32_t out_payload_size;
+    int ret = hd_host_file_encode_payload(&out_payload, &out_payload_size, type, file_size, file_md5, file_name);
+    if (ret) {
+        return ret;
+    }
+    ret = hd_camera_protocol_encode(
+            out_protocol,
+            out_protocol_size,
+            in_addr,
+            CMD_HD_PUSH_FILE,
+            out_payload_size,
+            out_payload
+    );
+    free(out_payload);
+    return ret;
+}
+
+uint8_t hd_host_file_encode_payload(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        uint8_t type,
+        uint32_t file_size,
+        const unsigned char file_md5[16],
+        const char *file_name
+) {
+
+    if (out_payload == NULL || out_payload_size == NULL) {
+        return 1;
+    }
+    unsigned long file_name_size = file_name == NULL ? 0 : strlen(file_name);
+
+    uint8_t payload_size = 1 + 4 + 16 + file_name_size;
+    LOGD("hd_host_file_encode_payload file_name         = %s\n",file_name);
+    LOGD("hd_host_file_encode_payload file_name_size    = %d\n",file_name_size);
+    LOGD("hd_host_file_encode_payload payload_size      = %d\n",payload_size);
+    uint8_t *payload = (unsigned char *) malloc(payload_size);
+    if (payload == NULL) {
+        return -1; // 内存分配失败
+    }
+    memset(payload, 0, payload_size);
+    payload[0] = type;
+    // 填充数据长度 (小端模式)
+    payload[1] = (file_size >> 0) & 0xFF;  // LSB
+    payload[2] = (file_size >> 8) & 0xFF;
+    payload[3] = (file_size >> 16) & 0xFF;
+    payload[4] = (file_size >> 24) & 0xFF; // MSB
+    for (int i = 0; i < 16; ++i) {
+        payload[5+i] = file_md5[i];
+    }
+
+    if (file_name_size > 0) {
+        for (int i = 0; i < file_name_size; ++i) {
+            payload[21+i] = file_name[i];
+        }
+    }
+    *out_payload = payload;
+    *out_payload_size = payload_size;
+
+    return 0;
+}
+
+// 从机解析主机请求
+uint8_t hd_slave_file_decode_payload(
+        uint8_t *type,
+        uint32_t *file_size,
+        unsigned char file_md5[16],
+        char file_name[2048],
+        const unsigned char *in_payload,
+        uint32_t in_payload_size
+) {
+    if (type == NULL || file_size==NULL || file_md5 == NULL || file_name == NULL) {
+        return -2;
+    }
+    if (in_payload == NULL || in_payload_size < 1 + 4 + 16) {
+        return 3;
+    }
+    if (DEBUG_PROTOCOL_CMD) {
+        hd_camera_protocol_print_buffer(in_payload, in_payload_size, "hd_slave_file_decode_payload");
+    }
+
+    *type = in_payload[0];
+    uint32_t size = (uint32_t) in_payload[1] |
+                    (uint32_t) in_payload[2] << 8 |
+                    (uint32_t) in_payload[3] << 16 |
+                    (uint32_t) in_payload[4] << 24;
+    *file_size = size;
+    for (int i = 0; i < 16; ++i) {
+        file_md5[i] = in_payload[5 + i];
+    }
+    uint32_t file_name_size = in_payload_size - 1 - 4 - 16;
+    LOGD("file_name_size          =   %d\n", file_name_size);
+    if (file_name_size > 0) {
+        for (int i = 0; i <file_name_size ; ++i) {
+            file_name[i] = in_payload[1+4+16+i];
+        }
+        file_name[file_name_size] = '\0';
+    }
+    LOGD("type          =   %d\n", *type);
+    LOGD("file_size     =   %d %02x\n", *file_size,*file_size);
+    return 0;
+}
+
+// 从机返回结果
+uint8_t hd_slave_file_encode_payload(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        uint8_t int_type,
+        uint8_t int_result,
+        uint32_t int_offset
+) {
+    if (out_payload == NULL || out_payload_size == NULL) {
+        return 1;
+    }
+
+    uint8_t payload_size = 1 + 1 + 4 ;
+    uint8_t *payload = (unsigned char *) malloc(payload_size);
+    if (payload == NULL) {
+        return -1; // 内存分配失败
+    }
+    memset(payload, 0, payload_size);
+    payload[0] = int_type;
+    payload[1] = int_result;
+    // 填充数据长度 (小端模式)
+    payload[2] = (int_offset >> 0) & 0xFF;  // LSB
+    payload[3] = (int_offset >> 8) & 0xFF;
+    payload[4] = (int_offset >> 16) & 0xFF;
+    payload[5] = (int_offset >> 24) & 0xFF; // MSB
+    *out_payload = payload;
+    *out_payload_size = payload_size;
+    return 0;
+}
+
+// 从机返回结果
+uint8_t hd_slave_file_encode(
+        unsigned char **out_protocol,
+        uint32_t *out_protocol_size,
+        uint8_t in_addr,
+        uint8_t int_type,
+        uint8_t int_result,
+        uint32_t int_offset
+){
+    unsigned char *out_payload;
+    uint32_t out_payload_size;
+    int ret;
+    ret = hd_slave_file_encode_payload(&out_payload,&out_payload_size,int_type,int_result,int_offset);
+    if (ret)return ret;
+    ret = hd_camera_protocol_encode(out_protocol,out_protocol_size,in_addr,CMD_HD_PUSH_FILE_SEND,out_payload_size,out_payload);
+    free(out_payload);
+    return ret;
 }

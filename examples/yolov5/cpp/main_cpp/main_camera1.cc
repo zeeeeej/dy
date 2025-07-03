@@ -87,7 +87,7 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.1";
+std::string app_version = "V1.0";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
@@ -206,6 +206,19 @@ void writeStringToFileAfterDelay(const std::string& file_path, const std::string
 
 int main(int argc, char **argv)
 {
+    double uptime_seconds = getUptimeSeconds();
+    if (uptime_seconds < 10) {
+        if (deleteFile("/userdata/watchdog.pid")) {
+        std::cout << "删除看门狗PID文件成功" << std::endl;
+        } else {
+            std::cout << "删除看门狗PID文件失败或文件不存在" << std::endl;
+        }
+    }
+
+    start_watchdog();
+    std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
+
+
     std::cout << "app_version:" << app_version << std::endl;
     const char* path = "/userdata/jpeg";
 	LOG_DEBUG("main begin\n");
@@ -263,7 +276,7 @@ int main(int argc, char **argv)
     ensure_path_exists(image_tmp_path);
     ensure_path_exists(images_dir_path);
 
-	hd_uart_init(addr_biu, images_dir_path, action_id_collect, on_event);
+	hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event);
 
     
 /*--------------陀螺仪检测并拍照------------------------------*/

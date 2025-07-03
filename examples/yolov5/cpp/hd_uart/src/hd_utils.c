@@ -4,6 +4,8 @@
 #include <stdarg.h>
 #include "hd_utils.h"
 #include <time.h>
+#include <dirent.h>  // 目录操作头文件
+#include <string.h>  // 用于 strcmp
 
 static HDLoggerLevel g_HDLoggerLevel = HD_LOGGER_LEVEL_INFO;
 
@@ -111,7 +113,7 @@ void hd_printf_buff(const unsigned char *buf, size_t buf_size, const char *tag, 
     if (full) {
         printf("\n");
     }
-    printf("[%s][v]", tag);
+    printf("[%s][%zu]", tag,size);
     for (int i = 0; i < size; ++i) {
 //        if (i > 0xff) {
 //            printf("%-1s%04x", "", buf[i]);
@@ -156,5 +158,38 @@ int hd_array_cmp(const unsigned char *a1, size_t len1,
     }
 
     return 0; // 长度和内容都相等
+}
+static void extract_filename(const char* full_name, char* name_only) {
+    const char* dot = strrchr(full_name, '.');  // 查找最后一个 '.' 的位置
+    if (dot != NULL) {
+        size_t length = dot - full_name;  // 计算主文件名长度
+        strncpy(name_only, full_name, length);  // 复制到新缓冲区
+        name_only[length] = '\0';  // 添加字符串结束符
+    } else {
+        strcpy(name_only, full_name);  // 如果没有扩展名，直接复制
+    }
+}
+
+int hd_find_model_name(const char* dir_path, char * model_version,const char * prefix) {
+    DIR* dir = opendir(dir_path);
+    if (!dir) {
+        perror("opendir failed");
+        return 1;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        // 跳过 "." 和 ".." 目录
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        if (strstr(entry->d_name, prefix) != NULL) {
+            extract_filename(entry->d_name,model_version);
+            return 0;
+        }
+    }
+
+    closedir(dir);  // 关闭目录
+    return 2;
 }
 

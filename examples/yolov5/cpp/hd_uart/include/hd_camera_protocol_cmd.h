@@ -23,10 +23,10 @@ extern "C" {
 #define CMD_QJY_PIC_PULL                0x09
 #define CMD_QJY_PIC_PULL_COMPLETED      0x0A
 #define CMD_OTA                         0x0B
-#define CMD_OTA_PUSH                    0x0C
+#define CMD_OTA_SEND                    0x0C
 #define CMD_DOOR_SIGNAL                 0x0D
 #define CMD_APP_UPGRADE                 0x1B
-#define CMD_APP_UPGRADE_PUSH            0x1C
+#define CMD_APP_UPGRADE_SEND            0x1C
 #define CMD_HD_PROPERTY_GET             0xC2
 #define CMD_HD_PROPERTY_SET             0xC3
 #define CMD_HD_CAMERA_SNAPSHOT          0xC6
@@ -35,6 +35,8 @@ extern "C" {
 #define CMD_HD_PIC_PULL                 0xC9
 #define CMD_HD_PIC_PULL_COMPLETED       0xCA
 #define CMD_HD_BROADCAST_ACTION_ID      0xCD
+#define CMD_HD_PUSH_FILE                0xCB
+#define CMD_HD_PUSH_FILE_SEND           0xCC
 
 
 
@@ -236,6 +238,16 @@ uint8_t hd_slave_property_get_encode(
  * @return
  */
 uint8_t hd_host_property_get_decode(
+        uint8_t *out_property_id,
+        uint8_t *out_result,
+        unsigned char **out_property_value,
+        uint32_t *out_property_value_size,
+        const unsigned char *in_payload_data,
+        uint32_t in_payload_data_size
+
+);
+
+uint8_t qjy_host_property_get_decode(
         uint8_t *out_property_id,
         uint8_t *out_result,
         unsigned char **out_property_value,
@@ -790,11 +802,14 @@ uint8_t hd_camera_protocol_cmd_property_camera_ota_resp(
  * @param data_len          0x000000000：发送完毕;0xFFFFFFFF:  终止OTA升级;其他：固件数据包长度。
  * @param data              固件数据包
  */
-uint8_t hd_camera_protocol_cmd_property_camera_ota_push_req(
-        uint8_t slave_addr,
-        uint32_t offset,
-        uint32_t data_len,
-        const unsigned char *data
+uint8_t
+hd_host_ota_push_encode(
+        unsigned char **protocol_data_out,
+        uint32_t *protocol_data_size_out,
+        uint8_t slave_addr_in,
+        uint32_t in_offset,
+        uint32_t in_read_len,
+        const unsigned char * data
 );
 
 
@@ -903,6 +918,61 @@ uint8_t hd_camera_protocol_cmd_property_camera_app_upgrade_push_resp(
         uint8_t *result
 );
 
+/* ********************* */
+/* <0xCB 发送文件通知（0xCB）> */
+/* ********************* */
+// 主机请求发送文件
+
+uint8_t hd_host_file_encode(
+        unsigned char **out_protocol,
+        uint32_t *out_protocol_size,
+        uint8_t in_addr,
+        uint8_t type,
+        uint32_t file_size,
+        const unsigned char file_md5[16],
+        const char * file_name
+);
+
+uint8_t hd_host_file_encode_payload(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        uint8_t type,
+        uint32_t file_size,
+        const unsigned char file_md5[16],
+        const char * file_name
+);
+
+// 从机解析主机请求
+uint8_t hd_slave_file_decode_payload(
+        uint8_t *type,
+        uint32_t *file_size,
+        unsigned char *file_md5,
+        char  file_name[2048],
+        const unsigned char *in_payload,
+        uint32_t in_payload_size
+);
+
+// 从机返回结果
+uint8_t hd_slave_file_encode_payload(
+        unsigned char **out_payload,
+        uint32_t *out_payload_size,
+        uint8_t int_type,
+        uint8_t int_result,
+        uint32_t int_offset
+);
+
+// 从机返回结果
+uint8_t hd_slave_file_encode(
+        unsigned char **out_protocol,
+        uint32_t *out_protocol_size,
+        uint8_t in_addr,
+        uint8_t int_type,
+        uint8_t int_result,
+        uint32_t int_offset
+);
+/* ********************* */
+/* <0xCC 发送文件（0xCC）> */
+/* ********************* */
 
 #ifdef __cplusplus
 }

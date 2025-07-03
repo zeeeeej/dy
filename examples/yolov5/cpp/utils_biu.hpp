@@ -154,5 +154,6 @@ bool deleteFile(const std::string& filepath);
 bool moveFile(const std::string& srcPath, const std::string& dstFolder);
 
 void start_watchdog();
+double getUptimeSeconds();
 
 #endif

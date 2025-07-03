@@ -36,6 +36,7 @@ typedef void* (*hd_on_event)(int  event_id,void * event_value,size_t event_value
 int hd_uart_init(
         uint8_t addr,
         const char *pic_dir_path,
+        const char *version,
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event
         );

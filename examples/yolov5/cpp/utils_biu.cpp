@@ -17,8 +17,40 @@
 #include <vector>
 
 
+double getUptimeSeconds() {
+    std::ifstream uptimeFile("/proc/uptime");
+    double uptimeSeconds = 0;
+    if (uptimeFile) {
+        uptimeFile >> uptimeSeconds;
+    }
+    return uptimeSeconds;
+}
+
+
+
+// 清理旧 watchdog 进程组
+void kill_old_watchdog() {
+    std::string pidPath = "/userdata/watchdog.pid";
+    if (std::filesystem::exists(pidPath)) {
+        std::ifstream pidFile(pidPath);
+        pid_t old_pid = 0;
+        pidFile >> old_pid;
+        pidFile.close();
+
+        if (old_pid > 0) {
+            pid_t pgid = getpgid(old_pid);
+            if (pgid > 0) {
+                std::cout << "[Watchdog] 杀掉旧进程组 PGID=" << pgid << std::endl;
+                kill(-pgid, SIGKILL);
+                std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            }
+        }
+    }
+}
+
+
 void start_watchdog() {
-    // 获取当前程序绝对路径
+    kill_old_watchdog();
     char exePath[1024] = {0};
     ssize_t len = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
     if (len == -1) {
@@ -28,41 +60,49 @@ void start_watchdog() {
     exePath[len] = '\0';
     std::string programPath = exePath;
 
-    // watchdog 脚本路径
+
+    {
+        std::ofstream pidFile("/userdata/main.pid");
+        pidFile << getpid();
+    }
+
+    // 写 watchdog.sh
     std::string watchdogPath = "/userdata/watchdog.sh";
-
-    std::string programName = std::filesystem::path(programPath).filename();
-
-    // 写入脚本内容
     std::ofstream script(watchdogPath);
     script << "#!/bin/sh\n";
     script << "echo $$ > /userdata/watchdog.pid\n";
     script << "while true; do\n";
-    script << "    if ! ps aux | grep -v grep | grep -F \"" << programName << "\" > /dev/null; then\n";
-    script << "        echo \"检测到程序挂了，重启中...\"\n";
-    script << "        " << programPath << " &\n";
+    script << "  if [ -f /userdata/main.pid ]; then\n";
+    script << "    pid=$(cat /userdata/main.pid)\n";
+    script << "    if ! kill -0 \"$pid\" 2>/dev/null; then\n";
+    script << "      echo \"检测到主程序挂了，重启中...\"\n";
+    script << "      setsid " << programPath << " &\n";  // 用setsid脱离watchdog进程组
+    script << "      echo $! > /userdata/main.pid\n";
     script << "    fi\n";
-    script << "    sleep 30\n";
+    script << "  else\n";
+    script << "    echo \"未找到主程序 PID，尝试启动...\"\n";
+    script << "    setsid " << programPath << " &\n";    // 用setsid脱离watchdog进程组
+    script << "    echo $! > /userdata/main.pid\n";
+    script << "  fi\n";
+    script << "  sleep 10\n";
     script << "done\n";
     script.close();
 
-    // 添加执行权限
+   
     std::string chmodCmd = "chmod +x " + watchdogPath;
     system(chmodCmd.c_str());
 
-    // fork + execl 启动 watchdog.sh
+    // fork启动watchdog进程
     pid_t pid = fork();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
     if (pid == 0) {
-    execl("/bin/sh", "sh", watchdogPath.c_str(), (char*)nullptr);
-    std::cerr << "watchdog 启动失败，errno=" << errno << " , 原因：" << strerror(errno) << std::endl;
-    exit(1);
+        setpgid(0, 0);  // 子进程独立进程组
+        execl("/bin/sh", "sh", watchdogPath.c_str(), (char*)nullptr);
+        std::cerr << "watchdog启动失败 errno=" << errno << " 原因：" << strerror(errno) << std::endl;
+        exit(1);
     }
 
-    // 父进程继续执行主程序
+    std::cout << "[Watchdog] 启动成功，PID=" << pid << std::endl;
 }
-
-
 
 
 

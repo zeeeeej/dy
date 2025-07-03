@@ -108,7 +108,7 @@ void setup_segv_handler() {
 
 
 
-std::string app_version = "V1.1";
+std::string app_version = "V1.0";
 int addr_biu = 2;
 int pic_id = 65;
 static uint8_t door_status = 2;  // 默认日志级别为INFO
@@ -254,15 +254,18 @@ void rkipc_get_opt(int argc, char *argv[]) {
 
 
 
-
-
-
-
 int main(int argc, char **argv)
 {
+    double uptime_seconds = getUptimeSeconds();
+    if (uptime_seconds < 10) {
+        if (deleteFile("/userdata/watchdog.pid")) {
+        std::cout << "删除看门狗PID文件成功" << std::endl;
+        } else {
+            std::cout << "删除看门狗PID文件失败或文件不存在" << std::endl;
+        }
+    }
 
-    // setup_segv_handler();
-    // start_watchdog();
+    start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
     std::cout << "app_version:" << app_version << std::endl;
@@ -359,7 +362,7 @@ int main(int argc, char **argv)
     ensure_path_exists(txt_dir);
     
 
-    hd_uart_init(addr_biu, crop_img_dirs.c_str(), action_id_collect, on_event);
+    hd_uart_init(addr_biu, crop_img_dirs.c_str(), app_version.c_str(), action_id_collect, on_event);
 
     std::string final_result;
 
