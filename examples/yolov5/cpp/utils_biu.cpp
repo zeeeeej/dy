@@ -17,6 +17,122 @@
 #include <vector>
 
 
+void start_watchdog() {
+    // 获取当前程序绝对路径
+    char exePath[1024] = {0};
+    ssize_t len = readlink("/proc/self/exe", exePath, sizeof(exePath) - 1);
+    if (len == -1) {
+        std::cerr << "无法获取当前程序路径" << std::endl;
+        return;
+    }
+    exePath[len] = '\0';
+    std::string programPath = exePath;
+
+    // watchdog 脚本路径
+    std::string watchdogPath = "/userdata/watchdog.sh";
+
+    std::string programName = std::filesystem::path(programPath).filename();
+
+    // 写入脚本内容
+    std::ofstream script(watchdogPath);
+    script << "#!/bin/sh\n";
+    script << "echo $$ > /userdata/watchdog.pid\n";
+    script << "while true; do\n";
+    script << "    if ! ps aux | grep -v grep | grep -F \"" << programName << "\" > /dev/null; then\n";
+    script << "        echo \"检测到程序挂了，重启中...\"\n";
+    script << "        " << programPath << " &\n";
+    script << "    fi\n";
+    script << "    sleep 30\n";
+    script << "done\n";
+    script.close();
+
+    // 添加执行权限
+    std::string chmodCmd = "chmod +x " + watchdogPath;
+    system(chmodCmd.c_str());
+
+    // fork + execl 启动 watchdog.sh
+    pid_t pid = fork();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    if (pid == 0) {
+    execl("/bin/sh", "sh", watchdogPath.c_str(), (char*)nullptr);
+    std::cerr << "watchdog 启动失败，errno=" << errno << " , 原因：" << strerror(errno) << std::endl;
+    exit(1);
+    }
+
+    // 父进程继续执行主程序
+}
+
+
+
+
+
+bool moveFile(const std::string& srcPath, const std::string& dstFolder) {
+    namespace fs = std::filesystem;
+
+    if (!std::filesystem::exists(srcPath)) {
+        std::cerr << "源文件不存在：" << srcPath << std::endl;
+        return false;
+    }
+
+    if (!std::filesystem::exists(dstFolder)) {
+        std::cerr << "目标文件夹不存在：" << dstFolder << std::endl;
+        return false;
+    }
+
+    std::filesystem::path src(srcPath);
+    std::filesystem::path dst = std::filesystem::path(dstFolder) / src.filename();
+
+    std::error_code ec;
+    std::filesystem::rename(src, dst, ec);
+    if (ec) {
+        // 如果是跨设备错误，做复制+删除
+        if (ec == std::errc::cross_device_link) {
+            // 复制文件
+            std::filesystem::copy(src, dst, std::filesystem::copy_options::overwrite_existing, ec);
+            if (ec) {
+                std::cerr << "复制文件失败：" << ec.message() << std::endl;
+                return false;
+            }
+            // 删除源文件
+            std::filesystem::remove(src, ec);
+            if (ec) {
+                std::cerr << "删除源文件失败：" << ec.message() << std::endl;
+                return false;
+            }
+            return true;
+        } else {
+            std::cerr << "移动失败：" << ec.message() << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+
+
+bool deleteFile(const std::string& filepath) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    bool result = fs::remove(filepath, ec);  // 删除文件，失败不会抛异常
+    if (ec) {
+        std::cerr << "删除失败：" << ec.message() << std::endl;
+    }
+    return result;
+}
+
+
+std::string findRknnFile(const std::string& folderPath) {
+    for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".rknn") {
+            return std::filesystem::absolute(entry.path()).string();  
+        }
+    }
+    return "";  
+}
+
+
 
 bool compressImageToTargetSize(const std::string& inputPath,
                                const std::string& outputPath,

@@ -261,7 +261,9 @@ void rkipc_get_opt(int argc, char *argv[]) {
 int main(int argc, char **argv)
 {
 
-    setup_segv_handler();
+    // setup_segv_handler();
+    // start_watchdog();
+    std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
     std::cout << "app_version:" << app_version << std::endl;
     const char* path = "/userdata/jpeg";
@@ -306,9 +308,33 @@ int main(int argc, char **argv)
 	qjy_photo_init();
 	heat_pwm_init();
 
+   
+    std::string model_path_std;
+    
+    std::string userdata_rknn_path_new = findRknnFile("/userdata");
+    std::string userdata_rknn_path_old = findRknnFile("/oem/usr/share");
+
+    if (!userdata_rknn_path_new.empty()){
+        if (deleteFile(userdata_rknn_path_old)){
+            std::cout << "权重文件已删除" << std::endl;
+        } else {
+        std::cout << "文件删除失败或文件不存在" << std::endl;
+        }
+        
+        if (moveFile(userdata_rknn_path_new, "/oem/usr/share/")) {
+            std::cout << "移动成功" << std::endl;
+            model_path_std = findRknnFile("/oem/usr/share");
+        } else {
+            std::cerr << "移动失败" << std::endl;
+        }
+    } else {
+        model_path_std = userdata_rknn_path_old;
+    }
+    const char* model_path = model_path_std.c_str();
+
 
     
-    const char *model_path = "/oem/usr/share/one_category_full.rknn";
+    // const char *model_path = "/oem/usr/share/one_category_full.rknn";
     
 /*--------------判断图片路径是否存在并创建---------------------*/
     const char *image_tmp_path = "/userdata/tmp_images_path";

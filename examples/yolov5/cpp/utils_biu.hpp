@@ -147,4 +147,12 @@ bool compressImageToTargetSize(const std::string& inputPath,
                                int minQuality = 10,
                                int maxQuality = 95);
 
+std::string findRknnFile(const std::string& folderPath);
+
+bool deleteFile(const std::string& filepath);
+
+bool moveFile(const std::string& srcPath, const std::string& dstFolder);
+
+void start_watchdog();
+
 #endif

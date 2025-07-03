@@ -6,5 +6,5 @@ C_DEFINES = -DLIBRGA_IM2D_HANDLE -DRV1106_1103
 
 C_INCLUDES = -I/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/../../../3rdparty/allocator/dma -I/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/utils
 
-C_FLAGS =  -g -O0 -g
+C_FLAGS = -O3 -DNDEBUG
 

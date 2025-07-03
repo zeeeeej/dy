@@ -4,11 +4,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Debug)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-set(CMAKE_EXE_LINKER_FLAGS "-rdynamic")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
+# set(CMAKE_EXE_LINKER_FLAGS "-rdynamic")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 
 
 # set(CMAKE_BUILD_TYPE Debug)
@@ -18,7 +18,7 @@ set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibc
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-project(ipc_app_0702_camera1)
+project(ipc_app_0703_camera2)
 
 if (ENABLE_ASAN)
 	message(STATUS "BUILD WITH ADDRESS SANITIZER")

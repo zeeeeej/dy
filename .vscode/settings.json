@@ -60,6 +60,7 @@
         "thread": "cpp",
         "cinttypes": "cpp",
         "typeinfo": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "hd_utils.h": "c"
     }
 }
