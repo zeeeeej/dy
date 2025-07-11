@@ -1,12 +1,12 @@
-#ifndef __HD_CAMERA_SHELL__
-#define __HD_CAMERA_SHELL__
+#ifndef H__HD_CAMERA_SHELL__H
+#define H__HD_CAMERA_SHELL__H
+
+#include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <stddef.h>
 
 #define MAX_COMMAND_LENGTH 1024
 #define MAX_RESULT_LENGTH 10240
@@ -34,4 +34,4 @@ void hd_camera_shell_deinit();
 }
 #endif
 
-#endif // __HD_CAMERA_SHELL__
+#endif // H__HD_CAMERA_SHELL__H

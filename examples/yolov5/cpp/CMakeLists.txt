@@ -10,6 +10,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0")
 
+# set(CMAKE_CXX_FLAGS_RELEASE "-O2 -fno-rtti -fno-exceptions -DNDEBUG")
+# set(CMAKE_EXE_LINKER_FLAGS "-s")
+
+# set(CMAKE_C_FLAGS_RELEASE "-Os -ffunction-sections -fdata-sections")
+# set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections")
+
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_C_FLAGS_RELEASE "-Os -ffunction-sections -fdata-sections")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s")
+
+
 
 # set(CMAKE_BUILD_TYPE Debug)
 
@@ -18,7 +29,7 @@ set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibc
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-project(ipc_app_0703_camera2)
+project(ipc_app_0710_camera2)
 
 if (ENABLE_ASAN)
 	message(STATUS "BUILD WITH ADDRESS SANITIZER")
@@ -53,7 +64,7 @@ add_executable(${PROJECT_NAME}
     postprocess.cc
     utils_biu.cpp
     ${rknpu_yolov5_file}
-    # ${urat_files}
+    ${urat_files}
 )
 
 set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)
@@ -125,7 +136,7 @@ target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils im
     stdc++ 
     /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librksysutils.so
     /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libapp_shared.so
-    /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
+    # /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
   
     /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
     dl

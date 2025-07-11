@@ -1,12 +1,12 @@
-#ifndef __HD_UTILS__
-#define __HD_UTILS__
+#ifndef H__HD_UTILS__H
+#define H__HD_UTILS__H
+
+#include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <string.h>
 
 #define TAG "HDUART"
 
@@ -58,9 +58,12 @@ int hd_array_cmp(const unsigned char *a1, size_t len1,
  */
 int hd_find_model_name(const char* dir_path, char * model_version,const char * prefix);
 
+int create_directory_if_not_exists(const char *path);
+
+int delete_file_if_exists(const char *filename);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __HD_UTILS__
+#endif // H__HD_UTILS__H

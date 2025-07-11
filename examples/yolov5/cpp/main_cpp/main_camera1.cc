@@ -207,7 +207,7 @@ void writeStringToFileAfterDelay(const std::string& file_path, const std::string
 int main(int argc, char **argv)
 {
     double uptime_seconds = getUptimeSeconds();
-    if (uptime_seconds < 10) {
+    if (uptime_seconds < 15) {
         if (deleteFile("/userdata/watchdog.pid")) {
         std::cout << "删除看门狗PID文件成功" << std::endl;
         } else {
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
         }
     }
 
-    start_watchdog();
+    // start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
 
@@ -281,8 +281,8 @@ int main(int argc, char **argv)
     
 /*--------------陀螺仪检测并拍照------------------------------*/
 
-    ThreadSafeSet<std::string> photo_names(10);
-    ThreadSafeSet<std::string> action_id_record(10);
+    ThreadSafeSet<std::string> photo_names(20);
+    ThreadSafeSet<std::string> action_id_record(20);
 
     bool door_closed_reported = false;
 
@@ -325,16 +325,16 @@ int main(int argc, char **argv)
                 pic_id = (pic_id + 1) % 0x41;
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
+                oss << "_0_" << std::to_string(last_reported_angle) <<"_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
                 std::string image_biu_name_path = oss.str();
-                std::string image_biu_name_path_change = "gai_1_" + std::to_string(time_now) + "_" + std::to_string(pic_id) + ".jpg";
+                std::string image_biu_name_path_change = "gai1_0_" + std::to_string(last_reported_angle) + "_" + std::to_string(time_now) + "_" + std::to_string(pic_id) + ".jpg";
 
                 
                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {
                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
                     std::string image_biu_path_change = std::string(image_tmp_path) + "/" + image_biu_name_path_change;
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                    if (compressImageToTargetSize(image_biu_path, image_biu_path_change, 380)) {
+                    if (compressImageToTargetSize(image_biu_path, image_biu_path_change, 300)) {
                         photo_names.insert(image_biu_path_change);
                         std::filesystem::remove(image_biu_path); 
                     } else {
@@ -371,7 +371,7 @@ int main(int argc, char **argv)
 
 
     while (g_main_run_) {
-		delete_oldest_folders(images_dir_path, 10);
+		delete_oldest_folders(images_dir_path, 50);
 		std::this_thread::sleep_for(std::chrono::minutes(1));
 	}
 

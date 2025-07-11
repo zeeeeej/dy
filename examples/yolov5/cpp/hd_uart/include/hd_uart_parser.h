@@ -1,5 +1,5 @@
-#ifndef __HD_UART_PARSER__
-#define __HD_UART_PARSER__
+#ifndef H__HD_UART_PARSER__H
+#define H__HD_UART_PARSER__H
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,4 +58,4 @@ char * hd_uart_version();
 }
 #endif
 
-#endif // __HD_UART_PARSER__
+#endif // H__HD_UART_PARSER__H

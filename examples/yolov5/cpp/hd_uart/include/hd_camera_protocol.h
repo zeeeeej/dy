@@ -1,13 +1,13 @@
 
-#ifndef __HD_CAMERA_PROTOCOL__
-#define __HD_CAMERA_PROTOCOL__
+#ifndef H__HD_CAMERA_PROTOCOL__H
+#define H__HD_CAMERA_PROTOCOL__H
+
+#include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <stdlib.h>
 
 #define DEBUG         0  // 1:打开 0：关闭
 #define CONTEXT       0  // 1:mac 0:板子
@@ -47,4 +47,4 @@ uint8_t hd_camera_protocol_encode(
 }
 #endif
 
-#endif // __HD_CAMERA_PROTOCOL__
+#endif // H__HD_CAMERA_PROTOCOL__H

@@ -1,12 +1,12 @@
 
-#ifndef __HD_CAMERA_PROTOCOL_PROPERTY__
-#define __HD_CAMERA_PROTOCOL_PROPERTY__
+#ifndef H__HD_CAMERA_PROTOCOL_PROPERTY__H
+#define H__HD_CAMERA_PROTOCOL_PROPERTY__H
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
 
 // property ids
 #define PROPERTY_ID_SLAVE_ADDR                  0x01
@@ -89,7 +89,7 @@ uint8_t hd_slave_property_set_push_decode(
 }
 #endif
 
-#endif // __HD_CAMERA_PROTOCOL_PROPERTY__
+#endif // H__HD_CAMERA_PROTOCOL_PROPERTY__H
 
 
 

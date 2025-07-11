@@ -43,10 +43,12 @@ void hd_queue_destroy(HDBlockingQueue *queue) {
 
 // 向队列添加元素（阻塞直到有空间）
 void hd_queue_put(HDBlockingQueue *queue, void *item) {
+//    printf("[queue] hd_queue_put (%d)%p \n",queue->size,item);
     pthread_mutex_lock(&queue->mutex);
 
     // 如果队列已满，等待直到有空间
     while (queue->size == queue->capacity) {
+        printf("[queue] hd_queue_put full.\n");
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
 
@@ -63,10 +65,12 @@ void hd_queue_put(HDBlockingQueue *queue, void *item) {
 
 // 从队列取出元素（阻塞直到有元素）
 void* hd_queue_take(HDBlockingQueue *queue) {
+//    printf("[queue] hd_queue_take (%d) \n",queue->size);
     pthread_mutex_lock(&queue->mutex);
 
     // 如果队列为空，等待直到有元素
     while (queue->size == 0) {
+//        printf("[queue] hd_queue_take empty.\n");
         pthread_cond_wait(&queue->not_empty, &queue->mutex);
     }
 
@@ -143,3 +147,98 @@ int hd_queue_size(HDBlockingQueue *queue) {
 //    destroy_queue(queue);
 //    return 0;
 //}
+
+
+// ###
+
+// 初始化队列
+HDBlockingQueueUint8* hd_queue_create_uint8(int capacity) {
+    HDBlockingQueueUint8 *queue = (HDBlockingQueueUint8*)malloc(sizeof(HDBlockingQueueUint8));
+    if (!queue) {
+        perror("Failed to allocate memory for queue");
+        return NULL;
+    }
+
+    queue->items = (uint8_t *)malloc(sizeof(uint8_t) * capacity);
+    if (!queue->items) {
+        perror("Failed to allocate memory for items");
+        free(queue);
+        return NULL;
+    }
+
+    queue->capacity = capacity;
+    queue->size = 0;
+    queue->front = 0;
+    queue->rear = -1;
+
+    pthread_mutex_init(&queue->mutex, NULL);
+    pthread_cond_init(&queue->not_empty, NULL);
+    pthread_cond_init(&queue->not_full, NULL);
+
+    return queue;
+}
+
+// 销毁队列
+void hd_queue_destroy_uint8(HDBlockingQueueUint8 *queue) {
+    if (queue) {
+        pthread_mutex_destroy(&queue->mutex);
+        pthread_cond_destroy(&queue->not_empty);
+        pthread_cond_destroy(&queue->not_full);
+        free(queue->items);
+        free(queue);
+    }
+}
+
+// 向队列添加元素（阻塞直到有空间）
+void hd_queue_put_uint8(HDBlockingQueueUint8 *queue, uint8_t item) {
+//    printf("[queue] hd_queue_put (%d)%p \n",queue->size,item);
+    pthread_mutex_lock(&queue->mutex);
+
+    // 如果队列已满，等待直到有空间
+    while (queue->size == queue->capacity) {
+        printf("[queue] hd_queue_put full.\n");
+        pthread_cond_wait(&queue->not_full, &queue->mutex);
+    }
+
+    // 添加元素
+    queue->rear = (queue->rear + 1) % queue->capacity;
+    queue->items[queue->rear] = item;
+    queue->size++;
+
+    // 通知可能正在等待的消费者
+    pthread_cond_signal(&queue->not_empty);
+
+    pthread_mutex_unlock(&queue->mutex);
+}
+
+// 从队列取出元素（阻塞直到有元素）
+uint8_t  hd_queue_take_uint8(HDBlockingQueueUint8 *queue) {
+//    printf("[queue] hd_queue_take (%d) \n",queue->size);
+    pthread_mutex_lock(&queue->mutex);
+
+    // 如果队列为空，等待直到有元素
+    while (queue->size == 0) {
+//        printf("[queue] hd_queue_take empty.\n");
+        pthread_cond_wait(&queue->not_empty, &queue->mutex);
+    }
+
+    // 取出元素
+    uint8_t item = queue->items[queue->front];
+    queue->front = (queue->front + 1) % queue->capacity;
+    queue->size--;
+
+    // 通知可能正在等待的生产者
+    pthread_cond_signal(&queue->not_full);
+
+    pthread_mutex_unlock(&queue->mutex);
+
+    return item;
+}
+
+// 获取队列当前大小
+int hd_queue_size_uint8(HDBlockingQueueUint8 *queue) {
+    pthread_mutex_lock(&queue->mutex);
+    int size = queue->size;
+    pthread_mutex_unlock(&queue->mutex);
+    return size;
+}

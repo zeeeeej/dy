@@ -1931,15 +1931,15 @@ uint8_t hd_slave_file_decode_payload(
         file_md5[i] = in_payload[5 + i];
     }
     uint32_t file_name_size = in_payload_size - 1 - 4 - 16;
-    LOGD("file_name_size          =   %d\n", file_name_size);
+//    LOGD("file_name_size          =   %d\n", file_name_size);
     if (file_name_size > 0) {
         for (int i = 0; i <file_name_size ; ++i) {
             file_name[i] = in_payload[1+4+16+i];
         }
         file_name[file_name_size] = '\0';
     }
-    LOGD("type          =   %d\n", *type);
-    LOGD("file_size     =   %d %02x\n", *file_size,*file_size);
+//    LOGD("type          =   %d\n", *type);
+//    LOGD("file_size     =   %d %02x\n", *file_size,*file_size);
     return 0;
 }
 

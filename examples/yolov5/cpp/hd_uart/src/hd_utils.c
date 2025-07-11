@@ -6,6 +6,8 @@
 #include <time.h>
 #include <dirent.h>  // 目录操作头文件
 #include <string.h>  // 用于 strcmp
+#include <sys/stat.h>
+#include <errno.h>
 
 static HDLoggerLevel g_HDLoggerLevel = HD_LOGGER_LEVEL_INFO;
 
@@ -23,8 +25,8 @@ void hd_logger_print(HDLoggerLevel level, const char *tag, const char *msg, ...)
     if (level < g_HDLoggerLevel) {
         return;
     }
-    if (tag != NULL){
-        printf("[%s]",tag);
+    if (tag != NULL) {
+        printf("[%s]", tag);
     }
 
     va_list args;
@@ -113,12 +115,12 @@ void hd_printf_buff(const unsigned char *buf, size_t buf_size, const char *tag, 
     if (full) {
         printf("\n");
     }
-    printf("[%s][%zu]", tag,size);
+    printf("[%s][%zu]", tag, size);
     for (int i = 0; i < size; ++i) {
 //        if (i > 0xff) {
 //            printf("%-1s%04x", "", buf[i]);
 //        } else {
-            printf("%-1s%02x", "", buf[i]);
+        printf("%-1s%02x", "", buf[i]);
 //        }
     }
     printf("\n");
@@ -139,7 +141,7 @@ void hd_sleep_ms(uint32_t milliseconds) {
 }
 
 int hd_array_cmp(const unsigned char *a1, size_t len1,
-              const unsigned char *a2, size_t len2) {
+                 const unsigned char *a2, size_t len2) {
     // 检查指针有效性
     if (a1 == NULL || a2 == NULL) {
         return 1; // NULL指针与任何数组都不相等
@@ -159,8 +161,9 @@ int hd_array_cmp(const unsigned char *a1, size_t len1,
 
     return 0; // 长度和内容都相等
 }
-static void extract_filename(const char* full_name, char* name_only) {
-    const char* dot = strrchr(full_name, '.');  // 查找最后一个 '.' 的位置
+
+static void extract_filename(const char *full_name, char *name_only) {
+    const char *dot = strrchr(full_name, '.');  // 查找最后一个 '.' 的位置
     if (dot != NULL) {
         size_t length = dot - full_name;  // 计算主文件名长度
         strncpy(name_only, full_name, length);  // 复制到新缓冲区
@@ -170,26 +173,64 @@ static void extract_filename(const char* full_name, char* name_only) {
     }
 }
 
-int hd_find_model_name(const char* dir_path, char * model_version,const char * prefix) {
-    DIR* dir = opendir(dir_path);
+int hd_find_model_name(const char *dir_path, char *model_version, const char *prefix) {
+    LOGI("%s %s %s", dir_path, model_version, prefix);
+    DIR *dir = opendir(dir_path);
     if (!dir) {
         perror("opendir failed");
         return 1;
     }
 
-    struct dirent* entry;
+    struct dirent *entry;
     while ((entry = readdir(dir)) != NULL) {
         // 跳过 "." 和 ".." 目录
         if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
         }
         if (strstr(entry->d_name, prefix) != NULL) {
-            extract_filename(entry->d_name,model_version);
+            extract_filename(entry->d_name, model_version);
             return 0;
         }
     }
 
     closedir(dir);  // 关闭目录
     return 2;
+}
+
+// 创建目录（如果不存在）
+int create_directory_if_not_exists(const char *path) {
+    char *dir_path = strdup(path);
+    char *p = strrchr(dir_path, '/');
+
+    if (p != NULL) {
+        *p = '\0'; // 截断文件名，只保留目录路径
+
+        // 检查目录是否存在
+        struct stat st;
+        if (stat(dir_path, &st) != 0) {
+            // 目录不存在，尝试创建
+            if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+                free(dir_path);
+                return -1; // 创建失败
+            }
+        }
+    }
+
+    free(dir_path);
+    return 0;
+}
+
+ int delete_file_if_exists(const char *filename) {
+    if (remove(filename) == 0) {
+        printf("文件 %s 已删除\n", filename);
+        return 0; // 成功
+    } else {
+        if (errno == ENOENT) {
+            printf("文件 %s 不存在\n", filename);
+        } else {
+            perror("删除文件失败");
+        }
+        return -1; // 失败
+    }
 }
 

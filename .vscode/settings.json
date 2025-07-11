@@ -61,6 +61,7 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "chrono": "cpp",
-        "hd_utils.h": "c"
+        "hd_utils.h": "c",
+        "hd_camera_ota.h": "c"
     }
 }

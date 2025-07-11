@@ -1,13 +1,13 @@
 
-#ifndef __HD_CAMERA_PROTOCOL_CMD__
-#define __HD_CAMERA_PROTOCOL_CMD__
+#ifndef H__HD_CAMERA_PROTOCOL_CMD__H
+#define H__HD_CAMERA_PROTOCOL_CMD__H
+
+#include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <stdint.h>
-#include <string.h>
 
 #define HEARTBEAT_INTERVAL              5           // 单位:秒
 
@@ -978,4 +978,4 @@ uint8_t hd_slave_file_encode(
 }
 #endif
 
-#endif // __HD_CAMERA_PROTOCOL_CMD__
+#endif // H__HD_CAMERA_PROTOCOL_CMD__H

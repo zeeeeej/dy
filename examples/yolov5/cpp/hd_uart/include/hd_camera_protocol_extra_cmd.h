@@ -1,16 +1,15 @@
 
-#ifndef __HD_CAMERA_PROTOCOL_EXTRA_CMD__
-#define __HD_CAMERA_PROTOCOL_EXTRA_CMD__
+#ifndef H__HD_CAMERA_PROTOCOL_EXTRA_CMD__H
+#define H__HD_CAMERA_PROTOCOL_EXTRA_CMD__H
+
+#include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <string.h>
-
 #include "hd_camera_protocol.h"
-
 
 #define CMD_HD_EXTRA_SHELL              0xF1
 #define CMD_HD_EXTRA_PULL               0xF2
@@ -150,4 +149,4 @@ uint8_t hd_slave_pull_encode(
 }
 #endif
 
-#endif // __HD_CAMERA_PROTOCOL_EXTRA_CMD__
+#endif // H__HD_CAMERA_PROTOCOL_EXTRA_CMD__H

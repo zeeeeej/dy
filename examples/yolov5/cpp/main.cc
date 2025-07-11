@@ -257,15 +257,28 @@ void rkipc_get_opt(int argc, char *argv[]) {
 int main(int argc, char **argv)
 {
     double uptime_seconds = getUptimeSeconds();
-    if (uptime_seconds < 10) {
+    if (uptime_seconds < 15) {
         if (deleteFile("/userdata/watchdog.pid")) {
         std::cout << "删除看门狗PID文件成功" << std::endl;
         } else {
             std::cout << "删除看门狗PID文件失败或文件不存在" << std::endl;
         }
     }
+    // setup_segv_handler();
+    // if (deleteFile("/userdata/main.pid")) {
+    //     std::cout << "删除主程序PID文件成功" << std::endl;
+    // } else {
+    //     std::cout << "删除主程序PID文件失败或文件不存在" << std::endl;
+    // }
 
-    start_watchdog();
+    // if (deleteFile("/userdata/watchdog.pid")) {
+    //     std::cout << "删除看门狗PID文件成功" << std::endl;
+    // } else {
+    //     std::cout << "删除看门狗PID文件失败或文件不存在" << std::endl;
+    // }
+
+
+    // start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
     std::cout << "app_version:" << app_version << std::endl;
@@ -436,7 +449,7 @@ int main(int argc, char **argv)
 
                 oss << std::setfill('0') << std::setw(3) << millis.count();  
                 // oss << "_" << "2" << "_" << time_now << "_" << pic_id << ".jpg";
-                oss << "_" << "2" << "_" << time_now << ".jpg";
+                oss << "_0_" << std::to_string(last_reported_angle) <<"_" << "2" << "_" << time_now << ".jpg";
                 std::string image_biu_name_path = oss.str();
 
                 
