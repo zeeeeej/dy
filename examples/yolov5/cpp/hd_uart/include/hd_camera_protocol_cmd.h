@@ -595,12 +595,16 @@ qjy_host_delete_pic_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
-        uint8_t in_pic_id
+        uint8_t in_pic_id,
+        uint8_t in_action_id_timestamp,
+        uint8_t in_action_id_index
 );
 
 uint8_t
 hd_slave_delete_pic_decode(
         uint8_t *out_pic_id,
+        uint32_t *out_action_id_timestamp,
+        uint8_t *out_action_id_index,
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 );

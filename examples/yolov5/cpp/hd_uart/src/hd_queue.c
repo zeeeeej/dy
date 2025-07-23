@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "hd_queue.h"
+#include "hd_c_log.h"
 
 // 初始化队列
 HDBlockingQueue* hd_queue_create(int capacity) {
@@ -48,7 +49,7 @@ void hd_queue_put(HDBlockingQueue *queue, void *item) {
 
     // 如果队列已满，等待直到有空间
     while (queue->size == queue->capacity) {
-        printf("[queue] hd_queue_put full.\n");
+        log_warn("[queue] hd_queue_put full.\n");
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
 
@@ -196,7 +197,7 @@ void hd_queue_put_uint8(HDBlockingQueueUint8 *queue, uint8_t item) {
 
     // 如果队列已满，等待直到有空间
     while (queue->size == queue->capacity) {
-        printf("[queue] hd_queue_put full.\n");
+        log_warn("[queue] hd_queue_put full.\n");
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
 

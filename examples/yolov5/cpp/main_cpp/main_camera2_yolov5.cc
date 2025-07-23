@@ -187,9 +187,10 @@ void action_id_collect(uint8_t status, const char *action_id){
         std::ofstream outfile(mydata::action_id_txt_name); 
         if (!outfile.is_open()) return;
         outfile << action_id << std::endl;
-
+    } else if (status == 0)
+    {
+        restore_sensor();
     }
-    
 }
 
 
@@ -278,7 +279,7 @@ int main(int argc, char **argv)
     // }
 
 
-    // start_watchdog();
+    start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
     std::cout << "app_version:" << app_version << std::endl;
@@ -321,6 +322,7 @@ int main(int argc, char **argv)
 	
     qjy_uart_init(&func, addr_biu);
 	gsensor_init(1);
+    restore_sensor();
 	qjy_photo_init();
 	heat_pwm_init();
 
@@ -458,7 +460,7 @@ int main(int argc, char **argv)
                     photo_names.insert(image_biu_path);
                 };
 
-                trim_folder_images(image_tmp_path, 20); // 保持临时图片目录最多10张图片
+                trim_folder_images(image_tmp_path, 10); // 保持临时图片目录最多10张图片
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 last_reported_angle = 1;   
@@ -519,6 +521,10 @@ int main(int argc, char **argv)
         std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
         resize_images_in_folder(action_id_path_biu, 960);
         std::vector<std::string> frames = get_image_paths(action_id_path_biu);
+    
+
+
+       
 
 /*--------------事件id检测的文件夹------------------------------*/
         std::string txt1_name_path;

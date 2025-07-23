@@ -3,9 +3,10 @@
 #include <string.h>
 #include "hd_utils.h"
 #include "hd_camera_protocol.h"
+#include "hd_c_log.h"
 
 static void hd_camera_protocol_print_buffer(const unsigned char *buf, size_t len, const char *tag) {
-    hd_printf_buff(buf,len,tag,0);
+    hd_printf_buff(buf, len, tag, 0);
 }
 
 static const uint16_t ccitt_table[256] = {
@@ -43,8 +44,7 @@ static const uint16_t ccitt_table[256] = {
         0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
- uint16_t hd_crc16(const uint8_t *data, uint32_t length)
-{
+uint16_t hd_crc16(const uint8_t *data, uint32_t length) {
     uint16_t crc = 0;
 
     while (length-- > 0)
@@ -53,13 +53,32 @@ static const uint16_t ccitt_table[256] = {
     return crc;
 }
 
+uint8_t hd_camera_protocol_addr(
+        uint8_t *out_addr,
+        const unsigned char *in_recv_data,
+        uint32_t in_recv_data_size){
+    if (in_recv_data_size < 10) {
+        return -1; // 数据长度不足
+    }
+
+    // 检查帧头
+    if (in_recv_data[0] != PROTOCOL_HEADER_1 || in_recv_data[1] != PROTOCOL_HEADER_0) {
+        log_debug("[uart]recv_data[0][1]:%02x,%02x\n", in_recv_data[0], in_recv_data[1]);
+        return -2; // 帧头错误
+    }
+
+    // 获取从机地址
+    *out_addr = (uint8_t) in_recv_data[2];
+    return 0;
+}
+
 uint8_t hd_camera_protocol_decode(
         const unsigned char *recv_data_in,
         uint32_t recv_data_size_in,
-         uint8_t *  slave_addr_out,
-         uint8_t *  cmd_out,
-         uint32_t *  payload_data_size_out,
-         unsigned char **  payload_data_out
+        uint8_t *slave_addr_out,
+        uint8_t *cmd_out,
+        uint32_t *payload_data_size_out,
+        unsigned char **payload_data_out
 ) {
     if (DEBUG) {
         hd_camera_protocol_print_buffer(recv_data_in, recv_data_size_in, "decode");
@@ -72,12 +91,12 @@ uint8_t hd_camera_protocol_decode(
 
     // 检查帧头
     if (recv_data_in[0] != PROTOCOL_HEADER_1 || recv_data_in[1] != PROTOCOL_HEADER_0) {
-        LOGD("[uart]recv_data[0][1]:%02x,%02x\n", recv_data_in[0], recv_data_in[1]);
+        log_debug("[uart]recv_data[0][1]:%02x,%02x\n", recv_data_in[0], recv_data_in[1]);
         return -2; // 帧头错误
     }
 
     // 获取从机地址
-    *slave_addr_out = (uint8_t)recv_data_in[2];
+    *slave_addr_out = (uint8_t) recv_data_in[2];
 
     // 获取命令
     *cmd_out = recv_data_in[3];
@@ -92,8 +111,14 @@ uint8_t hd_camera_protocol_decode(
     }
 
     *payload_data_size_out = length;
+
     if (length > 0) {
-        *payload_data_out = (unsigned char *)&recv_data_in[8];
+//        unsigned char *tmp = malloc(length);
+//        for (int i = 0; i < length; ++i) {
+//            tmp[i] = recv_data_in[8 + i];
+//        }
+//        *payload_data_out = tmp;
+        *payload_data_out = (unsigned char *) &recv_data_in[8];
     } else {
         *payload_data_out = NULL;
     }
@@ -102,12 +127,12 @@ uint8_t hd_camera_protocol_decode(
     uint16_t calculated_crc = hd_crc16(recv_data_in, 8 + length);
 
     if (received_crc != calculated_crc) {
-        LOGE("%02x vs %02x \n", received_crc, calculated_crc);
+        log_warn("%02x vs %02x \n", received_crc, calculated_crc);
         return -5; // CRC校验失败
     }
-    if (DEBUG){
-        LOGD("->cmd = %u \n",*cmd_out);
-        LOGD("->slave_addr = %u \n",*slave_addr_out);
+    if (DEBUG) {
+        log_debug("->cmd = %u \n", *cmd_out);
+        log_debug("->slave_addr = %u \n", *slave_addr_out);
     }
     return 0; // 解析成功
 }
@@ -153,8 +178,8 @@ uint8_t hd_camera_protocol_encode(
 
     // 计算CRC (覆盖: 帧头到payload)
     uint16_t crc = hd_crc16(buffer, fixed_header_size + payload_data_size_in);
-    if (DEBUG){
-        LOGD("crc = %02x \n", crc);
+    if (DEBUG) {
+        log_debug("crc = %02x \n", crc);
     }
 
     // 填充CRC (小端模式)

@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-#define  EVENT_SNAPSHOT                     0x01
-#define  EVENT_DEBUG_WRITE                  0x02
+#define  EVENT_HD_SNAPSHOT                  0x01
+#define  EVENT_HD_DELETE_ALL_FILE           0x02
 
 /**
  * 收到3.17 广播门开事件（0x1E）

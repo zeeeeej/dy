@@ -2,9 +2,8 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include <printf.h>
 #include <fcntl.h>
-#include <errno.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "hd_utils.h"
@@ -155,14 +154,15 @@ uint8_t hd_host_push_encode_ext(
     int fd;
     fd = open(src_file_path, O_RDWR);
     if (fd == -1) {
-        printf("extra_cmd.c 打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
+        printf("extra_cmd.c 打开文件失败\n ");
+//        printf("extra_cmd.c 打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
         return 11;
     }
     // 2。获取文件长度
     // 获取文件长度
     struct stat file_stat;
     if (fstat(fd, &file_stat) == -1) {
-        printf("extra_cmd.c 获取文件大小失败。fd:%d\n", fd);
+        printf("extra_cmd.c 获取文件大小失败.\n");
         close(fd);
         return 12;
     }
@@ -172,7 +172,7 @@ uint8_t hd_host_push_encode_ext(
     unsigned char md5[16];
     int ret = hd_md5(src_file_path, md5);
     if (ret) {
-        printf("extra_cmd.c 获取文件md5失败。fd:%d\n", fd);
+        printf("extra_cmd.c 获取文件md5失败.\n");
         close(fd);
         return 13;
     }

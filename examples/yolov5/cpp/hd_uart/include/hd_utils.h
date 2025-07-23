@@ -62,6 +62,8 @@ int create_directory_if_not_exists(const char *path);
 
 int delete_file_if_exists(const char *filename);
 
+void hd_delete_directory(const char* path);
+
 #ifdef __cplusplus
 }
 #endif

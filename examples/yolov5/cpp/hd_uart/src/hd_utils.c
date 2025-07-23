@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "hd_utils.h"
+#include "hd_c_log.h"
 #include <time.h>
 #include <dirent.h>  // 目录操作头文件
 #include <string.h>  // 用于 strcmp
 #include <sys/stat.h>
 #include <errno.h>
+#include <unistd.h>
 
 static HDLoggerLevel g_HDLoggerLevel = HD_LOGGER_LEVEL_INFO;
 
@@ -174,7 +176,7 @@ static void extract_filename(const char *full_name, char *name_only) {
 }
 
 int hd_find_model_name(const char *dir_path, char *model_version, const char *prefix) {
-    LOGI("%s %s %s", dir_path, model_version, prefix);
+    log_info("%s %s %s", dir_path, model_version, prefix);
     DIR *dir = opendir(dir_path);
     if (!dir) {
         perror("opendir failed");
@@ -231,6 +233,41 @@ int create_directory_if_not_exists(const char *path) {
             perror("删除文件失败");
         }
         return -1; // 失败
+    }
+}
+
+void hd_delete_directory(const char* path) {
+    DIR* dir = opendir(path);
+    if (!dir) {
+        perror("opendir failed");
+        return;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue; // 跳过 . 和 ..
+        }
+
+        char full_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
+
+        if (entry->d_type == DT_DIR) {
+            // 递归删除子目录
+            hd_delete_directory(full_path);
+        } else {
+            // 删除文件
+            if (unlink(full_path)) {
+                perror("unlink failed");
+            }
+        }
+    }
+
+    closedir(dir);
+
+    // 最后删除空目录
+    if (rmdir(path)) {
+        perror("rmdir failed");
     }
 }
 

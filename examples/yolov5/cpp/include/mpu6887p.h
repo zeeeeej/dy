@@ -29,6 +29,7 @@ void mpu_set_angle(uint8_t angle);
 void mpu_set_rotation(uint8_t rot);
 void mpu_set_enable(uint8_t enable);
 int get_angle();
+void restore_sensor();
 
 #ifdef __cplusplus
 }

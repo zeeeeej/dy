@@ -25,6 +25,11 @@ extern "C" {
 
 uint16_t hd_crc16(const uint8_t *data, uint32_t length);
 
+uint8_t hd_camera_protocol_addr(
+        uint8_t *out_addr,
+        const unsigned char *in_recv_data,
+        uint32_t in_recv_data_size);
+
 uint8_t hd_camera_protocol_decode(
         const unsigned char *recv_data_in,
         uint32_t recv_data_size_in,

@@ -117,7 +117,10 @@ void action_id_collect(uint8_t status, const char *action_id){
         std::ofstream outfile(mydata::action_id_txt_name); 
         if (!outfile.is_open()) return;
         outfile << action_id << std::endl;
-    }  
+    } else if (status == 0)
+    {
+        restore_sensor();
+    }
 }
 
 
@@ -206,6 +209,7 @@ void writeStringToFileAfterDelay(const std::string& file_path, const std::string
 
 int main(int argc, char **argv)
 {
+    
     double uptime_seconds = getUptimeSeconds();
     if (uptime_seconds < 15) {
         if (deleteFile("/userdata/watchdog.pid")) {
@@ -215,7 +219,7 @@ int main(int argc, char **argv)
         }
     }
 
-    // start_watchdog();
+    start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
 
@@ -259,6 +263,7 @@ int main(int argc, char **argv)
 	
 	qjy_uart_init(&func, addr_biu);
 	gsensor_init(0);
+    restore_sensor();
 	qjy_photo_init();
 	heat_pwm_init();
 

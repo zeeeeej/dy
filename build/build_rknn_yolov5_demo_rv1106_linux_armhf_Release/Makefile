@@ -162,17 +162,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named ipc_app_0710_camera2
+# Target rules for targets named ipc_app_0723_camera1
 
 # Build rule for target.
-ipc_app_0710_camera2: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ipc_app_0710_camera2
-.PHONY : ipc_app_0710_camera2
+ipc_app_0723_camera1: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ipc_app_0723_camera1
+.PHONY : ipc_app_0723_camera1
 
 # fast build rule for target.
-ipc_app_0710_camera2/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/build
-.PHONY : ipc_app_0710_camera2/fast
+ipc_app_0723_camera1/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/build
+.PHONY : ipc_app_0723_camera1/fast
 
 #=============================================================================
 # Target rules for targets named fileutils
@@ -226,12 +226,36 @@ audioutils/fast:
 	$(MAKE) $(MAKESILENT) -f utils.out/CMakeFiles/audioutils.dir/build.make utils.out/CMakeFiles/audioutils.dir/build
 .PHONY : audioutils/fast
 
+hd_uart/src/hd_c_log.o: hd_uart/src/hd_c_log.c.o
+.PHONY : hd_uart/src/hd_c_log.o
+
+# target to build an object file
+hd_uart/src/hd_c_log.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_c_log.c.o
+.PHONY : hd_uart/src/hd_c_log.c.o
+
+hd_uart/src/hd_c_log.i: hd_uart/src/hd_c_log.c.i
+.PHONY : hd_uart/src/hd_c_log.i
+
+# target to preprocess a source file
+hd_uart/src/hd_c_log.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_c_log.c.i
+.PHONY : hd_uart/src/hd_c_log.c.i
+
+hd_uart/src/hd_c_log.s: hd_uart/src/hd_c_log.c.s
+.PHONY : hd_uart/src/hd_c_log.s
+
+# target to generate assembly for a file
+hd_uart/src/hd_c_log.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_c_log.c.s
+.PHONY : hd_uart/src/hd_c_log.c.s
+
 hd_uart/src/hd_camera_ota.o: hd_uart/src/hd_camera_ota.c.o
 .PHONY : hd_uart/src/hd_camera_ota.o
 
 # target to build an object file
 hd_uart/src/hd_camera_ota.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_ota.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_ota.c.o
 .PHONY : hd_uart/src/hd_camera_ota.c.o
 
 hd_uart/src/hd_camera_ota.i: hd_uart/src/hd_camera_ota.c.i
@@ -239,7 +263,7 @@ hd_uart/src/hd_camera_ota.i: hd_uart/src/hd_camera_ota.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_ota.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_ota.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_ota.c.i
 .PHONY : hd_uart/src/hd_camera_ota.c.i
 
 hd_uart/src/hd_camera_ota.s: hd_uart/src/hd_camera_ota.c.s
@@ -247,7 +271,7 @@ hd_uart/src/hd_camera_ota.s: hd_uart/src/hd_camera_ota.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_ota.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_ota.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_ota.c.s
 .PHONY : hd_uart/src/hd_camera_ota.c.s
 
 hd_uart/src/hd_camera_protocol.o: hd_uart/src/hd_camera_protocol.c.o
@@ -255,7 +279,7 @@ hd_uart/src/hd_camera_protocol.o: hd_uart/src/hd_camera_protocol.c.o
 
 # target to build an object file
 hd_uart/src/hd_camera_protocol.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol.c.o
 .PHONY : hd_uart/src/hd_camera_protocol.c.o
 
 hd_uart/src/hd_camera_protocol.i: hd_uart/src/hd_camera_protocol.c.i
@@ -263,7 +287,7 @@ hd_uart/src/hd_camera_protocol.i: hd_uart/src/hd_camera_protocol.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_protocol.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol.c.i
 .PHONY : hd_uart/src/hd_camera_protocol.c.i
 
 hd_uart/src/hd_camera_protocol.s: hd_uart/src/hd_camera_protocol.c.s
@@ -271,7 +295,7 @@ hd_uart/src/hd_camera_protocol.s: hd_uart/src/hd_camera_protocol.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_protocol.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol.c.s
 .PHONY : hd_uart/src/hd_camera_protocol.c.s
 
 hd_uart/src/hd_camera_protocol_cmd.o: hd_uart/src/hd_camera_protocol_cmd.c.o
@@ -279,7 +303,7 @@ hd_uart/src/hd_camera_protocol_cmd.o: hd_uart/src/hd_camera_protocol_cmd.c.o
 
 # target to build an object file
 hd_uart/src/hd_camera_protocol_cmd.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_cmd.c.o
 .PHONY : hd_uart/src/hd_camera_protocol_cmd.c.o
 
 hd_uart/src/hd_camera_protocol_cmd.i: hd_uart/src/hd_camera_protocol_cmd.c.i
@@ -287,7 +311,7 @@ hd_uart/src/hd_camera_protocol_cmd.i: hd_uart/src/hd_camera_protocol_cmd.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_protocol_cmd.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_cmd.c.i
 .PHONY : hd_uart/src/hd_camera_protocol_cmd.c.i
 
 hd_uart/src/hd_camera_protocol_cmd.s: hd_uart/src/hd_camera_protocol_cmd.c.s
@@ -295,7 +319,7 @@ hd_uart/src/hd_camera_protocol_cmd.s: hd_uart/src/hd_camera_protocol_cmd.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_protocol_cmd.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_cmd.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_cmd.c.s
 .PHONY : hd_uart/src/hd_camera_protocol_cmd.c.s
 
 hd_uart/src/hd_camera_protocol_extra_cmd.o: hd_uart/src/hd_camera_protocol_extra_cmd.c.o
@@ -303,7 +327,7 @@ hd_uart/src/hd_camera_protocol_extra_cmd.o: hd_uart/src/hd_camera_protocol_extra
 
 # target to build an object file
 hd_uart/src/hd_camera_protocol_extra_cmd.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.o
 .PHONY : hd_uart/src/hd_camera_protocol_extra_cmd.c.o
 
 hd_uart/src/hd_camera_protocol_extra_cmd.i: hd_uart/src/hd_camera_protocol_extra_cmd.c.i
@@ -311,7 +335,7 @@ hd_uart/src/hd_camera_protocol_extra_cmd.i: hd_uart/src/hd_camera_protocol_extra
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_protocol_extra_cmd.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.i
 .PHONY : hd_uart/src/hd_camera_protocol_extra_cmd.c.i
 
 hd_uart/src/hd_camera_protocol_extra_cmd.s: hd_uart/src/hd_camera_protocol_extra_cmd.c.s
@@ -319,7 +343,7 @@ hd_uart/src/hd_camera_protocol_extra_cmd.s: hd_uart/src/hd_camera_protocol_extra
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_protocol_extra_cmd.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_extra_cmd.c.s
 .PHONY : hd_uart/src/hd_camera_protocol_extra_cmd.c.s
 
 hd_uart/src/hd_camera_protocol_property.o: hd_uart/src/hd_camera_protocol_property.c.o
@@ -327,7 +351,7 @@ hd_uart/src/hd_camera_protocol_property.o: hd_uart/src/hd_camera_protocol_proper
 
 # target to build an object file
 hd_uart/src/hd_camera_protocol_property.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_property.c.o
 .PHONY : hd_uart/src/hd_camera_protocol_property.c.o
 
 hd_uart/src/hd_camera_protocol_property.i: hd_uart/src/hd_camera_protocol_property.c.i
@@ -335,7 +359,7 @@ hd_uart/src/hd_camera_protocol_property.i: hd_uart/src/hd_camera_protocol_proper
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_protocol_property.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_property.c.i
 .PHONY : hd_uart/src/hd_camera_protocol_property.c.i
 
 hd_uart/src/hd_camera_protocol_property.s: hd_uart/src/hd_camera_protocol_property.c.s
@@ -343,7 +367,7 @@ hd_uart/src/hd_camera_protocol_property.s: hd_uart/src/hd_camera_protocol_proper
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_protocol_property.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_protocol_property.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_protocol_property.c.s
 .PHONY : hd_uart/src/hd_camera_protocol_property.c.s
 
 hd_uart/src/hd_camera_shell.o: hd_uart/src/hd_camera_shell.c.o
@@ -351,7 +375,7 @@ hd_uart/src/hd_camera_shell.o: hd_uart/src/hd_camera_shell.c.o
 
 # target to build an object file
 hd_uart/src/hd_camera_shell.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_shell.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_shell.c.o
 .PHONY : hd_uart/src/hd_camera_shell.c.o
 
 hd_uart/src/hd_camera_shell.i: hd_uart/src/hd_camera_shell.c.i
@@ -359,7 +383,7 @@ hd_uart/src/hd_camera_shell.i: hd_uart/src/hd_camera_shell.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_camera_shell.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_shell.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_shell.c.i
 .PHONY : hd_uart/src/hd_camera_shell.c.i
 
 hd_uart/src/hd_camera_shell.s: hd_uart/src/hd_camera_shell.c.s
@@ -367,7 +391,7 @@ hd_uart/src/hd_camera_shell.s: hd_uart/src/hd_camera_shell.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_camera_shell.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_camera_shell.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_camera_shell.c.s
 .PHONY : hd_uart/src/hd_camera_shell.c.s
 
 hd_uart/src/hd_queue.o: hd_uart/src/hd_queue.c.o
@@ -375,7 +399,7 @@ hd_uart/src/hd_queue.o: hd_uart/src/hd_queue.c.o
 
 # target to build an object file
 hd_uart/src/hd_queue.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_queue.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_queue.c.o
 .PHONY : hd_uart/src/hd_queue.c.o
 
 hd_uart/src/hd_queue.i: hd_uart/src/hd_queue.c.i
@@ -383,7 +407,7 @@ hd_uart/src/hd_queue.i: hd_uart/src/hd_queue.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_queue.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_queue.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_queue.c.i
 .PHONY : hd_uart/src/hd_queue.c.i
 
 hd_uart/src/hd_queue.s: hd_uart/src/hd_queue.c.s
@@ -391,7 +415,7 @@ hd_uart/src/hd_queue.s: hd_uart/src/hd_queue.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_queue.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_queue.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_queue.c.s
 .PHONY : hd_uart/src/hd_queue.c.s
 
 hd_uart/src/hd_uart_parser.o: hd_uart/src/hd_uart_parser.c.o
@@ -399,7 +423,7 @@ hd_uart/src/hd_uart_parser.o: hd_uart/src/hd_uart_parser.c.o
 
 # target to build an object file
 hd_uart/src/hd_uart_parser.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_uart_parser.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_uart_parser.c.o
 .PHONY : hd_uart/src/hd_uart_parser.c.o
 
 hd_uart/src/hd_uart_parser.i: hd_uart/src/hd_uart_parser.c.i
@@ -407,7 +431,7 @@ hd_uart/src/hd_uart_parser.i: hd_uart/src/hd_uart_parser.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_uart_parser.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_uart_parser.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_uart_parser.c.i
 .PHONY : hd_uart/src/hd_uart_parser.c.i
 
 hd_uart/src/hd_uart_parser.s: hd_uart/src/hd_uart_parser.c.s
@@ -415,7 +439,7 @@ hd_uart/src/hd_uart_parser.s: hd_uart/src/hd_uart_parser.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_uart_parser.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_uart_parser.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_uart_parser.c.s
 .PHONY : hd_uart/src/hd_uart_parser.c.s
 
 hd_uart/src/hd_utils.o: hd_uart/src/hd_utils.c.o
@@ -423,7 +447,7 @@ hd_uart/src/hd_utils.o: hd_uart/src/hd_utils.c.o
 
 # target to build an object file
 hd_uart/src/hd_utils.c.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_utils.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_utils.c.o
 .PHONY : hd_uart/src/hd_utils.c.o
 
 hd_uart/src/hd_utils.i: hd_uart/src/hd_utils.c.i
@@ -431,7 +455,7 @@ hd_uart/src/hd_utils.i: hd_uart/src/hd_utils.c.i
 
 # target to preprocess a source file
 hd_uart/src/hd_utils.c.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_utils.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_utils.c.i
 .PHONY : hd_uart/src/hd_utils.c.i
 
 hd_uart/src/hd_utils.s: hd_uart/src/hd_utils.c.s
@@ -439,7 +463,7 @@ hd_uart/src/hd_utils.s: hd_uart/src/hd_utils.c.s
 
 # target to generate assembly for a file
 hd_uart/src/hd_utils.c.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/hd_uart/src/hd_utils.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/hd_uart/src/hd_utils.c.s
 .PHONY : hd_uart/src/hd_utils.c.s
 
 main.o: main.cc.o
@@ -447,7 +471,7 @@ main.o: main.cc.o
 
 # target to build an object file
 main.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/main.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/main.cc.o
 .PHONY : main.cc.o
 
 main.i: main.cc.i
@@ -455,7 +479,7 @@ main.i: main.cc.i
 
 # target to preprocess a source file
 main.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/main.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/main.cc.i
 .PHONY : main.cc.i
 
 main.s: main.cc.s
@@ -463,7 +487,7 @@ main.s: main.cc.s
 
 # target to generate assembly for a file
 main.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/main.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/main.cc.s
 .PHONY : main.cc.s
 
 postprocess.o: postprocess.cc.o
@@ -471,7 +495,7 @@ postprocess.o: postprocess.cc.o
 
 # target to build an object file
 postprocess.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/postprocess.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/postprocess.cc.o
 .PHONY : postprocess.cc.o
 
 postprocess.i: postprocess.cc.i
@@ -479,7 +503,7 @@ postprocess.i: postprocess.cc.i
 
 # target to preprocess a source file
 postprocess.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/postprocess.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/postprocess.cc.i
 .PHONY : postprocess.cc.i
 
 postprocess.s: postprocess.cc.s
@@ -487,7 +511,7 @@ postprocess.s: postprocess.cc.s
 
 # target to generate assembly for a file
 postprocess.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/postprocess.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/postprocess.cc.s
 .PHONY : postprocess.cc.s
 
 rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
@@ -495,7 +519,7 @@ rknpu2/yolov5_rv1106_1103.o: rknpu2/yolov5_rv1106_1103.cc.o
 
 # target to build an object file
 rknpu2/yolov5_rv1106_1103.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/rknpu2/yolov5_rv1106_1103.cc.o
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.o
 
 rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
@@ -503,7 +527,7 @@ rknpu2/yolov5_rv1106_1103.i: rknpu2/yolov5_rv1106_1103.cc.i
 
 # target to preprocess a source file
 rknpu2/yolov5_rv1106_1103.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/rknpu2/yolov5_rv1106_1103.cc.i
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.i
 
 rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
@@ -511,7 +535,7 @@ rknpu2/yolov5_rv1106_1103.s: rknpu2/yolov5_rv1106_1103.cc.s
 
 # target to generate assembly for a file
 rknpu2/yolov5_rv1106_1103.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/rknpu2/yolov5_rv1106_1103.cc.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/rknpu2/yolov5_rv1106_1103.cc.s
 .PHONY : rknpu2/yolov5_rv1106_1103.cc.s
 
 utils_biu.o: utils_biu.cpp.o
@@ -519,7 +543,7 @@ utils_biu.o: utils_biu.cpp.o
 
 # target to build an object file
 utils_biu.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/utils_biu.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/utils_biu.cpp.o
 .PHONY : utils_biu.cpp.o
 
 utils_biu.i: utils_biu.cpp.i
@@ -527,7 +551,7 @@ utils_biu.i: utils_biu.cpp.i
 
 # target to preprocess a source file
 utils_biu.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/utils_biu.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/utils_biu.cpp.i
 .PHONY : utils_biu.cpp.i
 
 utils_biu.s: utils_biu.cpp.s
@@ -535,7 +559,7 @@ utils_biu.s: utils_biu.cpp.s
 
 # target to generate assembly for a file
 utils_biu.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0710_camera2.dir/build.make CMakeFiles/ipc_app_0710_camera2.dir/utils_biu.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ipc_app_0723_camera1.dir/build.make CMakeFiles/ipc_app_0723_camera1.dir/utils_biu.cpp.s
 .PHONY : utils_biu.cpp.s
 
 # Help Target
@@ -554,7 +578,10 @@ help:
 	@echo "... fileutils"
 	@echo "... imagedrawing"
 	@echo "... imageutils"
-	@echo "... ipc_app_0710_camera2"
+	@echo "... ipc_app_0723_camera1"
+	@echo "... hd_uart/src/hd_c_log.o"
+	@echo "... hd_uart/src/hd_c_log.i"
+	@echo "... hd_uart/src/hd_c_log.s"
 	@echo "... hd_uart/src/hd_camera_ota.o"
 	@echo "... hd_uart/src/hd_camera_ota.i"
 	@echo "... hd_uart/src/hd_camera_ota.s"
