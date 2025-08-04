@@ -58,6 +58,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../utils/ utils.out)
 
 #set(CMAKE_INSTALL_RPATH "$ORIGIN/lib")
 
+message( xxx CMAKE_CURRENT_SOURCE_DIR => ${CMAKE_CURRENT_SOURCE_DIR})
+
 # file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
 
@@ -68,7 +70,7 @@ add_executable(${PROJECT_NAME}
     postprocess.cc
     utils_biu.cpp
     ${rknpu_yolov5_file}
-    ${urat_files}
+    # ${urat_files}
 )
 
 
@@ -144,7 +146,7 @@ if(MY_CTX EQUAL 1)
         stdc++ 
         ${My_Root}/libs/librksysutils.so
         ${My_Root}/libs/libapp_shared.so
-        # ${My_Root}/libs/libhd_uart.so
+        ${My_Root}/libs/libhd_uart.so
     
         ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
         dl

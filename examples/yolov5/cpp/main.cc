@@ -87,7 +87,7 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.0";
+std::string app_version = "V1.1";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
@@ -113,10 +113,10 @@ namespace mydata {
 void action_id_collect(uint8_t status, const char *action_id){
     door_status = status;
     if (status==1){ 
-        if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
-        std::ofstream outfile(mydata::action_id_txt_name); 
-        if (!outfile.is_open()) return;
-        outfile << action_id << std::endl;
+        // if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+        // std::ofstream outfile(mydata::action_id_txt_name); 
+        // if (!outfile.is_open()) return;
+        // outfile << action_id << std::endl;
     } else if (status == 0)
     {
         restore_sensor();
@@ -269,7 +269,6 @@ int main(int argc, char **argv)
 
 
 
-
 /*--------------判断图片路径是否存在并创建---------------------*/
 
     const char *image_tmp_path = "/userdata/tmp_images_path";
@@ -284,107 +283,107 @@ int main(int argc, char **argv)
 	hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event);
 
     
-/*--------------陀螺仪检测并拍照------------------------------*/
+// /*--------------陀螺仪检测并拍照------------------------------*/
 
-    ThreadSafeSet<std::string> photo_names(20);
-    ThreadSafeSet<std::string> action_id_record(20);
+//     ThreadSafeSet<std::string> photo_names(20);
+//     ThreadSafeSet<std::string> action_id_record(20);
 
-    bool door_closed_reported = false;
+//     bool door_closed_reported = false;
 
-    std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &door_closed_reported]() {
-        while (g_main_run_) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+//     std::thread t1([&image_tmp_path, &images_dir_path, &photo_names, &action_id_record, &door_closed_reported]() {
+//         while (g_main_run_) {
+//             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-            int angle1 = get_angle();  
-            float result = tly_detect1(angle1);
+//             int angle1 = get_angle();  
+//             float result = tly_detect1(angle1);
         
 
-            if (result <= 0) {
-                zero_count++;
+//             if (result <= 0) {
+//                 zero_count++;
                 
-                if (zero_count >= 40 ) {
-                    last_reported_angle = 0;
-                }
-            } else {
-                zero_count = 0;  // 非0则清零计数
+//                 if (zero_count >= 40 ) {
+//                     last_reported_angle = 0;
+//                 }
+//             } else {
+//                 zero_count = 0;  // 非0则清零计数
                
-                if (result != last_reported_angle) {
-                std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
-                }
-                last_reported_angle = result;
-            }
+//                 if (result != last_reported_angle) {
+//                 std::cout << "检测到陀螺仪角度!!!!!!!!!!: " << result << std::endl;   
+//                 }
+//                 last_reported_angle = result;
+//             }
           
-            if (last_reported_angle >= 50.0f && !door_closed_reported && door_status == 1) {
+//             if (last_reported_angle >= 50.0f && !door_closed_reported && door_status == 1) {
 
-                std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
+//                 std::cout << "检测到陀螺仪角度*************: " << last_reported_angle << std::endl;
                
-                auto now = std::chrono::system_clock::now();
+//                 auto now = std::chrono::system_clock::now();
             
-                std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
+//                 std::time_t time_now = std::chrono::system_clock::to_time_t(now);   
             
-                auto duration = now.time_since_epoch();
-                auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
+//                 auto duration = now.time_since_epoch();
+//                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration) % 1000;
               
-                std::ostringstream oss;
+//                 std::ostringstream oss;
              
-                pic_id = (pic_id + 1) % 0x41;
+//                 pic_id = (pic_id + 1) % 0x41;
 
-                oss << std::setfill('0') << std::setw(3) << millis.count();  
-                oss << "_0_" << std::to_string(last_reported_angle) <<"_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
-                std::string image_biu_name_path = oss.str();
-                std::string image_biu_name_path_change = "gai1_0_" + std::to_string(last_reported_angle) + "_" + std::to_string(time_now) + "_" + std::to_string(pic_id) + ".jpg";
+//                 oss << std::setfill('0') << std::setw(3) << millis.count();  
+//                 oss << "_0_" << std::to_string(last_reported_angle) <<"_" << "1" << "_" << time_now << "_" << pic_id << ".jpg";
+//                 std::string image_biu_name_path = oss.str();
+//                 std::string image_biu_name_path_change = "gai1_0_" + std::to_string(last_reported_angle) + "_" + std::to_string(time_now) + "_" + std::to_string(pic_id) + ".jpg";
 
                 
-                if (take_photo(2, image_tmp_path,image_biu_name_path)) {
-                    std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
-                    std::string image_biu_path_change = std::string(image_tmp_path) + "/" + image_biu_name_path_change;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                    if (compressImageToTargetSize(image_biu_path, image_biu_path_change, 300)) {
-                        photo_names.insert(image_biu_path_change);
-                        std::filesystem::remove(image_biu_path); 
-                    } else {
-                        createBlankImage(image_biu_path_change);
-                        photo_names.insert(image_biu_path_change);
-                        std::filesystem::remove(image_biu_path); 
-                    }
+//                 if (take_photo(2, image_tmp_path,image_biu_name_path)) {
+//                     std::string image_biu_path = std::string(image_tmp_path) + "/" + image_biu_name_path;
+//                     std::string image_biu_path_change = std::string(image_tmp_path) + "/" + image_biu_name_path_change;
+//                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
+//                     if (compressImageToTargetSize(image_biu_path, image_biu_path_change, 300)) {
+//                         photo_names.insert(image_biu_path_change);
+//                         std::filesystem::remove(image_biu_path); 
+//                     } else {
+//                         createBlankImage(image_biu_path_change);
+//                         photo_names.insert(image_biu_path_change);
+//                         std::filesystem::remove(image_biu_path); 
+//                     }
    
-                };
+//                 };
 
-                // writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
-				// std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                last_reported_angle = 1; 
-                door_closed_reported = true; // 关门后设置为true，防止重复报告
+//                 // writeStringToFileAfterDelay("/userdata/action_id.txt", "1748939045000", 0);
+// 				// std::this_thread::sleep_for(std::chrono::milliseconds(500));
+//                 last_reported_angle = 1; 
+//                 door_closed_reported = true; // 关门后设置为true，防止重复报告
                
-            } else if (last_reported_angle <= 20.0f && door_closed_reported && door_status == 0) {
-                door_closed_reported = false;
-                std::string action_id = read_txt_file(mydata::action_id_txt_name);
-                // std ::cout << "读取到的action_id: " << action_id << std::endl;
-                clearFile(mydata::action_id_txt_name);
-                if (!action_id.empty()) {
-                    std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
-                    ensure_path_exists(action_id_image_path_finall.c_str());
-                    movePhotos(photo_names, action_id_image_path_finall, action_id_record);
-                    delete_folder_contents_only(image_tmp_path);
-                    action_id_record.clear();
-                } 
-           
-               
-              
-            }
-        }
-    });
+//             } else if (last_reported_angle <= 20.0f && door_closed_reported && door_status == 0) {
+//                 door_closed_reported = false;
+//                 std::string action_id = read_txt_file(mydata::action_id_txt_name);
+//                 // std ::cout << "读取到的action_id: " << action_id << std::endl;
+//                 clearFile(mydata::action_id_txt_name);
+//                 if (!action_id.empty()) {
+//                     std::string action_id_image_path_finall = std::string(images_dir_path) + "/" + action_id;
+//                     ensure_path_exists(action_id_image_path_finall.c_str());
+//                     movePhotos(photo_names, action_id_image_path_finall, action_id_record);
+//                     delete_folder_contents_only(image_tmp_path);
+//                     action_id_record.clear();
+//                 } 
+//             }
+//         }
+//     });
 
 
-    while (g_main_run_) {
-		delete_oldest_folders(images_dir_path, 50);
-		std::this_thread::sleep_for(std::chrono::minutes(1));
-	}
+//     while (g_main_run_) {
+// 		delete_oldest_folders(images_dir_path, 50);
+// 		std::this_thread::sleep_for(std::chrono::minutes(1));
+// 	}
 
+    
 
 	rk_param_deinit();
-	qjy_photo_deinit();
 
     hd_uart_deinit();
+	qjy_photo_deinit();
+
+
 
 
 	rk_isp_deinit(0);
