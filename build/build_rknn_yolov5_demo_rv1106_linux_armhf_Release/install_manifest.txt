@@ -1,4 +1,0 @@
-/home/book/proj/yo/camera-rv1103/install/rv1106_linux_armhf/rknn_yolov5_demo/./ipc_app_0723_camera1
-/home/book/proj/yo/camera-rv1103/install/rv1106_linux_armhf/rknn_yolov5_demo/model/one_category_full.rknn
-/home/book/proj/yo/camera-rv1103/install/rv1106_linux_armhf/rknn_yolov5_demo/lib/librknnmrt.so
-/home/book/proj/yo/camera-rv1103/install/rv1106_linux_armhf/rknn_yolov5_demo/lib/librga.so
