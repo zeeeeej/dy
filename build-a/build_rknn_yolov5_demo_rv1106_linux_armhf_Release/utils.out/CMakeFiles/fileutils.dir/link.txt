@@ -1,0 +1,2 @@
+/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libfileutils.a CMakeFiles/fileutils.dir/file_utils.c.o
+/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libfileutils.a

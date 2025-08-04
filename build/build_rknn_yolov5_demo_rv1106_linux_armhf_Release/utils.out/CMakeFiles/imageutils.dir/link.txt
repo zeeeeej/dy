@@ -1,2 +1,2 @@
-/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libimageutils.a CMakeFiles/imageutils.dir/image_utils.c.o
-/mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libimageutils.a
+/home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-ar qc libimageutils.a CMakeFiles/imageutils.dir/image_utils.c.o
+/home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf/bin/arm-rockchip830-linux-uclibcgnueabihf-ranlib libimageutils.a

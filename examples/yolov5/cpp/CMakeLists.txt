@@ -20,16 +20,15 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_FLAGS_RELEASE "-Os -ffunction-sections -fdata-sections")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s")
 
-set(MY_CTX 1) // 1:hdlinux 0:default 2:mac
+set(MY_CTX 1) # 1:hdlinux 0:default 2:mac
 
 # set(CMAKE_BUILD_TYPE Debug)
-if(MY_CTX == 1){
+message(ctx = ${MY_CTX})
+if(MY_CTX EQUAL 1)
     set(ULBIC_DIR /home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf)
-}
-elseif(MY_CTX == 0 )  {
+elseif(MY_CTX EQUAL 0 )  
     set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master)
-}  
-endif ()
+endif()
 
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
@@ -73,13 +72,13 @@ add_executable(${PROJECT_NAME}
 )
 
 
-if(MY_CTX == 1){
+if(MY_CTX EQUAL 1)
         set(My_Root /home/book/proj/yo/camera-rv1103/examples/yolov5/cpp)
 
-        set(OpenCV_INCLUDE_DIRS ${My_Root}/lib_opencv/arm32_rockchip830_install/include)
-        set(OpenCV_LIBS ${My_Root}/lib_opencv/arm32_rockchip830_install/lib)
+        set(OpenCV_INCLUDE_DIRS ${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4/)
+        set(OpenCV_LIBS ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/)
 
-        include_directories(${My_Root}/lib_opencv/arm32_rockchip830_install/include)
+        include_directories(${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4)
 
         message(STATUS "OpenCV Libraries: ${OpenCV_LIBS}")
         message(STATUS "OpenCV Include Path: ${OpenCV_INCLUDE_DIRS}")
@@ -127,9 +126,9 @@ if(MY_CTX == 1){
 
 
     target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
-        #${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
-        #${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgcodecs.so
-        #${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgproc.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgcodecs.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgproc.so
         pthread 
         ${My_Root}/libs/librockit.so 
         ${My_Root}/libs/librockchip_mpp.so
@@ -147,12 +146,12 @@ if(MY_CTX == 1){
         ${My_Root}/libs/libapp_shared.so
         # ${My_Root}/libs/libhd_uart.so
     
-        ${My_Root}/arm32_rockchip830_install/lib/libz.so
+        ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
         dl
 
     )
-} 
-elseif(MY_CTX == 0){
+
+elseif(MY_CTX EQUAL 0)
     set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)
     set(OpenCV_LIBS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/lib/)
 
@@ -228,8 +227,9 @@ elseif(MY_CTX == 0){
         dl
 
     )
-}
-endif
+endif()
+
+add_compile_options(-Wno-psabi)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Android")
     target_link_libraries(${PROJECT_NAME}
