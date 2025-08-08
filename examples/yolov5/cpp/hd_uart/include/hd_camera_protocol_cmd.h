@@ -39,10 +39,14 @@ extern "C" {
 #define CMD_HD_PUSH_FILE_SEND           0xCC
 
 
+#define PIC_ID_DELETE_ALL               0xFFFF
+#define PIC_ID_NAN                      0xFFFE
+
+
 
 typedef struct {
-    /** pic_id 1BYTE */
-    uint8_t id;
+    /** pic_id 2BYTE */
+    uint16_t id;
     /** action_id timestamps 4BYTE */
     uint32_t action_id_timestamps;
     /** action_id index BYTE */
@@ -59,9 +63,10 @@ typedef struct {
     unsigned char md5[16];
 } hd_dynamic_pic_info;
 
+
 static size_t hd_dynamic_pic_info_real_size() {
     return
-            sizeof(uint8_t) // id
+            sizeof(uint16_t) // id
             + sizeof(uint32_t) //  action_id_timestamps
             + sizeof(uint8_t) // action_id_index
             + sizeof(uint8_t) // trigger_type
@@ -465,7 +470,7 @@ uint8_t hd_slave_snapshot_encode(
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
         uint8_t in_result,
-        uint8_t in_pic_id
+        uint16_t in_pic_id
 );
 
 /**
@@ -478,7 +483,7 @@ uint8_t hd_slave_snapshot_encode(
  */
 uint8_t hd_slave_snapshot_decode(
         uint8_t *out_result,
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         const unsigned char *payload_data_in,
         uint32_t payload_data_size_in
 );
@@ -587,7 +592,7 @@ hd_host_delete_pic_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
-        uint8_t in_pic_id
+        uint16_t in_pic_id
 );
 
 uint8_t
@@ -602,7 +607,7 @@ qjy_host_delete_pic_encode(
 
 uint8_t
 hd_slave_delete_pic_decode(
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         uint32_t *out_action_id_timestamp,
         uint8_t *out_action_id_index,
         const unsigned char *in_payload_data,
@@ -652,7 +657,7 @@ hd_host_pull_pic_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
-        uint8_t in_pic_id,
+        uint16_t in_pic_id,
         uint32_t in_offset,
         uint32_t in_read_len);
 
@@ -666,7 +671,7 @@ qjy_host_pull_pic_encode(
         uint32_t in_read_len);
 
 uint8_t hd_slave_pull_pic_decode(
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         uint32_t *out_offset,
         uint32_t *out_read_len,
         const unsigned char *in_payload_data,

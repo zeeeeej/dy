@@ -33,7 +33,14 @@ endif()
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-project(ipc_app_0723_camera1)
+
+set(My_SO 1)
+if(My_SO EQUAL 1)
+    project(rkipc_v1.1_camera1_so)
+elseif(My_SO EQUAL 0 )  
+    project(rkipc_v1.1_camera1_app)
+endif()
+
 
 if (ENABLE_ASAN)
 	message(STATUS "BUILD WITH ADDRESS SANITIZER")
@@ -126,6 +133,8 @@ if(MY_CTX EQUAL 1)
     #)
 
 
+if(My_SO EQUAL 1)
+
 
     target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
         ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
@@ -146,12 +155,41 @@ if(MY_CTX EQUAL 1)
         stdc++ 
         ${My_Root}/libs/librksysutils.so
         ${My_Root}/libs/libapp_shared.so
+        
         ${My_Root}/libs/libhd_uart.so
     
         ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
         dl
 
     )
+elseif(My_SO EQUAL 0 )  
+      target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgcodecs.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgproc.so
+        pthread 
+        ${My_Root}/libs/librockit.so 
+        ${My_Root}/libs/librockchip_mpp.so
+        ${My_Root}/libs/librkaiq.so
+        ${My_Root}/libs/libaec_bf_process.so
+        ${My_Root}/libs/librkaudio_common.so 
+        m 
+        ${My_Root}/libs/libfreetype.so
+        ${My_Root}/libs/librockiva.so
+        ${My_Root}/libs/libiconv.so 
+        ${My_Root}/libs/librknnmrt.so 
+        ${My_Root}/libs/librga.so
+        stdc++ 
+        ${My_Root}/libs/librksysutils.so
+        ${My_Root}/libs/libapp_shared.so
+        
+        #${My_Root}/libs/libhd_uart.so
+    
+        ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
+        dl
+
+    )
+endif()
 
 elseif(MY_CTX EQUAL 0)
     set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)

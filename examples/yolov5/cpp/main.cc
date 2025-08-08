@@ -111,23 +111,229 @@ namespace mydata {
 
 
 void action_id_collect(uint8_t status, const char *action_id){
-    door_status = status;
-    if (status==1){ 
-        // if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
-        // std::ofstream outfile(mydata::action_id_txt_name); 
-        // if (!outfile.is_open()) return;
-        // outfile << action_id << std::endl;
-    } else if (status == 0)
-    {
-        restore_sensor();
-    }
+    // door_status = status;
+    // if (status==1){ 
+    //     if (!action_id || action_id[0] == '\0') return;  // 防止空指针写进文件
+    //     std::ofstream outfile(mydata::action_id_txt_name); 
+    //     if (!outfile.is_open()) return;
+    //     outfile << action_id << std::endl;
+    // } else if (status == 0)
+    // {
+    //     restore_sensor();
+    // }
 }
 
 
 void *on_event(int event_id, void *event_value, size_t event_value_size) {
     return NULL;
 }
+
+
+
+
+////////////////
+
+bool x_cp_file(const char* src_path, const char* dest_path) {
+    // 打开源文件（二进制模式）
+    std::ifstream src(src_path, std::ios::binary);
+    if (!src.is_open()) {
+        std::cerr << "无法打开源文件 '" << src_path << "': " << strerror(errno) << std::endl;
+        return false;
+    }
+
+    // 打开目标文件（二进制模式）
+    std::ofstream dest(dest_path, std::ios::binary);
+    if (!dest.is_open()) {
+        std::cerr << "无法打开目标文件 '" << dest_path << "': " << strerror(errno) << std::endl;
+        src.close();
+        return false;
+    }
+
+    // 复制文件内容
+    dest << src.rdbuf();
+
+    // 检查是否复制成功
+    if (!dest.good()) {
+        std::cerr << "复制文件时发生错误" << std::endl;
+        src.close();
+        dest.close();
+        return false;
+    }
+
+    // 关闭文件
+    src.close();
+    dest.close();
+
+    return true;
+}
+
+// 新添加的函数
+std::string process_image_with_yolov5(const std::string& src_path, const std::string& dst_path, 
+                                    const std::string& model_path, int target_width = 960) {
+    // 1. 读取原始图像并等比例缩放
+    cv::Mat src_img = cv::imread(src_path);
+    if (src_img.empty()) {
+        throw std::runtime_error("无法加载图像: " + src_path);
+    }
+
+    // 计算缩放比例
+    double scale = static_cast<double>(target_width) / src_img.cols;
+    cv::Mat scaled_img;
+    cv::resize(src_img, scaled_img, cv::Size(), scale, scale, cv::INTER_LINEAR);
+
+    // 保存缩放后的图像到临时文件
+    std::string temp_dir = fs::path(dst_path).parent_path().string();
+    std::string scale_path = temp_dir + "/temp_scaled.jpg";
+    if (!cv::imwrite(scale_path, scaled_img)) {
+        throw std::runtime_error("无法保存缩放后的图像: " + scale_path);
+    }
+
+    // 2. 准备RKNN推理
+    // rknn_app_context_t rknn_app_ctx;
+    // memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
+
+    // init_post_process();
+
+    // int ret = init_yolov5_model(model_path.c_str(), &rknn_app_ctx);
+    // if (ret != 0) {
+    //     fs::remove(scale_path);
+    //     throw std::runtime_error("init_yolov5_model fail! ret=" + std::to_string(ret));
+    // }
+
+    // 3. 准备输入图像
+    image_buffer_t src_image;
+    memset(&src_image, 0, sizeof(image_buffer_t));
+    src_image.width = scaled_img.cols;
+    src_image.height = scaled_img.rows;
+    src_image.format = IMAGE_FORMAT_RGB888;
+    src_image.size = scaled_img.total() * scaled_img.elemSize();
+    src_image.virt_addr = (unsigned char*)malloc(src_image.size);
     
+    // 将OpenCV Mat转换为RGB格式
+    cv::Mat rgb_img;
+    cv::cvtColor(scaled_img, rgb_img, cv::COLOR_BGR2RGB);
+    memcpy(src_image.virt_addr, rgb_img.data, src_image.size);
+
+    // 4. 执行推理
+    object_detect_result_list od_results;
+    ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
+    if (ret != 0) {
+        free(src_image.virt_addr);
+        release_yolov5_model(&rknn_app_ctx);
+        fs::remove(scale_path);
+        throw std::runtime_error("inference_yolov5_model fail! ret=" + std::to_string(ret));
+    }
+
+    // 5. 处理检测结果并裁剪原始图像
+    if (od_results.count > 0) {
+        // 取置信度最高的检测结果
+        object_detect_result* best_result = &od_results.results[0];
+        for (int i = 1; i < od_results.count; i++) {
+            if (od_results.results[i].prop > best_result->prop) {
+                best_result = &od_results.results[i];
+            }
+        }
+
+        // 将检测框坐标映射回原始图像
+        int x1 = static_cast<int>(best_result->box.left / scale);
+        int y1 = static_cast<int>(best_result->box.top / scale);
+        int x2 = static_cast<int>(best_result->box.right / scale);
+        int y2 = static_cast<int>(best_result->box.bottom / scale);
+
+        // 确保坐标在图像范围内
+        x1 = std::max(0, x1);
+        y1 = std::max(0, y1);
+        x2 = std::min(src_img.cols - 1, x2);
+        y2 = std::min(src_img.rows - 1, y2);
+
+        // 裁剪图像
+        cv::Rect roi(x1, y1, x2 - x1, y2 - y1);
+        cv::Mat cropped_img = src_img(roi);
+
+        // 保存裁剪后的图像
+        if (!cv::imwrite(dst_path, cropped_img)) {
+            free(src_image.virt_addr);
+            release_yolov5_model(&rknn_app_ctx);
+            fs::remove(scale_path);
+            throw std::runtime_error("无法保存裁剪后的图像: " + dst_path);
+        }
+    } else {
+        free(src_image.virt_addr);
+        release_yolov5_model(&rknn_app_ctx);
+        fs::remove(scale_path);
+        throw std::runtime_error("未检测到任何目标");
+    }
+
+    // 6. 清理资源
+    free(src_image.virt_addr);
+    release_yolov5_model(&rknn_app_ctx);
+    fs::remove(scale_path);
+
+    return dst_path;
+}
+
+
+/**
+ * 
+ * @param src_path 原图path
+ * @param src_path 裁减图path
+ * @return 成功返回0 失败返回1
+ */
+ int(*transform_pic)(const char * src_path, char * transform_path){
+    process_image_with_yolov5(
+        src_path,transform_path,"",960
+    );   
+    // // （1）复制副本bak_path
+    // char  bak_path[1024];
+    // if(x_cp_file(src_path,bak_path)){
+    //     return 1;
+    // }
+
+    // // （2）缩放    
+    //  int max_length = 960;
+    // std::string extension = bak_path.extension().string();
+    // if (extension == ".jpg" || extension == ".png" || extension == ".bmp") {
+    //     cv::Mat img = cv::imread(bak_path);
+    //     if (img.empty()) {
+    //         st d::cerr << "无法读取图片: " << bak_path << std::endl;
+    //         continue;
+    //     }
+
+    //     int width = img.cols;
+    //     int height = img.rows;
+    //     std::cout << "处理图片: " << bak_path << " (原始尺寸: " << width << "x" << height << ")" << std::endl;
+    //     int long_side = std::max(width, height);
+
+    //     // 如果已经小于等于 max_length，则跳过
+    //     if (long_side <= max_length) continue;
+
+    //     // 计算缩放比例
+    //     double scale = static_cast<double>(max_length) / long_side;
+    //     int new_width = static_cast<int>(width * scale);
+    //     int new_height = static_cast<int>(height * scale);
+
+    //     cv::Mat resized;
+    //     cv::resize(img, resized, cv::Size(new_width, new_height));
+
+    //     // 覆盖保存
+    //     if (!cv::imwrite(bak_path, resized)) {
+    //         std::cerr << "保存失败: " << bak_path << std::endl;
+    //         return 1;
+    //     } else {
+    //         std::cout << "处理完成: " << bak_path << std::endl;
+    //     }
+    // }
+    
+    // // (3)对bak_path进行目标检测，得到目标检测数据。
+
+    // // 根据目标数据从src_path中裁剪
+
+    // // 将裁减结果放到transform_path
+
+    // // 删除副本文件
+
+    return 1;
+ }    
 
 
 
@@ -262,7 +468,7 @@ int main(int argc, char **argv)
 	RK_MPI_SYS_Init();
 	
 	qjy_uart_init(&func, addr_biu);
-	gsensor_init(0);
+	gsensor_init(addr_biu==1?0:1);
     restore_sensor();
 	qjy_photo_init();
 	heat_pwm_init();
@@ -280,8 +486,31 @@ int main(int argc, char **argv)
     ensure_path_exists(image_tmp_path);
     ensure_path_exists(images_dir_path);
 
-	hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event);
+    if (addr_biu == 2)
+    {
+       int ret;
+        rknn_app_context_t rknn_app_ctx;
+        memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
 
+        init_post_process();
+
+        ret = init_yolov5_model(model_path, &rknn_app_ctx);
+        if (ret != 0)
+        {
+            printf("init_yolov5_model fail! ret=%d model_path=%s\n", ret, model_path);
+            deinit_post_process();
+        
+            ret = release_yolov5_model(&rknn_app_ctx);
+            if (ret != 0)
+            {
+                printf("release_yolov5_model fail! ret=%d\n", ret);
+            }
+            return 0;
+        }
+    }
+
+    hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event);
+    
     
 // /*--------------陀螺仪检测并拍照------------------------------*/
 
@@ -371,10 +600,13 @@ int main(int argc, char **argv)
 //     });
 
 
-//     while (g_main_run_) {
-// 		delete_oldest_folders(images_dir_path, 50);
-// 		std::this_thread::sleep_for(std::chrono::minutes(1));
-// 	}
+    // while (g_main_run_) {
+	// 	// delete_oldest_folders(images_dir_path, 50);
+	// 	std::this_thread::sleep_for(std::chrono::minutes(1));
+	// }
+    while (g_main_run_) {
+		usleep(1000 * 1000);
+	}
 
     
 
