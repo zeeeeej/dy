@@ -456,7 +456,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
 
     // // 删除副本文件
 
-    return 1;
+    // return 1;
  }    
 
 
