@@ -388,7 +388,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
-            std::cout << i <<"<------" << endl;
+            std::cout << i <<"<------" << std::endl;
 
             for (size_t j = 0; j < 4; j++)
             {
