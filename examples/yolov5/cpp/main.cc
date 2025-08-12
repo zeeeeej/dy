@@ -267,108 +267,109 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
  * @param src_path 原始图片
  * @param dst_path 生成的目标图片
  */
-std::string process_image_with_yolov5(const std::string& src_path, const std::string& dst_path, 
+int process_image_with_yolov5(const std::string& src_path, const std::string& dst_path, 
                                     const std::string& model_path, int target_width = 960) {
-    // 1. 读取原始图像并等比例缩放
-    cv::Mat src_img = cv::imread(src_path);
-    if (src_img.empty()) {
-        throw std::runtime_error("无法加载图像: " + src_path);
-    }
-
-    // 计算缩放比例
-    double scale = static_cast<double>(target_width) / src_img.cols;
-    cv::Mat scaled_img;
-    cv::resize(src_img, scaled_img, cv::Size(), scale, scale, cv::INTER_LINEAR);
-
-    // 保存缩放后的图像到临时文件
-    std::string temp_dir = fs::path(dst_path).parent_path().string();
-    std::string scale_path = temp_dir + "/temp_scaled.jpg";
-    if (!cv::imwrite(scale_path, scaled_img)) {
-        throw std::runtime_error("无法保存缩放后的图像: " + scale_path);
-    }
-
-    // 2. 准备RKNN推理
-    // rknn_app_context_t rknn_app_ctx;
-    // memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
-
-    // init_post_process();
-
-    // int ret = init_yolov5_model(model_path.c_str(), &rknn_app_ctx);
-    // if (ret != 0) {
-    //     fs::remove(scale_path);
-    //     throw std::runtime_error("init_yolov5_model fail! ret=" + std::to_string(ret));
+    // // 1. 读取原始图像并等比例缩放
+    // cv::Mat src_img = cv::imread(src_path);
+    // if (src_img.empty()) {
+    //     throw std::runtime_error("无法加载图像: " + src_path);
     // }
 
-    // 3. 准备输入图像
-    image_buffer_t src_image;
-    memset(&src_image, 0, sizeof(image_buffer_t));
-    src_image.width = scaled_img.cols;
-    src_image.height = scaled_img.rows;
-    src_image.format = IMAGE_FORMAT_RGB888;
-    src_image.size = scaled_img.total() * scaled_img.elemSize();
-    src_image.virt_addr = (unsigned char*)malloc(src_image.size);
+    // // 计算缩放比例
+    // double scale = static_cast<double>(target_width) / src_img.cols;
+    // cv::Mat scaled_img;
+    // cv::resize(src_img, scaled_img, cv::Size(), scale, scale, cv::INTER_LINEAR);
+
+    // // 保存缩放后的图像到临时文件
+    // std::string temp_dir = fs::path(dst_path).parent_path().string();
+    // std::string scale_path = temp_dir + "/temp_scaled.jpg";
+    // if (!cv::imwrite(scale_path, scaled_img)) {
+    //     throw std::runtime_error("无法保存缩放后的图像: " + scale_path);
+    // }
+
+    // // 2. 准备RKNN推理
+    // // rknn_app_context_t rknn_app_ctx;
+    // // memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
+
+    // // init_post_process();
+
+    // // int ret = init_yolov5_model(model_path.c_str(), &rknn_app_ctx);
+    // // if (ret != 0) {
+    // //     fs::remove(scale_path);
+    // //     throw std::runtime_error("init_yolov5_model fail! ret=" + std::to_string(ret));
+    // // }
+
+    // // 3. 准备输入图像
+    // image_buffer_t src_image;
+    // memset(&src_image, 0, sizeof(image_buffer_t));
+    // src_image.width = scaled_img.cols;
+    // src_image.height = scaled_img.rows;
+    // src_image.format = IMAGE_FORMAT_RGB888;
+    // src_image.size = scaled_img.total() * scaled_img.elemSize();
+    // src_image.virt_addr = (unsigned char*)malloc(src_image.size);
     
-    // 将OpenCV Mat转换为RGB格式
-    cv::Mat rgb_img;
-    cv::cvtColor(scaled_img, rgb_img, cv::COLOR_BGR2RGB);
-    memcpy(src_image.virt_addr, rgb_img.data, src_image.size);
+    // // 将OpenCV Mat转换为RGB格式
+    // cv::Mat rgb_img;
+    // cv::cvtColor(scaled_img, rgb_img, cv::COLOR_BGR2RGB);
+    // memcpy(src_image.virt_addr, rgb_img.data, src_image.size);
 
-    // 4. 执行推理
-    object_detect_result_list od_results;
-    ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
-    if (ret != 0) {
-        free(src_image.virt_addr);
-        release_yolov5_model(&rknn_app_ctx);
-        fs::remove(scale_path);
-        throw std::runtime_error("inference_yolov5_model fail! ret=" + std::to_string(ret));
-    }
+    // // 4. 执行推理
+    // object_detect_result_list od_results;
+    // ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
+    // if (ret != 0) {
+    //     free(src_image.virt_addr);
+    //     release_yolov5_model(&rknn_app_ctx);
+    //     fs::remove(scale_path);
+    //     throw std::runtime_error("inference_yolov5_model fail! ret=" + std::to_string(ret));
+    // }
 
-    // 5. 处理检测结果并裁剪原始图像
-    if (od_results.count > 0) {
-        // 取置信度最高的检测结果
-        object_detect_result* best_result = &od_results.results[0];
-        for (int i = 1; i < od_results.count; i++) {
-            if (od_results.results[i].prop > best_result->prop) {
-                best_result = &od_results.results[i];
-            }
-        }
+    // // 5. 处理检测结果并裁剪原始图像
+    // if (od_results.count > 0) {
+    //     // 取置信度最高的检测结果
+    //     object_detect_result* best_result = &od_results.results[0];
+    //     for (int i = 1; i < od_results.count; i++) {
+    //         if (od_results.results[i].prop > best_result->prop) {
+    //             best_result = &od_results.results[i];
+    //         }
+    //     }
 
-        // 将检测框坐标映射回原始图像
-        int x1 = static_cast<int>(best_result->box.left / scale);
-        int y1 = static_cast<int>(best_result->box.top / scale);
-        int x2 = static_cast<int>(best_result->box.right / scale);
-        int y2 = static_cast<int>(best_result->box.bottom / scale);
+    //     // 将检测框坐标映射回原始图像
+    //     int x1 = static_cast<int>(best_result->box.left / scale);
+    //     int y1 = static_cast<int>(best_result->box.top / scale);
+    //     int x2 = static_cast<int>(best_result->box.right / scale);
+    //     int y2 = static_cast<int>(best_result->box.bottom / scale);
 
-        // 确保坐标在图像范围内
-        x1 = std::max(0, x1);
-        y1 = std::max(0, y1);
-        x2 = std::min(src_img.cols - 1, x2);
-        y2 = std::min(src_img.rows - 1, y2);
+    //     // 确保坐标在图像范围内
+    //     x1 = std::max(0, x1);
+    //     y1 = std::max(0, y1);
+    //     x2 = std::min(src_img.cols - 1, x2);
+    //     y2 = std::min(src_img.rows - 1, y2);
 
-        // 裁剪图像
-        cv::Rect roi(x1, y1, x2 - x1, y2 - y1);
-        cv::Mat cropped_img = src_img(roi);
+    //     // 裁剪图像
+    //     cv::Rect roi(x1, y1, x2 - x1, y2 - y1);
+    //     cv::Mat cropped_img = src_img(roi);
 
-        // 保存裁剪后的图像
-        if (!cv::imwrite(dst_path, cropped_img)) {
-            free(src_image.virt_addr);
-            release_yolov5_model(&rknn_app_ctx);
-            fs::remove(scale_path);
-            throw std::runtime_error("无法保存裁剪后的图像: " + dst_path);
-        }
-    } else {
-        free(src_image.virt_addr);
-        release_yolov5_model(&rknn_app_ctx);
-        fs::remove(scale_path);
-        throw std::runtime_error("未检测到任何目标");
-    }
+    //     // 保存裁剪后的图像
+    //     if (!cv::imwrite(dst_path, cropped_img)) {
+    //         free(src_image.virt_addr);
+    //         release_yolov5_model(&rknn_app_ctx);
+    //         fs::remove(scale_path);
+    //         throw std::runtime_error("无法保存裁剪后的图像: " + dst_path);
+    //     }
+    // } else {
+    //     free(src_image.virt_addr);
+    //     release_yolov5_model(&rknn_app_ctx);
+    //     fs::remove(scale_path);
+    //     throw std::runtime_error("未检测到任何目标");
+    // }
 
-    // 6. 清理资源
-    free(src_image.virt_addr);
-    release_yolov5_model(&rknn_app_ctx);
-    fs::remove(scale_path);
+    // // 6. 清理资源
+    // free(src_image.virt_addr);
+    // release_yolov5_model(&rknn_app_ctx);
+    // fs::remove(scale_path);
 
-    return dst_path;
+    // return dst_path;
+    return 0;
 }
   rknn_app_context_t rknn_app_ctx;
 
