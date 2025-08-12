@@ -384,7 +384,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
     // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx
     int tmp [5][4] = {0};
     if(rknn_app_ctx){
-        int ret =  process_image_with_yolov5_v2(src_path,tmp,&rknn_app_ctx);
+        int ret =  process_image_with_yolov5_v2(src_path,tmp,rknn_app_ctx);
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
