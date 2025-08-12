@@ -613,13 +613,35 @@ int main(int argc, char **argv)
 
     if (addr_biu == 2)
     {
+        std::string model_path_std;
+    
+    std::string userdata_rknn_path_new = findRknnFile("/userdata");
+    std::string userdata_rknn_path_old = findRknnFile("/oem/usr/share");
+
+    if (!userdata_rknn_path_new.empty()){
+        if (deleteFile(userdata_rknn_path_old)){
+            std::cout << "权重文件已删除" << std::endl;
+        } else {
+        std::cout << "文件删除失败或文件不存在" << std::endl;
+        }
+        
+        if (moveFile(userdata_rknn_path_new, "/oem/usr/share/")) {
+            std::cout << "移动成功" << std::endl;
+            model_path_std = findRknnFile("/oem/usr/share");
+        } else {
+            std::cerr << "移动失败" << std::endl;
+        }
+    } else {
+        model_path_std = userdata_rknn_path_old;
+    }
+    const char* model_path = model_path_std.c_str();
        int ret;
       
         memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
 
         init_post_process();
 
-        ret = init_yolov5_model(model_path, &rknn_app_ctx);
+        ret = init_yolov5_model(model_path.c_str(), &rknn_app_ctx);
         if (ret != 0)
         {
             printf("init_yolov5_model fail! ret=%d model_path=%s\n", ret, model_path);
