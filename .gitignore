@@ -4,3 +4,4 @@ examples/yolov5/.DS_Store
 examples/yolov5/cpp/.DS_Store
 build/
 install/
+build-a/
