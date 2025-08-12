@@ -2,20 +2,21 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include "hd_queue.h"
-#include "hd_c_log.h"
+#include "hd_utils.h"
 
 // 初始化队列
 HDBlockingQueue* hd_queue_create(int capacity) {
     HDBlockingQueue *queue = (HDBlockingQueue*)malloc(sizeof(HDBlockingQueue));
     if (!queue) {
-        perror("Failed to allocate memory for queue");
+        LOGD("Failed to allocate memory for queue");
         return NULL;
     }
 
     queue->items = (void**)malloc(sizeof(void*) * capacity);
     if (!queue->items) {
-        perror("Failed to allocate memory for items");
+        LOGW("Failed to allocate memory for items");
         free(queue);
+        queue = NULL;
         return NULL;
     }
 
@@ -32,24 +33,36 @@ HDBlockingQueue* hd_queue_create(int capacity) {
 }
 
 // 销毁队列
-void hd_queue_destroy(HDBlockingQueue *queue) {
+void hd_queue_destroy(HDBlockingQueue *queue,void(*item)(void**)) {
     if (queue) {
         pthread_mutex_destroy(&queue->mutex);
         pthread_cond_destroy(&queue->not_empty);
         pthread_cond_destroy(&queue->not_full);
-        free(queue->items);
+
+        if (queue->size>0){
+            for (int i = 0; i < queue->size; ++i) {
+                item(queue->items[i]);
+            }
+        }
+        if (queue->items){
+            free(queue->items);
+            queue->items = NULL;
+        }
+
         free(queue);
+        queue = NULL;
+
     }
 }
 
 // 向队列添加元素（阻塞直到有空间）
-void hd_queue_put(HDBlockingQueue *queue, void *item) {
+int hd_queue_put(HDBlockingQueue *queue, void *item) {
 //    printf("[queue] hd_queue_put (%d)%p \n",queue->size,item);
     pthread_mutex_lock(&queue->mutex);
 
     // 如果队列已满，等待直到有空间
     while (queue->size == queue->capacity) {
-        log_warn("[queue] hd_queue_put full.\n");
+        LOGW("[queue] hd_queue_put full.\n");
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
 
@@ -62,6 +75,7 @@ void hd_queue_put(HDBlockingQueue *queue, void *item) {
     pthread_cond_signal(&queue->not_empty);
 
     pthread_mutex_unlock(&queue->mutex);
+    return 0;
 }
 
 // 从队列取出元素（阻塞直到有元素）
@@ -156,14 +170,15 @@ int hd_queue_size(HDBlockingQueue *queue) {
 HDBlockingQueueUint8* hd_queue_create_uint8(int capacity) {
     HDBlockingQueueUint8 *queue = (HDBlockingQueueUint8*)malloc(sizeof(HDBlockingQueueUint8));
     if (!queue) {
-        perror("Failed to allocate memory for queue");
+        LOGW("Failed to allocate memory for queue");
         return NULL;
     }
 
     queue->items = (uint8_t *)malloc(sizeof(uint8_t) * capacity);
     if (!queue->items) {
-        perror("Failed to allocate memory for items");
+        LOGW("Failed to allocate memory for items");
         free(queue);
+        queue = NULL;
         return NULL;
     }
 
@@ -185,9 +200,36 @@ void hd_queue_destroy_uint8(HDBlockingQueueUint8 *queue) {
         pthread_mutex_destroy(&queue->mutex);
         pthread_cond_destroy(&queue->not_empty);
         pthread_cond_destroy(&queue->not_full);
-        free(queue->items);
+        if (queue->items){
+            free(queue->items);
+            queue->items = NULL;
+        }
+
         free(queue);
+        queue = NULL;
     }
+}
+
+// 尝试向队列添加元素，如果队列已满则立即返回false，成功添加返回true
+int hd_queue_offer_uint8(HDBlockingQueueUint8 *queue, uint8_t item) {
+    pthread_mutex_lock(&queue->mutex);
+
+    // 如果队列已满，直接返回false
+    if (queue->size == queue->capacity) {
+        pthread_mutex_unlock(&queue->mutex);
+        return 1;
+    }
+
+    // 添加元素
+    queue->rear = (queue->rear + 1) % queue->capacity;
+    queue->items[queue->rear] = item;
+    queue->size++;
+
+    // 通知可能正在等待的消费者
+    pthread_cond_signal(&queue->not_empty);
+
+    pthread_mutex_unlock(&queue->mutex);
+    return 0;
 }
 
 // 向队列添加元素（阻塞直到有空间）
@@ -197,7 +239,7 @@ void hd_queue_put_uint8(HDBlockingQueueUint8 *queue, uint8_t item) {
 
     // 如果队列已满，等待直到有空间
     while (queue->size == queue->capacity) {
-        log_warn("[queue] hd_queue_put full.\n");
+        LOGW("[queue] hd_queue_put full.\n");
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
 

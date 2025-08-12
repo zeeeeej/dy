@@ -2,13 +2,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
-#include <printf.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include "hd_utils.h"
-#include "hd_c_log.h"
 
 // 属性ID TODO
 static struct {
@@ -47,25 +45,20 @@ static uint8_t hd_host_property_set_push_pull_encode(
         return 1;
     }
     uint32_t size = 16 + sizeof(in_file_size) + strlen(in_file_path) + 1;
-    log_debug("size = %d\n", size);
-    log_debug("len  = %lu\n", strlen(in_file_path));
     unsigned char *payload = (unsigned char *) malloc(size);
     if (payload == NULL) {
         return -1; // 内存分配失败
     }
     memset(payload, 0, size);
     int pos = 0;
-    log_debug("组装file_md5.pos = %d\n", pos);
     for (int i = 0; i < 16; ++i) {
         payload[i] = in_file_md5[i];
         pos++;
     }
-    log_debug("组装file_size.pos = %d ,file_size = %llx\n", pos, in_file_size);
     for (int i = 0; i < 8; i++) {
         payload[pos + i] = (in_file_size >> (i * 8)) & 0xFF;
     }
     pos += 8;
-    log_debug("组装file_name.pos = %d\n", pos);
     for (int i = 0; i < strlen(in_file_path); ++i) {
         payload[pos++] = in_file_path[i];
     }
@@ -90,12 +83,12 @@ uint8_t hd_slave_property_set_push_pull_decode(
         return 2;
     }
     int pos = 0;
-    log_debug("解析file_md5 pos=%d\n", pos);
+    LOGD("解析file_md5 pos=%d\n", pos);
     for (int i = 0; i < 16; ++i) {
         out_file_md5[i] = in_payload[i];
         pos++;
     }
-    log_debug("解析file_size pos=%d\n", pos);
+    LOGD("解析file_size pos=%d\n", pos);
     *out_file_size = (uint64_t) in_payload[pos] |
                      (uint64_t) in_payload[pos + 1] << 8 |
                      (uint64_t) in_payload[pos + 2] << 16 |
@@ -106,18 +99,18 @@ uint8_t hd_slave_property_set_push_pull_decode(
                      (uint64_t) in_payload[pos + 7] << 56;
     pos += 8;
 
-    log_debug("解析file_path pos=%d\n", pos);
+    LOGD("解析file_path pos=%d\n", pos);
     size_t file_path_size = in_payload_size - 16 - 8;
-    log_debug("解析file_path size=%zu\n", file_path_size);
+    LOGD("解析file_path size=%zu\n", file_path_size);
     for (int i = 0; i < file_path_size; ++i) {
         out_file_path[i] = in_payload[pos + i];
     }
-    log_debug("md5 = [");
+    LOGD("md5 = [");
     for (int i = 0; i < 16; ++i) {
-        log_debug("%02x ", out_file_md5[i]);
-        log_debug("]\n");
-        log_debug("out_file_size = %llx\n", *out_file_size);
-        log_debug("out_file_path = %s\n", out_file_path);
+        LOGD("%02x ", out_file_md5[i]);
+        LOGD("]\n");
+        LOGD("out_file_size = %llx\n", *out_file_size);
+        LOGD("out_file_path = %s\n", out_file_path);
     }
     return 0;
 
@@ -158,32 +151,32 @@ uint8_t hd_host_property_set_push_encode_ext(
     int fd;
     fd = open(src_file_path, O_RDWR);
     if (fd == -1) {
-        log_debug("打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
+        LOGD("打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
         return 11;
     }
     // 2。获取文件长度
     // 获取文件长度
     struct stat file_stat;
     if (fstat(fd, &file_stat) == -1) {
-        log_debug("获取文件大小失败。fd:%d\n", fd);
+        LOGD("获取文件大小失败。fd:%d\n", fd);
         close(fd);
         return 12;
     }
     off_t file_size = file_stat.st_size;
-    log_debug("file_size   :  < %lld >bytes\n", file_size);
+    LOGD("file_size   :  < %lld >bytes\n", file_size);
     // 3。获取文件md5
     unsigned char md5[16];
     int ret = hd_md5(src_file_path, md5);
     if (ret) {
-        log_debug("获取文件md5失败。fd:%d\n", fd);
+        LOGD("获取文件md5失败。fd:%d\n", fd);
         close(fd);
         return 13;
     }
-    log_debug("file_md5    :  ");
+    LOGD("file_md5    :  ");
     for (int i = 0; i < sizeof(md5); ++i) {
-        log_debug("%02x ", md5[i]);
+        LOGD("%02x ", md5[i]);
     }
-    log_debug("\n");
+    LOGD("\n");
     return hd_host_property_set_push_encode(
             out_payload, out_payload_size, md5, file_size, dest_file_path
     );

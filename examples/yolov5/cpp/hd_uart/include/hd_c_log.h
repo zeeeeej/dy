@@ -18,43 +18,22 @@
 extern "C" {
 #endif
 
-#define LOG_VERSION "0.1.0"
+//<editor-fold desc="拍摄">
+#include <stdint.h>
 
-typedef struct {
-  va_list ap;
-  const char *fmt;
-  const char *file;
-  struct tm *time;
-  void *udata;
-  int line;
-  int level;
-} log_Event;
+int hd_camera_produce_init(uint8_t addr,
+                           const char *path,
+                           const char *demo_path,
+                           int(*on_action_id_info_produce)(char *, char **, int),
+                           int(*transform_pic)(const char *, char *)
+                           );
 
-typedef void (*log_LogFn)(log_Event *ev);
-typedef void (*log_LockFn)(bool lock, void *udata);
+int hd_camera_produce_on_action_id_changed(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t status,uint8_t trigger_type);
 
-enum { LOG_TRACE, LOG_DEBUG, LOG_INFO, LOG_WARN, LOG_ERROR, LOG_FATAL };
+int hd_camera_produce_take_photos_actively(uint16_t* pic_id);
 
-
-// 从完整路径中提取文件名（兼容Windows和Linux路径格式）
-#define HD_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : \
-                       (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__))
-
-#define log_trace(...) log_log(LOG_TRACE, HD_FILENAME, __LINE__, __VA_ARGS__)
-#define log_debug(...) log_log(LOG_DEBUG, HD_FILENAME, __LINE__, __VA_ARGS__)
-#define log_info(...)  log_log(LOG_INFO,  HD_FILENAME, __LINE__, __VA_ARGS__)
-#define log_warn(...)  log_log(LOG_WARN,  HD_FILENAME, __LINE__, __VA_ARGS__)
-#define log_error(...) log_log(LOG_ERROR, HD_FILENAME, __LINE__, __VA_ARGS__)
-#define log_fatal(...) log_log(LOG_FATAL, HD_FILENAME, __LINE__, __VA_ARGS__)
-
-const char* log_level_string(int level);
-void log_set_lock(log_LockFn fn, void *udata);
-void log_set_level(int level);
-void log_set_quiet(bool enable);
-int log_add_callback(log_LogFn fn, void *udata, int level);
-int log_add_fp(FILE *fp, int level);
-
-void log_log(int level, const char *file, int line, const char *fmt, ...);
+int hd_camera_produce_deinit(uint8_t addr);
+//</editor-fold>
 
 #ifdef __cplusplus
 }

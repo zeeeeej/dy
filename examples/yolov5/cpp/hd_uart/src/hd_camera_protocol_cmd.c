@@ -5,7 +5,6 @@
 #include "hd_camera_protocol_cmd.h"
 #include "hd_camera_protocol.h"
 #include "hd_utils.h"
-#include "hd_c_log.h"
 
 #define DEBUG_PROTOCOL_CMD              0
 
@@ -69,7 +68,7 @@ uint8_t hd_host_heartbeat_decode(
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 ) {
-    if (in_payload_data!=NULL && in_payload_data_size == 1) {
+    if (in_payload_data != NULL && in_payload_data_size == 1) {
         *out_ack_number = in_payload_data[0];
         return 0;
     } else {
@@ -112,13 +111,13 @@ static uint8_t common_slave_property_get_encode(
         hd_printf_buff(in_property_value, in_property_value_size, "hd_slave_property_get_encode", 0);
     }
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("    sizeof (property_id_in) = %lu\n", sizeof(in_property_id));
-        log_debug("    sizeof (result_in)      = %lu\n", sizeof(in_result));
-        log_debug("    property_value_size_in  = %u\n", in_property_value_size);
+        LOGD("    sizeof (property_id_in) = %lu\n", sizeof(in_property_id));
+        LOGD("    sizeof (result_in)      = %lu\n", sizeof(in_result));
+        LOGD("    property_value_size_in  = %u\n", in_property_value_size);
     }
     uint8_t len = sizeof(in_property_id) + sizeof(in_result) + in_property_value_size;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("    len                     = %u\n", len);
+        LOGD("    len                     = %u\n", len);
     }
     uint8_t payload_size = len;
     uint8_t *payload = (unsigned char *) malloc(payload_size);
@@ -139,7 +138,7 @@ static uint8_t common_slave_property_get_encode(
 
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(payload, len, "hd_slave_property_get_encode=2");
-        log_debug("    sizeof (payload) = %hhu\n", payload_size);
+        LOGD("    sizeof (payload) = %hhu\n", payload_size);
     }
 
     uint8_t ret = hd_camera_protocol_encode(
@@ -183,8 +182,8 @@ uint8_t qjy_host_property_get_decode(
 
 //    uint8_t len = in_payload_data[0];
 //    if (DEBUG_PROTOCOL_CMD) {
-//        log_debug("    len                  = %d %0X\n", len, len);
-//        log_debug("    payload_data_size_in = %d %0X\n", in_payload_data_size, in_payload_data_size);
+//        LOGD("    len                  = %d %0X\n", len, len);
+//        LOGD("    payload_data_size_in = %d %0X\n", in_payload_data_size, in_payload_data_size);
 //    }
 //
 //    // 检查声明的长度是否与实际数据长度一致
@@ -230,8 +229,8 @@ uint8_t hd_host_property_get_decode(
 
 //    uint8_t len = in_payload_data[0];
 //    if (DEBUG_PROTOCOL_CMD) {
-//        log_debug("    len                  = %d %0X\n", len, len);
-//        log_debug("    payload_data_size_in = %d %0X\n", in_payload_data_size, in_payload_data_size);
+//        LOGD("    len                  = %d %0X\n", len, len);
+//        LOGD("    payload_data_size_in = %d %0X\n", in_payload_data_size, in_payload_data_size);
 //    }
 //
 //    // 检查声明的长度是否与实际数据长度一致
@@ -378,7 +377,7 @@ static uint8_t common_host_property_set_encode(
         int hd
 ) {
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug(" hd_host_property_set_encode ........\n");
+        LOGD(" hd_host_property_set_encode ........\n");
     }
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(property_value_in, property_value_size_in, "[hd_host_property_set_encode]");
@@ -391,7 +390,7 @@ static uint8_t common_host_property_set_encode(
 
     uint8_t payload_size = sizeof(property_id_in) + property_value_size_in;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("payload_size                     = %u\n", payload_size);
+        LOGD("payload_size                     = %u\n", payload_size);
     }
     uint8_t *payload = (unsigned char *) malloc(payload_size);
     if (payload == NULL) {
@@ -588,8 +587,8 @@ uint8_t hd_host_property_set_decode(
 
     uint8_t len = payload_data_in[0];
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("    len                  = %d %0x\n", len, len);
-        log_debug("    payload_data_size_in = %d %0x\n", payload_data_size_in, payload_data_size_in);
+        LOGD("    len                  = %d %0x\n", len, len);
+        LOGD("    payload_data_size_in = %d %0x\n", payload_data_size_in, payload_data_size_in);
     }
 
     // 检查声明的长度是否与实际数据长度一致
@@ -641,9 +640,9 @@ uint8_t hd_slave_property_set_decode(
 //    size_t  size =  payload_data_size_in - 1;
 //    *result_value_size_out = size;
 //    if (DEBUG_PROTOCOL_CMD) {
-//        log_debug("    id                      = %d %0x\n", id, id);
-//        log_debug("    payload_data_size_in    = %d %0x\n", payload_data_size_in, payload_data_size_in);
-//        log_debug("    result_value_size_out   = %d %0x\n", *result_value_size_out, *result_value_size_out);
+//        LOGD("    id                      = %d %0x\n", id, id);
+//        LOGD("    payload_data_size_in    = %d %0x\n", payload_data_size_in, payload_data_size_in);
+//        LOGD("    result_value_size_out   = %d %0x\n", *result_value_size_out, *result_value_size_out);
 //    }
 //
 //    if (*result_value_size_out == 0) {
@@ -654,7 +653,7 @@ uint8_t hd_slave_property_set_decode(
 ////    unsigned char *tmp = (unsigned char *) malloc(size );
 //
 //    for (int i = 0; i < size; ++i) {
-//        log_debug("%d---> %02x\n",i,payload_data_in[i + 1]);
+//        LOGD("%d---> %02x\n",i,payload_data_in[i + 1]);
 //        *result_value_out[i] = payload_data_in[i + 1];
 //    }
 //    if (DEBUG_PROTOCOL_CMD) {
@@ -799,10 +798,22 @@ uint8_t hd_slave_snapshot_encode(
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
         uint8_t in_result,
-        uint8_t in_pic_id
+        uint16_t in_pic_id
 ) {
-    return common_slave_snapshot_encode(out_protocol_data, out_protocol_data_size, in_slave_addr, in_result, in_pic_id,
-                                        1);
+    unsigned char default_value[3] = {
+            in_result,
+            ((in_pic_id >> 0) & 0xFF),
+            ((in_pic_id >> 8) & 0xFF)
+    };
+
+    return hd_camera_protocol_encode(
+            out_protocol_data,
+            out_protocol_data_size,
+            in_slave_addr,
+            CMD_HD_CAMERA_SNAPSHOT,
+            sizeof(default_value),
+            default_value
+    );
 }
 
 /**
@@ -815,15 +826,16 @@ uint8_t hd_slave_snapshot_encode(
  */
 uint8_t hd_slave_snapshot_decode(
         uint8_t *out_result,
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         const unsigned char *payload_data_in,
         uint32_t payload_data_size_in
 ) {
-    if (payload_data_in == NULL || payload_data_size_in != 2) {
+    if (payload_data_in == NULL || payload_data_size_in != 3) {
         return -2;
     }
     *out_result = payload_data_in[0];
-    *out_pic_id = payload_data_in[1];
+    *out_pic_id = (uint16_t) payload_data_in[1] |
+                  (uint32_t) payload_data_in[2] << 8;
     return 0;
 }
 
@@ -836,32 +848,32 @@ uint8_t hd_host_snapshot_decode(
 }
 
 void hd_dynamic_pic_info_print(const hd_dynamic_pic_info **infos, size_t size) {
-    log_debug("=================图片信息==========================\n");
+    LOGD("=================图片信息==========================\n");
     if (size > 0) {
 
-        log_debug("大小：(%zu):\n", size);
+        LOGD("大小：(%zu):\n", size);
         for (int i = 0; i < size; ++i) {
-            log_debug("------------%d-------------\n", i);
-            log_debug("id                    =     %02x   %d\n", infos[i]->id, infos[i]->id);
-            log_debug("size                  =     %02x   %d\n", infos[i]->size, infos[i]->size);
-            log_debug("action_id_index       =     %02x   %d\n", infos[i]->action_id_index, infos[i]->action_id_index);
-            log_debug("action_id_timestamps  =     %02x   %d\n", infos[i]->action_id_timestamps,
-                      infos[i]->action_id_timestamps);
-            log_debug("trigger_type          =     %02x   %d\n", infos[i]->trigger_type, infos[i]->trigger_type);
-            log_debug("trigger_angel         =     %02x   %d\n", infos[i]->trigger_angel, infos[i]->trigger_angel);
-            log_debug("snapshot_timestamps   =     %02x   %d\n", infos[i]->snapshot_timestamps,
-                      infos[i]->snapshot_timestamps);
-            log_debug("md5                   =     ");
+            LOGD("------------%d-------------\n", i);
+            LOGD("id                    =     %02x   %d\n", infos[i]->id, infos[i]->id);
+            LOGD("size                  =     %02x   %d\n", infos[i]->size, infos[i]->size);
+            LOGD("action_id_index       =     %02x   %d\n", infos[i]->action_id_index, infos[i]->action_id_index);
+            LOGD("action_id_timestamps  =     %02x   %d\n", infos[i]->action_id_timestamps,
+                 infos[i]->action_id_timestamps);
+            LOGD("trigger_type          =     %02x   %d\n", infos[i]->trigger_type, infos[i]->trigger_type);
+            LOGD("trigger_angel         =     %02x   %d\n", infos[i]->trigger_angel, infos[i]->trigger_angel);
+            LOGD("snapshot_timestamps   =     %02x   %d\n", infos[i]->snapshot_timestamps,
+                 infos[i]->snapshot_timestamps);
+            LOGD("md5                   =     ");
             for (int j = 0; j < 16; ++j) {
-                log_debug("%02x ", infos[i]->md5[j]);
+                LOGD("%02x ", infos[i]->md5[j]);
             }
-            log_debug("\n");
+            LOGD("\n");
 
         }
     } else {
-        log_debug("图片信息为空\n");
+        LOGD("图片信息为空\n");
     }
-    log_debug("====================end=======================\n");
+    LOGD("====================end=======================\n");
 }
 
 uint8_t common_host_pic_info_encode(
@@ -903,13 +915,16 @@ uint8_t hd_host_pic_info_decode(
         const unsigned char *payload_data_in,
         uint32_t payload_data_size_in
 ) {
+    if(pic_info_out==NULL || pic_info_size_out == NULL || payload_data_in == NULL){
+        return 1;
+    }
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(payload_data_in, payload_data_size_in, "[hd_host_pic_info_decode]");
     }
     uint32_t pic_number = payload_data_in[0];
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("len            =   %d(%02x)\n", payload_data_size_in, payload_data_size_in);
-        log_debug("pic_number     =   %d(%02x)\n", pic_number, pic_number);
+        LOGD("len            =   %d(%02x)\n", payload_data_size_in, payload_data_size_in);
+        LOGD("pic_number     =   %d(%02x)\n", pic_number, pic_number);
     }
     if (payload_data_size_in - pic_number * hd_dynamic_pic_info_real_size() != 1) {
         perror("len != pic_number");
@@ -920,7 +935,7 @@ uint8_t hd_host_pic_info_decode(
     int pos = 1;
     for (int i = 0; i < pic_number; ++i) {
         if (DEBUG_PROTOCOL_CMD) {
-            log_debug("pos=%d \n", pos);
+            LOGD("pos=%d \n", pos);
         }
         hd_dynamic_pic_info *info = (hd_dynamic_pic_info *) malloc(sizeof(hd_dynamic_pic_info));
         uint8_t id = payload_data_in[pos];
@@ -944,13 +959,13 @@ uint8_t hd_host_pic_info_decode(
                         (uint32_t) payload_data_in[pos + 3] << 24;
         pos += 4;
         if (DEBUG_PROTOCOL_CMD) {
-            log_debug("    id                        :       %02x\n", id);
-            log_debug("    action_id_timestamps      :       %02x\n", action_id_timestamps);
-            log_debug("    action_id                 :       %02x\n", action_id);
-            log_debug("    trigger_type              :       %02x\n", trigger_type);
-            log_debug("    trigger_angel             :       %02x\n", trigger_angel);
-            log_debug("    snapshot_timestamps       :       %02x\n", snapshot_timestamps);
-            log_debug("    size                      :       %02x\n", size);
+            LOGD("    id                        :       %02x\n", id);
+            LOGD("    action_id_timestamps      :       %02x\n", action_id_timestamps);
+            LOGD("    action_id                 :       %02x\n", action_id);
+            LOGD("    trigger_type              :       %02x\n", trigger_type);
+            LOGD("    trigger_angel             :       %02x\n", trigger_angel);
+            LOGD("    snapshot_timestamps       :       %02x\n", snapshot_timestamps);
+            LOGD("    size                      :       %02x\n", size);
         }
         info->id = id;
         info->action_id_timestamps = action_id_timestamps;
@@ -988,10 +1003,10 @@ uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info *infos,
     const size_t struct_size = sizeof(hd_dynamic_pic_info);
     const size_t total_size = real_size * count;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("hd_dynamic_pic_info     count           =    %zu\n", count);
-        log_debug("hd_dynamic_pic_info     real_size       =    %zu\n", real_size);
-        log_debug("hd_dynamic_pic_info     struct_size     =    %zu\n", struct_size);
-        log_debug("hd_dynamic_pic_infos    total_size      =    %zu\n", total_size);
+        LOGD("hd_dynamic_pic_info     count           =    %zu\n", count);
+        LOGD("hd_dynamic_pic_info     real_size       =    %zu\n", real_size);
+        LOGD("hd_dynamic_pic_info     struct_size     =    %zu\n", struct_size);
+        LOGD("hd_dynamic_pic_infos    total_size      =    %zu\n", total_size);
     }
     unsigned char *buffer = (unsigned char *) malloc(total_size);
     if (buffer == NULL) {
@@ -1004,8 +1019,8 @@ uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info *infos,
         const hd_dynamic_pic_info info = infos[i];
 
         // 复制id (1字节)
-        *ptr++ = info.id;
-
+        *ptr++ =  ((info.id >> 0) & 0xFF);
+        *ptr++ =  ((info.id >> 8) & 0xFF);
 //        if (is_big_endian) {
 //            uint32_t r = swap_uint32((info->action_id_timestamps));
 //            memcpy(ptr, &r, sizeof(uint32_t));
@@ -1062,7 +1077,7 @@ uint8_t hd_dynamic_pic_infos_encode(hd_dynamic_pic_info *infos,
     *result_size = total_size;
     *result = buffer;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("hd_dynamic_pic_infos 转换成字节大小: %d  = (%d x %d)\n", total_size, real_size, count);
+        LOGD("hd_dynamic_pic_infos 转换成字节大小: %d  = (%d x %d)\n", total_size, real_size, count);
     }
     return 0;
 }
@@ -1096,11 +1111,11 @@ static uint8_t common_slave_pic_info_encode(
     unsigned char *pic_info;
     size_t pic_info_size;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("encode pic ....\n");
+        LOGD("encode pic ....\n");
     }
     ret = hd_dynamic_pic_infos_encode(info_in, info_size_in, &pic_info, &pic_info_size, 0);
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("encode end ! pic_info_size=%d\n", pic_info_size);
+        LOGD("encode end ! pic_info_size=%d\n", pic_info_size);
         //hd_printf_buff(pic_info, pic_info_size, "<图片数据>", 1);
     }
     if (ret) {
@@ -1116,11 +1131,11 @@ static uint8_t common_slave_pic_info_encode(
     uint32_t payload_size = 1 + pic_info_size;
     unsigned char *payload = (unsigned char *) malloc(payload_size);
     if (payload == NULL) {
-        log_error("malloc payload fail.\n");
+        LOGE("malloc payload fail.\n");
         return 2;
     }
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("malloc payload size = %d\n", payload_size);
+        LOGD("malloc payload size = %d\n", payload_size);
     }
     payload[0] = info_size_in;
     memcpy(&payload[1], pic_info, pic_info_size);
@@ -1128,7 +1143,7 @@ static uint8_t common_slave_pic_info_encode(
         hd_camera_protocol_print_buffer(payload, payload_size, "[hd_slave_pic_info_encode]");
     }
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("hd_camera_protocol_encode ....\n");
+        LOGD("hd_camera_protocol_encode ....\n");
     }
     ret = hd_camera_protocol_encode(
             protocol_data_out,
@@ -1139,11 +1154,11 @@ static uint8_t common_slave_pic_info_encode(
             payload
     );
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("hd_camera_protocol_encode end \n");
+        LOGD("hd_camera_protocol_encode end \n");
     }
     free(payload);
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("common_slave_pic_info_encode end!! \n");
+        LOGD("common_slave_pic_info_encode end!! \n");
     }
     return ret;
 }
@@ -1206,9 +1221,20 @@ uint8_t hd_host_delete_pic_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
-        uint8_t in_pic_id
+        uint16_t in_pic_id
 ) {
-    return common_host_delete_pic_encode(out_protocol_data, out_protocol_data_size, in_slave_addr, in_pic_id, 1);
+
+    uint8_t payload[] = {((in_pic_id >> 0) & 0xFF),
+                         ((in_pic_id >> 8) & 0xFF)};
+    return hd_camera_protocol_encode(
+            out_protocol_data,
+            out_protocol_data_size,
+            in_slave_addr,
+            CMD_HD_PIC_DELETE,
+            sizeof(payload),
+            payload
+    );
+
 }
 
 uint8_t qjy_host_delete_pic_encode(
@@ -1225,41 +1251,41 @@ uint8_t qjy_host_delete_pic_encode(
 
 static uint8_t
 hd_slave_delete_pic_decode_v2(
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         uint32_t *out_action_id_timestamp,
         uint8_t *out_action_id_index,
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 ) {
-    if (in_payload_data == NULL || in_payload_data_size != 1 + 4 + 1) {
-        return -2;
+    if (in_payload_data == NULL || in_payload_data_size < 2) {
+        return 2;
     }
-    *out_pic_id = in_payload_data[0];
-    *out_action_id_timestamp = (uint32_t) in_payload_data[1] |  // 最低字节在最低地址
-                               (uint32_t) in_payload_data[2] << 8 |
-                               (uint32_t) in_payload_data[3] << 16 |
-                               (uint32_t) in_payload_data[4] << 24;
-    *out_action_id_index = in_payload_data[5];
+    *out_pic_id = (uint16_t) in_payload_data[0] |
+                  (uint32_t) in_payload_data[1] << 8;
+    if (in_payload_data_size == 2 + 4 + 1) {
+        *out_action_id_timestamp = (uint32_t) in_payload_data[2] |  // 最低字节在最低地址
+                                   (uint32_t) in_payload_data[3] << 8 |
+                                   (uint32_t) in_payload_data[4] << 16 |
+                                   (uint32_t) in_payload_data[5] << 24;
+        *out_action_id_index = in_payload_data[6];
+    } else {
+        *out_action_id_timestamp = 0;
+        *out_action_id_index = 0;
+    }
+
     return 0;
 }
 
 uint8_t
 hd_slave_delete_pic_decode(
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         uint32_t *out_action_id_timestamp,
         uint8_t *out_action_id_index,
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 ) {
-    if (0){
-        return hd_slave_delete_pic_decode_v2(out_pic_id, out_action_id_timestamp, out_action_id_index, in_payload_data,
-                                             in_payload_data_size);
-    }
-    if (in_payload_data == NULL || in_payload_data_size != 1) {
-        return -2;
-    }
-    *out_pic_id = in_payload_data[0];
-    return 0;
+    return hd_slave_delete_pic_decode_v2(out_pic_id, out_action_id_timestamp, out_action_id_index, in_payload_data,
+                                         in_payload_data_size);
 }
 
 
@@ -1359,6 +1385,7 @@ common_host_pull_pic_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1367,12 +1394,42 @@ hd_host_pull_pic_encode(
         unsigned char **out_protocol_data,
         uint32_t *out_protocol_data_size,
         uint8_t in_slave_addr,
-        uint8_t in_pic_id,
+        uint16_t in_pic_id,
         uint32_t in_offset,
         uint32_t in_read_len
 ) {
-    return common_host_pull_pic_encode(out_protocol_data, out_protocol_data_size, in_slave_addr, in_pic_id, in_offset,
-                                       in_read_len, 1);
+    if (out_protocol_data == NULL || out_protocol_data_size == NULL) {
+        return -1;
+    }
+    uint32_t payload_size = sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    unsigned char *payload = (unsigned char *) malloc(payload_size);
+
+    payload[0] = ((in_pic_id >> 0) & 0xFF);
+    payload[1] = ((in_pic_id >> 8) & 0xFF);
+    payload[2] = (in_offset >> 0) & 0xFF;  // LSB
+    payload[3] = (in_offset >> 8) & 0xFF;
+    payload[4] = (in_offset >> 16) & 0xFF;
+    payload[5] = (in_offset >> 24) & 0xFF; // MSB
+
+    payload[6] = (in_read_len >> 0) & 0xFF;  // LSB
+    payload[7] = (in_read_len >> 8) & 0xFF;
+    payload[8] = (in_read_len >> 16) & 0xFF;
+    payload[9] = (in_read_len >> 24) & 0xFF; // MSB
+
+    if (DEBUG_PROTOCOL_CMD) {
+        hd_camera_protocol_print_buffer(payload, payload_size, "[hd_host_pull_pic_encode]");
+    }
+    int ret = hd_camera_protocol_encode(
+            out_protocol_data,
+            out_protocol_data_size,
+            in_slave_addr,
+            CMD_HD_PIC_PULL,
+            payload_size,
+            payload
+    );
+    free(payload);
+    payload = NULL;
+    return ret;
 }
 
 uint8_t
@@ -1389,25 +1446,27 @@ qjy_host_pull_pic_encode(
 }
 
 uint8_t hd_slave_pull_pic_decode(
-        uint8_t *out_pic_id,
+        uint16_t *out_pic_id,
         uint32_t *out_offset,
         uint32_t *out_read_len,
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 ) {
-    if (in_payload_data == NULL || in_payload_data_size != (sizeof(uint8_t) + sizeof(uint32_t) * 2)) {
+    if (in_payload_data == NULL || in_payload_data_size != (sizeof(uint16_t) + sizeof(uint32_t) * 2)) {
         return -2;
     }
-    *out_pic_id = in_payload_data[0];
-    *out_offset = (uint32_t) in_payload_data[1] |  // 最低字节在最低地址
-                  (uint32_t) in_payload_data[2] << 8 |
-                  (uint32_t) in_payload_data[3] << 16 |
-                  (uint32_t) in_payload_data[4] << 24;
+    *out_pic_id =    (uint16_t) in_payload_data[0] |
+                     (uint32_t) in_payload_data[1] << 8;
 
-    *out_read_len = (uint32_t) in_payload_data[5] |  // 最低字节在最低地址
-                    (uint32_t) in_payload_data[6] << 8 |
-                    (uint32_t) in_payload_data[7] << 16 |
-                    (uint32_t) in_payload_data[8] << 24;
+    *out_offset = (uint32_t) in_payload_data[2] |  // 最低字节在最低地址
+                  (uint32_t) in_payload_data[3] << 8 |
+                  (uint32_t) in_payload_data[4] << 16 |
+                  (uint32_t) in_payload_data[5] << 24;
+
+    *out_read_len = (uint32_t) in_payload_data[6] |  // 最低字节在最低地址
+                    (uint32_t) in_payload_data[7] << 8 |
+                    (uint32_t) in_payload_data[8] << 16 |
+                    (uint32_t) in_payload_data[9] << 24;
 
     return 0;
 }
@@ -1427,17 +1486,17 @@ common_slave_pull_pic_encode(
     }
     uint32_t payload_size = sizeof(in_result) + in_pic_data_size;
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("payload_size  = %d \n", payload_size);
+        LOGD("payload_size  = %d \n", payload_size);
     }
     unsigned char *payload = (unsigned char *) malloc(payload_size);
 //    for (int i = 0; i < payload_size; ++i) {
-//         log_debug(" %d--->%02x\n",i,payload[i]);
+//         LOGD(" %d--->%02x\n",i,payload[i]);
 //    }
     payload[0] = in_result;
     memcpy(&payload[1], in_pic_data, in_pic_data_size);
 
 //    for (int i = 0; i < payload_size; ++i) {
-//         log_debug(" %d--->%02x\n",i,payload[i]);
+//         LOGD(" %d--->%02x\n",i,payload[i]);
 //    }
     if (DEBUG_PROTOCOL_CMD) {
         hd_camera_protocol_print_buffer(payload, payload_size, "[hd_slave_pull_pic_encode]");
@@ -1451,7 +1510,7 @@ common_slave_pull_pic_encode(
             payload_size,
             payload
     );
-//     log_debug("ret = %d \n",ret);
+//     LOGD("ret = %d \n",ret);
     // AA 5A
     // 01
     // 09
@@ -1498,7 +1557,10 @@ uint8_t hd_host_pull_pic_decode(
         const unsigned char *in_payload_data,
         uint32_t in_payload_data_size
 ) {
-    if (in_payload_data == NULL || in_payload_data_size < (sizeof(uint8_t) + sizeof(uint32_t))) {
+    if (out_pic_data == NULL || out_pic_data_size == NULL) {
+        return 1;
+    }
+    if (in_payload_data == NULL || in_payload_data_size < (sizeof(uint16_t) + sizeof(uint32_t))) {
         return -2;
     }
     // 11 00 00 00  01  43 02 53 62 04 3A AE 9F AE 9B 33 96 BD F2 E1 D7
@@ -1512,8 +1574,8 @@ uint8_t hd_host_pull_pic_decode(
     *out_result = in_payload_data[0];
     *out_pic_data_size = in_payload_data_size - sizeof(uint8_t);
     if (DEBUG_PROTOCOL_CMD) {
-        log_debug("out_result          =   %d\n", *out_result);
-        log_debug("out_pic_data_size   =   %d\n", *out_pic_data_size);
+        LOGD("out_result          =   %d\n", *out_result);
+        LOGD("out_pic_data_size   =   %d\n", *out_pic_data_size);
     }
     unsigned char *result = (unsigned char *) malloc(*out_pic_data_size);
     uint32_t pos = 1;
@@ -1663,6 +1725,7 @@ hd_host_ota_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1705,6 +1768,7 @@ hd_host_ota_push_encode(
 //            payload
 //    );
 //    free(payload);
+//    paylaod = NULL;
 //    return ret;
 }
 
@@ -1771,6 +1835,7 @@ uint8_t hd_host_app_upgrade_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1827,6 +1892,7 @@ uint8_t hd_host_action_id_encode(
             default_value
     );
     free(default_value);
+    default_value = NULL;
     return ret;
 }
 
@@ -1884,6 +1950,7 @@ uint8_t hd_host_file_encode(
             out_payload
     );
     free(out_payload);
+    out_payload = NULL;
     return ret;
 }
 
@@ -1902,9 +1969,9 @@ uint8_t hd_host_file_encode_payload(
     unsigned long file_name_size = file_name == NULL ? 0 : strlen(file_name);
 
     uint8_t payload_size = 1 + 4 + 16 + file_name_size;
-    log_debug("hd_host_file_encode_payload file_name         = %s\n", file_name);
-    log_debug("hd_host_file_encode_payload file_name_size    = %d\n", file_name_size);
-    log_debug("hd_host_file_encode_payload payload_size      = %d\n", payload_size);
+    LOGD("hd_host_file_encode_payload file_name         = %s\n", file_name);
+    LOGD("hd_host_file_encode_payload file_name_size    = %d\n", file_name_size);
+    LOGD("hd_host_file_encode_payload payload_size      = %d\n", payload_size);
     uint8_t *payload = (unsigned char *) malloc(payload_size);
     if (payload == NULL) {
         return -1; // 内存分配失败
@@ -1960,15 +2027,15 @@ uint8_t hd_slave_file_decode_payload(
         file_md5[i] = in_payload[5 + i];
     }
     uint32_t file_name_size = in_payload_size - 1 - 4 - 16;
-//    log_debug("file_name_size          =   %d\n", file_name_size);
+//    LOGD("file_name_size          =   %d\n", file_name_size);
     if (file_name_size > 0) {
         for (int i = 0; i < file_name_size; ++i) {
             file_name[i] = in_payload[1 + 4 + 16 + i];
         }
         file_name[file_name_size] = '\0';
     }
-//    log_debug("type          =   %d\n", *type);
-//    log_debug("file_size     =   %d %02x\n", *file_size,*file_size);
+//    LOGD("type          =   %d\n", *type);
+//    LOGD("file_size     =   %d %02x\n", *file_size,*file_size);
     return 0;
 }
 
@@ -2019,5 +2086,6 @@ uint8_t hd_slave_file_encode(
     ret = hd_camera_protocol_encode(out_protocol, out_protocol_size, in_addr, CMD_HD_PUSH_FILE_SEND, out_payload_size,
                                     out_payload);
     free(out_payload);
+    out_payload = NULL;
     return ret;
 }

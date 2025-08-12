@@ -21,7 +21,7 @@ extern "C" {
 #define PROTOCOL_RATE_DEFAULT           460800                      // 默认485串口波特率
 #define PROTOCOL_UART_SUCCESS           0                           // result 成功
 #define PROTOCOL_UART_FAIL              1                           // result 失败
-#define PROTOCOL_MAX_FRAME_LEN          (10240+256)                 // 定义最大帧长度
+#define PROTOCOL_MAX_FRAME_LEN          (512*1024)                  // 定义最大帧长度
 
 uint16_t hd_crc16(const uint8_t *data, uint32_t length);
 
@@ -46,6 +46,40 @@ uint8_t hd_camera_protocol_encode(
         uint8_t cmd_in,
         uint32_t payload_data_size_in,
         const unsigned char *payload_data_in
+);
+
+typedef struct {
+    uint32_t snapshot_timestamps;
+    uint16_t pic_id;
+    int file_size;
+    unsigned char file_md5[16];
+} hd_parse_pic_infos;
+
+/**
+ * 文件名格式：
+ * id_md5_fileSize_bigTimestamp_triggerType_triggerAngel_addr_timestamp_picid.jpg
+ * 其中md5为16进制字符串，filesize为整数字符串，timestamp为整数，picid为整数。
+ * 根据文件名称解析数据得到hd_parse_pic_infos
+ * 比如
+ * 001_e3d99dcf615c61cd25b37b9f62989cce_123456_666_0_30_1_1234567788_002.jpg
+ * 解除出来的hd_parse_pic_infos的值为：
+ * snapshot_timestamps = 1234567788
+ * pic_id = 002
+ * file_size = 123456
+ * file_size = 123456
+ * file_md5 = [0xe3,0xd9,0x9d,0xcf,0x61,0x5c,0x61,0xcd,0x25,0xb3,0x7b,0x9f,0x62,0x98,0x9c,0xce]
+ *
+ * @param file_name     文件名称
+ * @param infos         图片详情
+ * @return
+ */
+int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos *infos);
+
+// 001_e3d99dcf615c61cd25b37b9f62989cce_123456_666_0_30_1_1234567788_002.jpg
+// %d_%s_%d_%d_%d_%d_%d_%d_%03d.jpg
+int hd_camera_protocol_pic_info_encode(char result[1024], uint8_t index_1, unsigned char md5[16], uint32_t file_size,
+                                       uint8_t index_2, uint8_t addr, uint8_t trigger_angel, uint8_t trigger_type,
+                                       uint32_t timestamp, uint8_t pic_id
 );
 
 #ifdef __cplusplus

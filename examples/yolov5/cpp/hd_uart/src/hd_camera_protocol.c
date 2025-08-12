@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
 #include "hd_utils.h"
 #include "hd_camera_protocol.h"
-#include "hd_c_log.h"
 
 static void hd_camera_protocol_print_buffer(const unsigned char *buf, size_t len, const char *tag) {
     hd_printf_buff(buf, len, tag, 0);
@@ -56,14 +58,14 @@ uint16_t hd_crc16(const uint8_t *data, uint32_t length) {
 uint8_t hd_camera_protocol_addr(
         uint8_t *out_addr,
         const unsigned char *in_recv_data,
-        uint32_t in_recv_data_size){
+        uint32_t in_recv_data_size) {
     if (in_recv_data_size < 10) {
         return -1; // 数据长度不足
     }
 
     // 检查帧头
     if (in_recv_data[0] != PROTOCOL_HEADER_1 || in_recv_data[1] != PROTOCOL_HEADER_0) {
-        log_debug("[uart]recv_data[0][1]:%02x,%02x\n", in_recv_data[0], in_recv_data[1]);
+        LOGW("[uart]recv_data[0][1]:%02x,%02x\n", in_recv_data[0], in_recv_data[1]);
         return -2; // 帧头错误
     }
 
@@ -91,7 +93,7 @@ uint8_t hd_camera_protocol_decode(
 
     // 检查帧头
     if (recv_data_in[0] != PROTOCOL_HEADER_1 || recv_data_in[1] != PROTOCOL_HEADER_0) {
-        log_debug("[uart]recv_data[0][1]:%02x,%02x\n", recv_data_in[0], recv_data_in[1]);
+        LOGW("[uart]recv_data[0][1]:%02x,%02x\n", recv_data_in[0], recv_data_in[1]);
         return -2; // 帧头错误
     }
 
@@ -127,12 +129,12 @@ uint8_t hd_camera_protocol_decode(
     uint16_t calculated_crc = hd_crc16(recv_data_in, 8 + length);
 
     if (received_crc != calculated_crc) {
-        log_warn("%02x vs %02x \n", received_crc, calculated_crc);
+        LOGW("%02x vs %02x \n", received_crc, calculated_crc);
         return -5; // CRC校验失败
     }
     if (DEBUG) {
-        log_debug("->cmd = %u \n", *cmd_out);
-        log_debug("->slave_addr = %u \n", *slave_addr_out);
+        LOGW("->cmd = %u \n", *cmd_out);
+        LOGW("->slave_addr = %u \n", *slave_addr_out);
     }
     return 0; // 解析成功
 }
@@ -179,7 +181,7 @@ uint8_t hd_camera_protocol_encode(
     // 计算CRC (覆盖: 帧头到payload)
     uint16_t crc = hd_crc16(buffer, fixed_header_size + payload_data_size_in);
     if (DEBUG) {
-        log_debug("crc = %02x \n", crc);
+        LOGW("crc = %02x \n", crc);
     }
 
     // 填充CRC (小端模式)
@@ -196,6 +198,117 @@ uint8_t hd_camera_protocol_encode(
 
 }
 
+int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos *infos) {
+    if (!file_name || !infos) {
+        return -1;
+    }
 
+    // 复制文件名以便处理
+    char *name = strdup(file_name);
+    if (!name) {
+        return -2;
+    }
+
+    // 去掉可能的路径和扩展名
+    char *base_name = strrchr(name, '/');
+    if (!base_name) {
+        base_name = name;
+    } else {
+        base_name++; // 跳过'/'
+    }
+
+    // 去掉.jpg扩展名
+    char *dot = strrchr(base_name, '.');
+    if (dot) {
+        *dot = '\0';
+    }
+
+    // 分割字符串
+    char *parts[9] = {0};
+    char *token = strtok(base_name, "_");
+    int part_count = 0;
+
+    while (token && part_count < 9) {
+        parts[part_count++] = token;
+        token = strtok(NULL, "_");
+    }
+
+    // 检查是否有足够的组成部分
+    if (part_count != 9) {
+        free(name);
+        name = NULL;
+        return -3;
+    }
+
+    // 解析各个字段
+    // 1. MD5 (parts[1])
+    if (strlen(parts[1]) != 32) {
+        free(name);
+        name = NULL;
+        return -4;
+    }
+
+    for (int i = 0; i < 16; i++) {
+        char byte_str[3] = {parts[1][2 * i], parts[1][2 * i + 1], '\0'};
+        infos->file_md5[i] = (uint8_t) strtol(byte_str, NULL, 16);
+    }
+
+    // 2. file_size (parts[2])
+    errno = 0;
+    unsigned long size = strtoul(parts[2], NULL, 10);
+    if (errno != 0 || size > UINT32_MAX) {
+        free(name);
+        name = NULL;
+        return -5;
+    }
+    infos->file_size = (uint32_t) size;
+
+    // 3. snapshot_timestamps (parts[7])
+    errno = 0;
+    unsigned long long timestamp = strtoull(parts[7], NULL, 10);
+    if (errno != 0) {
+        free(name);
+        name = NULL;
+        return -6;
+    }
+    infos->snapshot_timestamps = timestamp;
+
+    // 4. pic_id (parts[8])
+    errno = 0;
+    unsigned long pic_id = strtoul(parts[8], NULL, 10);
+    if (errno != 0 || pic_id > UINT32_MAX) {
+        free(name);
+        name = NULL;
+        return -7;
+    }
+    infos->pic_id = (uint16_t) pic_id;
+
+    free(name);
+    name = NULL;
+    return 0;
+}
+
+int
+hd_camera_protocol_pic_info_encode( char result[1024], uint8_t index_1, unsigned char md5[16], uint32_t file_size,
+                                   uint8_t index_2, uint8_t addr, uint8_t trigger_angel, uint8_t trigger_type,
+                                   uint32_t timestamp, uint8_t pic_id
+) {
+    if (result == NULL)return 1;
+    // 将MD5转为可打印的十六进制字符串
+    char md5_str[33]; // 32字符MD5 + 1个null终止符
+    for (int i = 0; i < 16; i++) {
+        sprintf(&md5_str[i*2], "%02x", md5[i]);
+    }
+    // 使用固定缓冲区大小1024
+    int ret = snprintf(result, 1024, "%u_%s_%u_%u_%u_%u_%u_%u_%05u.jpg",
+                       index_1, md5_str, file_size, index_2, addr,
+                       trigger_angel, trigger_type, timestamp, pic_id);
+
+    // 检查是否截断
+    if (ret >= 1024) {
+        return 2; // 缓冲区不足
+    }
+    return 0;
+}
 
 

@@ -309,6 +309,7 @@ uint8_t hd_slave_pull_encode(
     ret = hd_camera_protocol_encode(out_protocol_payload, out_protocol_payload_size, in_slave_addr, CMD_HD_EXTRA_PULL,
                                     out_payload_size_resp, out_payload_resp);
     free(out_payload_resp);
+    out_payload_resp = NULL;
     return ret;
 }
 
@@ -328,5 +329,6 @@ uint8_t hd_host_pull_encode(
     ret = hd_camera_protocol_encode(out_protocol, out_protocol_size, in_slave_addr, CMD_HD_EXTRA_PULL,
                                     out_payload_size_resp, out_payload_resp);
     free(out_payload_resp);
+    out_payload_resp = NULL;
     return ret;
 }

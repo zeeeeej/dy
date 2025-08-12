@@ -17,7 +17,10 @@
 #include <signal.h>
 #include "hd_camera_ota.h"
 #include "hd_camera.h"
-#include "hd_c_log.h"
+
+
+#define hd_camera_ota_debug                     0
+#define hd_camera_ota_tag                       "hd_camera_ota.c"
 
 #define HD_FILE_PUSH_TIMEOUT                    10                          // 接受上传文件超时时间
 #if(CONTEXT)
@@ -61,11 +64,11 @@ static void on_hd_push_delete_and_reply(int result);
 
 static void hd_camera_ota_reset(const char *tag);
 
-static void start_push_timeout(){
+static void start_push_timeout() {
 
 }
 
-static void stop_push_timeout(){
+static void stop_push_timeout() {
 
 }
 
@@ -81,7 +84,7 @@ static void hd_camera_ota_reset_internal(const char *dir_path, const char *end) 
 
     dir = opendir(dir_path);
     if (dir == NULL) {
-        perror("无法打开目录");
+        LOGW("hd_camera_ota_reset_internal 无法打开目录\n");
         return;
     }
 
@@ -94,9 +97,9 @@ static void hd_camera_ota_reset_internal(const char *dir_path, const char *end) 
 
             // 删除文件
             if (remove(filepath)) {
-                perror("删除文件失败");
+                LOGW("删除文件失败");
             } else {
-                printf("已删除: %s\n", filepath);
+                LOGI("已删除: %s\n", filepath);
             }
         }
     }
@@ -105,20 +108,20 @@ static void hd_camera_ota_reset_internal(const char *dir_path, const char *end) 
 }
 
 int hd_camera_ota_version(
-         uint8_t property_id_out,
-         const unsigned char *payload_data, uint32_t payload_data_size,
+        uint8_t property_id_out,
+        const unsigned char *payload_data, uint32_t payload_data_size,
         unsigned char **protocol_data_out,
         uint32_t *protocol_data_size_out
 ) {
     int ret;
-    log_info("[%d获取模型名称]%02x\n", g_addr, property_id_out);
+    LOGD("[%d获取模型名称]%02x\n", g_addr, property_id_out);
     // 查找模型
     char version[1024];
     ret = hd_find_model_name(MODEL_DIR_PATH, version, MODEL_PREFIX);
     if (ret) {
         return ret;
     }
-    log_info("模型名称: %s\n", version);
+    LOGD("模型名称: %s\n", version);
     size_t len = strlen(version);
     unsigned char *result = (unsigned char *) malloc(len);
     if (!result) {
@@ -129,6 +132,7 @@ int hd_camera_ota_version(
     ret = hd_slave_property_get_encode(protocol_data_out, protocol_data_size_out,
                                        g_addr, property_id_out, 0, result, len);
     free(result);
+    result = NULL;
     return ret;
 }
 
@@ -147,13 +151,13 @@ void hd_camera_ota_model_recv(uint8_t str) {
 static void hd_camera_ota_consume(uint8_t data) {
     stop_push_timeout();
     if (g_hd_push_mode_file == NULL) {
-        log_info("[升级模型]g_hd_push_mode_file == null \n");
+        LOGD("[升级模型]g_hd_push_mode_file == null \n");
         return;
     }
     if (g_hd_push_recv_count < g_hd_push_mode_file_size) {
         size_t written = fwrite(&data, sizeof(uint8_t), 1, g_hd_push_mode_file);
         if (written != 1) {
-            perror("[升级模型] Failed to write byte\n");
+            LOGW("[升级模型] Failed to write byte\n");
             hd_camera_ota_reset("fwrite");
             on_hd_push_delete_and_reply(1);
 
@@ -169,7 +173,7 @@ static void hd_camera_ota_consume(uint8_t data) {
         stop_push_timeout();
         usleep(100);
         if (g_hd_push_mode_file == NULL) {
-            log_info("[升级模型]g_hd_push_mode_file == null \n");
+            LOGD("[升级模型]g_hd_push_mode_file == null \n");
             return;
         }
         if (g_hd_push_mode_file != NULL) {
@@ -180,14 +184,14 @@ static void hd_camera_ota_consume(uint8_t data) {
 
         usleep(10 * 1000);
         printf("\n");
-        log_info("[升级模型]接受完毕！文件：%s ，大小：%d\n", g_hd_push_mode_file_path_downloading, g_hd_push_mode_file_size);
+        LOGD("[升级模型]接受完毕！文件：%s ，大小：%d\n", g_hd_push_mode_file_path_downloading, g_hd_push_mode_file_size);
         hd_camera_change_serial_mode(HD_SERIAL_NORMAL_MODE);
-        log_info("[升级模型]开始校验 ... <%s>\n", g_hd_push_mode_file_path_downloading);
+        LOGD("[升级模型]开始校验 ... <%s>\n", g_hd_push_mode_file_path_downloading);
         // 校验md5
         unsigned char result[16];
         int ret = hd_md5(g_hd_push_mode_file_path_downloading, result);
         if (ret) {
-            log_warn("[升级模型]md5生成 fail :%d\n", ret);
+            LOGW("[升级模型]md5生成 fail :%d\n", ret);
             on_hd_push_delete_and_reply(4);
             memset(g_hd_push_mode_file_path, 0, sizeof(g_hd_push_mode_file_path));
             memset(g_hd_push_mode_file_path_downloading, 0, sizeof(g_hd_push_mode_file_path_downloading));
@@ -196,17 +200,17 @@ static void hd_camera_ota_consume(uint8_t data) {
         }
         hd_printf_buff(result, 16, "md5", 0);
         if (hd_array_cmp(result, 16, g_hd_push_mode_file_md5, 16) == 0) {
-            log_info("[升级模型]修改名称！\n");
+            LOGD("[升级模型]修改名称！\n");
             ret = rename(g_hd_push_mode_file_path_downloading, g_hd_push_mode_file_path);
             if (ret == 0) {
-                log_info("[升级模型] hd push model success！\n");
+                LOGD("[升级模型] hd push model success！\n");
                 on_hd_push_delete_and_reply(0);
             } else {
-                log_info("[升级模型] hd push model fail！\n");
+                LOGD("[升级模型] hd push model fail！\n");
                 on_hd_push_delete_and_reply(5);
             }
         } else {
-            log_warn("[升级模型]md5不同\n");
+            LOGW("[升级模型]md5不同\n");
             on_hd_push_delete_and_reply(4);
         }
         memset(g_hd_push_mode_file_path, 0, sizeof(g_hd_push_mode_file_path));
@@ -223,12 +227,12 @@ static void hd_camera_ota_consume(uint8_t data) {
 
         printf("[升级模型]耗时: %f 毫秒\n", time_used);
 
-        log_warn("[升级模型]准备重启！\n");
+        LOGW("[升级模型]准备重启！\n");
         sleep(1);
         system("reboot");
     } else if (g_hd_push_recv_count > g_hd_push_mode_file_size) {
         printf("\n");
-        log_warn("[升级模型]file_size不同 %d\n", g_hd_push_recv_count);
+        LOGW("[升级模型]file_size不同 %d\n", g_hd_push_recv_count);
         hd_camera_ota_reset("size_error");
         g_hd_push_recv_count = 0;
         on_hd_push_delete_and_reply(3);
@@ -239,7 +243,7 @@ static void hd_camera_ota_consume(uint8_t data) {
 
 
 static void hd_camera_ota_reset(const char *tag) {
-    log_info("resetHDPushMode -> %s\n", tag);
+    LOGD("resetHDPushMode -> %s\n", tag);
     if (g_hd_push_mode_file != NULL) {
         fclose(g_hd_push_mode_file);
         g_hd_push_mode_file = NULL;
@@ -259,7 +263,7 @@ static void hd_camera_ota_reset(const char *tag) {
 // ************************************************************************************************************************
 
 static void *hd_camera_ota_progress_thread(void *arg) {
-    log_info("hd_camera_ota_thread start...\n");
+    LOGD("hd_camera_ota_progress_thread start...\n");
     while (g_running && g_hd_push_mode_file_size > 0) {
         sleep(3);
         if (g_hd_push_mode_file_size != 0) {
@@ -267,23 +271,23 @@ static void *hd_camera_ota_progress_thread(void *arg) {
             if (g_hd_push_recv_count >= g_hd_push_mode_file_size) {
                 progress = 100.0;
             } else {
-                progress = 100.0 * (1.0 * ((double ) g_hd_push_recv_count) / ((double )g_hd_push_mode_file_size));
+                progress = 100.0 * (1.0 * ((double) g_hd_push_recv_count) / ((double) g_hd_push_mode_file_size));
             }
-            printf("更新模型进度：[%3d%%] (%zu/%zu)\n", (int)progress, g_hd_push_recv_count, g_hd_push_mode_file_size);
+            printf("更新模型进度：[%3d%%] (%zu/%zu)\n", (int) progress, g_hd_push_recv_count, g_hd_push_mode_file_size);
         }
     }
-    log_info("hd_camera_ota_thread end...\n");
+    LOGD("hd_camera_ota_thread end...\n");
 
     return NULL;
 }
 
 static void *hd_camera_ota_thread(void *arg) {
-    log_info("hd_camera_ota_thread start...\n");
+    LOGD("hd_camera_ota_thread start...\n");
     while (g_running) {
         uint8_t item = hd_queue_take_uint8(g_hd_push_frame_queue);
         hd_camera_ota_consume(item);
     }
-    log_info("hd_camera_ota_thread end.\n");
+    LOGD("hd_camera_ota_thread end.\n");
     return NULL;
 }
 
@@ -297,11 +301,12 @@ static void on_hd_push_delete_and_reply(int result) {
                                    g_addr, in_type, result, offset);
 
     if (ret) {
-        log_warn("on_hd_push_delete_and_reply error = %d\n", ret);
+        LOGW("on_hd_push_delete_and_reply error = %d\n", ret);
         return;
     }
     hd_camera_uart_write(out_protocol_data, out_protocol_data_size);
     free(out_protocol_data);
+    out_protocol_data = NULL;
 }
 
 int hd_camera_ota_model_handle_cmd(
@@ -309,7 +314,7 @@ int hd_camera_ota_model_handle_cmd(
         uint32_t payload_data_size
 ) {
     // 解析
-    log_info("[hd_camera_ota]\n");
+    LOGD("[hd_camera_ota]\n");
     uint8_t type;
     uint32_t file_size;
     static unsigned char file_md5[16] = {0};
@@ -317,35 +322,35 @@ int hd_camera_ota_model_handle_cmd(
     int ret;
     ret = hd_slave_file_decode_payload(&type, &file_size, file_md5, file_name, payload_data, payload_data_size);
     if (ret) {
-        log_warn("[hd_camera_ota] hd_slave_file_decode_payload error = %d\n", ret);
+        LOGW("[hd_camera_ota] hd_slave_file_decode_payload error = %d\n", ret);
         return 1;
     }
     switch (type) {
         case 0x01: {
             if (g_hd_push_mode_file != NULL) {
-                log_warn("[hd_camera_ota] doing ....\n");
+                LOGW("[hd_camera_ota] doing ....\n");
                 break;
             }
             usleep(100);
             hd_camera_ota_reset("init");
             if (file_size <= 0) {
-                log_warn("[hd_camera_ota] hd_slave_file_decode_payload file_size error\n");
+                LOGW("[hd_camera_ota] hd_slave_file_decode_payload file_size error\n");
                 break;
             }
 
             if (strlen(file_name) <= 0) {
-                log_warn("[hd_camera_ota] hd_slave_file_decode_payload file_name error\n");
+                LOGW("[hd_camera_ota] hd_slave_file_decode_payload file_name error\n");
                 break;
             }
 
-            log_info("============ 准备接受文件的信息a ============ \n");
-            log_info("type           :           %02x \n", type);
-            log_info("file_size      :           %02x(%d) \n", file_size, file_size);
-            log_info("file_md5       :           ");
+            LOGD("============ 准备接受文件的信息a ============ \n");
+            LOGD("type           :           %02x \n", type);
+            LOGD("file_size      :           %02x(%d) \n", file_size, file_size);
+            LOGD("file_md5       :           ");
             hd_printf_buff(file_md5, 16, "md5", 0);
-            log_info("file_name      :           %s \n", file_name);
+            LOGD("file_name      :           %s \n", file_name);
 
-            log_info("============ 准备接受文件的信息z ============\n");
+            LOGD("============ 准备接受文件的信息z ============\n");
             g_hd_push_mode_file_size = file_size;
             g_hd_push_recv_count = 0;
             memcpy(g_hd_push_mode_file_md5, file_md5, 16);
@@ -354,21 +359,21 @@ int hd_camera_ota_model_handle_cmd(
             snprintf(g_hd_push_mode_file_path_downloading, sizeof(g_hd_push_mode_file_path_downloading), "%s%s",
                      g_hd_push_mode_file_path, MODEL_PREFIX_DOWNLOADING);
             // 创建文件夹，准备接受数据
-            log_info("[hd_camera_ota] g_hd_push_mode_file_path_downloading      :           %s \n",
+            LOGD("[hd_camera_ota] g_hd_push_mode_file_path_downloading      :           %s \n",
                  g_hd_push_mode_file_path_downloading);
             ret = create_directory_if_not_exists(g_hd_push_mode_file_path_downloading);
             if (ret) {
-                perror("[hd_camera_ota] create_directory_if_not_exists fail.\n");
+                LOGW("[hd_camera_ota] create_directory_if_not_exists fail.\n");
                 break;
             }
             delete_file_if_exists(g_hd_push_mode_file_path_downloading);
             usleep(10);
             g_hd_push_mode_file = fopen(g_hd_push_mode_file_path_downloading, "wb");  // 二进制写入模式
             if (!g_hd_push_mode_file) {
-                log_info("<<<<打开文件失败 g_hd_push_mode_file ==  null>>>>\n");
+                LOGD("<<<<打开文件失败 g_hd_push_mode_file ==  null>>>>\n");
                 break;
             }
-            log_info("<<<<打开文件成功 准备接受数据>>>>\n");
+            LOGD("<<<<打开文件成功 准备接受数据>>>>\n");
             hd_camera_change_serial_mode(HD_SERIAL_HD_PUSH_MODE);
             usleep(1 * 1000);
             // 回复
@@ -378,7 +383,7 @@ int hd_camera_ota_model_handle_cmd(
             uint8_t int_result = 0;
             ret = hd_slave_file_encode_payload(&out_payload, &out_payload_size, int_type, int_result, 0);
             if (ret) {
-                log_warn("[hd_camera_ota] hd_slave_file_encode_payload error = %d\n", ret);
+                LOGW("[hd_camera_ota] hd_slave_file_encode_payload error = %d\n", ret);
                 hd_camera_ota_reset("hd_slave_file_encode_payload");
                 break;
             }
@@ -387,19 +392,21 @@ int hd_camera_ota_model_handle_cmd(
             ret = hd_camera_protocol_encode(&out_p, &out_p_size, g_addr, CMD_HD_PUSH_FILE, out_payload_size,
                                             out_payload);
             free(out_payload);
+            out_payload = NULL;
             if (ret) {
-                log_warn("[hd_camera_ota] hd_camera_protocol_encode error = %d\n", ret);
+                LOGW("[hd_camera_ota] hd_camera_protocol_encode error = %d\n", ret);
                 hd_camera_ota_reset("hd_camera_protocol_encode");
                 break;
             }
             ret = hd_camera_uart_write(out_p, out_p_size);
             free(out_p);
+            out_p = NULL;
             if (ret) {
-                log_warn("[hd_camera_ota] hd_camera_uart_write error = %d\n", ret);
+                LOGW("[hd_camera_ota] hd_camera_uart_write error = %d\n", ret);
                 hd_camera_ota_reset("hd_camera_uart_write");
                 break;
             }
-            log_info("[hd_camera_ota] <%s>(%d)等待上传至<%s> ...\n", file_name, file_size, g_hd_push_mode_file_path_downloading);
+            LOGD("[hd_camera_ota] <%s>(%d)等待上传至<%s> ...\n", file_name, file_size, g_hd_push_mode_file_path_downloading);
             // 准备接受数据 do_uart_recv_with_hd_push
             pthread_create(&g_hd_push_progress_pthread_t, NULL, hd_camera_ota_progress_thread, NULL);
             start_push_timeout();
@@ -420,7 +427,7 @@ int hd_camera_ota_init(uint8_t addr) {
     g_addr = addr;
     g_hd_push_frame_queue = hd_queue_create_uint8(10 * 1024);
     if (g_hd_push_frame_queue == NULL) {
-        log_error("createQueue g_hd_push_frame_queue error!");
+        LOGE("createQueue g_hd_push_frame_queue error!");
         return -1;
     }
     g_running = 1;
