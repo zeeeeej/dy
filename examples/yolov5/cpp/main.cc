@@ -641,7 +641,7 @@ int main(int argc, char **argv)
 
         init_post_process();
 
-        ret = init_yolov5_model(model_path.c_str(), &rknn_app_ctx);
+        ret = init_yolov5_model(model_path, &rknn_app_ctx);
         if (ret != 0)
         {
             printf("init_yolov5_model fail! ret=%d model_path=%s\n", ret, model_path);
