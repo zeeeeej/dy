@@ -378,10 +378,11 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
  * @param src_path 原图path
  * @param src_path 裁减图path
  * @return 成功返回0 失败返回1
+ * int(*transform_pic)(const char *, char *)
  */
- int(*transform_pic)(const char * src_path, char * transform_path){
+ int transform_pic_my(const char * src_path, char * transform_path){
     // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx
-    int tmp [5][4];
+    int tmp [5][4] = {0};
     if(rknn_app_ctx){
         int ret =  process_image_with_yolov5_v2(src_path,tmp,&rknn_app_ctx);
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<endl;
@@ -633,7 +634,7 @@ int main(int argc, char **argv)
         }
     }
 
-    hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic);
+    hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic_my);
     
     
 // /*--------------陀螺仪检测并拍照------------------------------*/
