@@ -191,6 +191,7 @@ if(MY_CTX EQUAL 1)
         ${My_Root}/libs/libapp_shared.so
         ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
         dl
+      )
 
 
 
