@@ -20,7 +20,7 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_FLAGS_RELEASE "-Os -ffunction-sections -fdata-sections")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s")
 
-set(MY_CTX 0) # 1:hdlinux 0:default 2:mac
+set(MY_CTX 1) # 1:hdlinux 0:default 2:mac
 
 # set(CMAKE_BUILD_TYPE Debug)
 message(ctx = ${MY_CTX})
@@ -34,7 +34,7 @@ set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
 
-set(My_SO 1)
+set(My_SO 0)
 if(My_SO EQUAL 1)
     project(rkipc_v1.1_camera1_so)
 elseif(My_SO EQUAL 0 )  
