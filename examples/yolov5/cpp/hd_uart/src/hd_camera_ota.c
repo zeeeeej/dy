@@ -132,6 +132,7 @@ int hd_camera_ota_version(
     ret = hd_slave_property_get_encode(protocol_data_out, protocol_data_size_out,
                                        g_addr, property_id_out, 0, result, len);
     free(result);
+    result = NULL;
     return ret;
 }
 
@@ -305,6 +306,7 @@ static void on_hd_push_delete_and_reply(int result) {
     }
     hd_camera_uart_write(out_protocol_data, out_protocol_data_size);
     free(out_protocol_data);
+    out_protocol_data = NULL;
 }
 
 int hd_camera_ota_model_handle_cmd(
@@ -390,6 +392,7 @@ int hd_camera_ota_model_handle_cmd(
             ret = hd_camera_protocol_encode(&out_p, &out_p_size, g_addr, CMD_HD_PUSH_FILE, out_payload_size,
                                             out_payload);
             free(out_payload);
+            out_payload = NULL;
             if (ret) {
                 LOGW("[hd_camera_ota] hd_camera_protocol_encode error = %d\n", ret);
                 hd_camera_ota_reset("hd_camera_protocol_encode");
@@ -397,6 +400,7 @@ int hd_camera_ota_model_handle_cmd(
             }
             ret = hd_camera_uart_write(out_p, out_p_size);
             free(out_p);
+            out_p = NULL;
             if (ret) {
                 LOGW("[hd_camera_ota] hd_camera_uart_write error = %d\n", ret);
                 hd_camera_ota_reset("hd_camera_uart_write");

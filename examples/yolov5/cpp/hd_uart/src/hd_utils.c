@@ -497,13 +497,19 @@ int create_directory_if_not_exists(const char *path) {
         if (stat(dir_path, &st) != 0) {
             // 目录不存在，尝试创建
             if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
-                free(dir_path);
+                if (dir_path){
+                    free(dir_path);
+                    dir_path = NULL;
+                }
                 return -1; // 创建失败
             }
         }
     }
 
-    free(dir_path);
+    if (dir_path){
+        free(dir_path);
+        dir_path = NULL;
+    }
     return 0;
 }
 

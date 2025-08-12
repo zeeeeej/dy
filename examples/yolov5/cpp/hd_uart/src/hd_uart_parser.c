@@ -27,16 +27,16 @@
 
 #define HD_UART_PARSER_DEBUG_APp                0                           // debug开启
 #define HD_UART_PARSER_DEBUG_Uart               0                           // debug开启
-#define HD_UART_PARSER_DEBUG                    1                           // debug开启
+#define HD_UART_PARSER_DEBUG                    0                           // debug开启
 #define FRAME_HEADER_H                          PROTOCOL_HEADER_1           // 头1
 #define FRAME_HEADER_L                          PROTOCOL_HEADER_0           // 头2
-#define MAX_FILE_SIZE                           (512*1024)                  // 最大图片传输大小
+#define MAX_FILE_SIZE                           PROTOCOL_MAX_FRAME_LEN      // 最大图片传输大小
 #define MAX_FILE_PATH_SIZE                      1024                        // path大小
 #define JPG_SUFFIX                              ".jpg"                      // 图片格式
 #define JPG_SUFFIX_LEN                          4                           // 图片格式长度
 
-#define SNAP_TEST_WITH_PURE                         1
-#define SNAP_PATH                                   "/userdata/hadlinks"                // 图片地址
+#define SNAP_TEST_WITH_PURE                         0
+#define SNAP_PATH                                   "/userdata/hadlinks"           // 图片地址
 #define SNAP_DEMO_CROP_PIC                          "/userdata/crop.jpg"           // 动态截图副本
 //#define SNAP_PATH                                     "/Users/xiangpengle/CLionProjects/hd_camera/test_case/userdata/hadlinks"
 //#define SNAP_DEMO_CROP_PIC                            "/Users/xiangpengle/CLionProjects/hd_camera/test_case/userdata/crop.jpg"
@@ -399,7 +399,11 @@ static void on_push_delete_and_reply(int success) {
                                            g_addr, PROPERTY_HD_ID_PUSH, success);
     if (ret)return;
     hd_camera_uart_write(out_protocol_data, out_protocol_data_size);
-    free(out_protocol_data);
+    if (out_protocol_data){
+        free(out_protocol_data);
+        out_protocol_data = NULL;
+    }
+
 }
 
 
@@ -833,6 +837,7 @@ static int do_collect_all_pic_infos_from_pic_infos(hd_dynamic_pic_info *pic_info
     *pic_infos_size = caches_size;
     if (caches != NULL) {
         HD_PIC_INFOs_free(caches, caches_size);
+        caches = NULL;
     }
     return 0;
 }
@@ -842,7 +847,9 @@ static int on_pic_info_removed(const HD_PIC_INFO *info) {
     LOGI("on_pic_info_removed %s\n", info->path);
     if (SNAP_TEST_WITH_PURE) {
         if (info->path) {
-            remove(info->path);
+            if (access(info->path,F_OK)){
+                remove(info->path);
+            }
         }
     } else {
         if (g_hd_on_event != NULL) {
@@ -911,7 +918,10 @@ handle_property_get(
 //            result[len] = '\0';
             ret = hd_slave_property_get_encode(protocol_data_out, protocol_data_size_out,
                                                g_addr, property_id_out, 0, result, len);
-            free(result);
+            if (result){
+                free(result);
+                result = NULL;
+            }
             return ret;
         }
 
@@ -1027,17 +1037,26 @@ handle_property_set(const unsigned char *payload_data, uint32_t payload_data_siz
                 char *tmp = strdup(g_push_mode_file_path);
                 ret = create_directory_if_not_exists(tmp);
                 if (ret) {
-                    free(tmp);
+                    if (tmp){
+                        free(tmp);
+                        tmp = NULL;
+                    }
                     perror("create_directory_if_not_exists fail.\n");
                     break;
                 }
                 g_push_mode_file = fopen(tmp, "wb");  // 二进制写入模式
                 if (!g_push_mode_file) {
-                    free(tmp);
+                    if (tmp){
+                        free(tmp);
+                        tmp = NULL;
+                    }
                     perror("Failed to open file");
                     break;
                 }
-                free(tmp);
+                if (tmp){
+                    free(tmp);
+                    tmp = NULL;
+                }
                 LOGI("<<<<打开文件成功 准备接受数据>>>>\n");
                 // 写入数据...
                 // fwrite(data, 1, size, file);
@@ -1086,6 +1105,7 @@ handle_property_set(const unsigned char *payload_data, uint32_t payload_data_siz
 //    }
     if (protocol_data_out != NULL) {
         free(protocol_data_out);
+        protocol_data_out = NULL;
     }
 
     return 0;
@@ -1095,6 +1115,20 @@ static u_int8_t handle_snapshot_pic(
         unsigned char **protocol_data_out,
         uint32_t *protocol_data_size_out
 ) {
+
+    if (SNAP_TEST_WITH_PURE) {
+        uint16_t  pic_id;
+        int ret = hd_camera_produce_take_photos_actively(&pic_id);
+        if (ret){
+            hd_slave_snapshot_encode(protocol_data_out,protocol_data_size_out,g_addr,1,0);
+        }else{
+            printf("handle_snapshot_pic pic_id = %d\n",pic_id);
+            hd_slave_snapshot_encode(protocol_data_out,protocol_data_size_out,g_addr,0,pic_id);
+        }
+        return 0;
+    }
+
+
     // 拍照 超时？
     if (g_hd_on_event == NULL) {
         return -3;
@@ -1235,10 +1269,12 @@ static int handle_delete_pic(const unsigned char *payload_data, uint32_t payload
                 }
                 int delete_result_int = *((int *) delete_result);
                 if (delete_result_int) {
-                    free(delete_result);
+//                    free(delete_result);
+//                    delete_result = NULL;
                     return 0;
                 } else {
-                    free(delete_result);
+//                    free(delete_result);
+//                    delete_result = NULL;
                     return -3;
                 }
             }
@@ -1322,6 +1358,7 @@ static void handle_extra_pull(unsigned char *payload_data, uint32_t payload_data
         ret = hd_camera_uart_write(protocol_data_out, protocol_data_size_out);
         if (protocol_data_out != NULL) {
             free(protocol_data_out);
+            protocol_data_out = NULL;
         }
 
         LOGD("[handle_extra_pull] 应答完毕! \n");
@@ -1377,6 +1414,7 @@ static void handle_extra_pull(unsigned char *payload_data, uint32_t payload_data
 
     if (protocol_data_out) {
         free(protocol_data_out);
+        protocol_data_out = NULL;
     }
 }
 
@@ -1387,9 +1425,14 @@ static char *debug_file_2 = "/userdata/1_e99a18c428cb38d5f260853678922e03_123456
 static char *debug_file_dest = "/userdata/hadlinks/1753422798";
 
 static void my_remove_directory(const char *path) {
+    if (!access(path,F_OK)){
+        perror("my_remove_directory access error ");
+        return;
+    }
     DIR *dir = opendir(path);
     if (!dir) {
         perror("无法打开目录");
+        printf("path=%s\n",path);
         return;
     }
 
@@ -1522,6 +1565,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
             if (out_protocol_data) {
                 free(out_protocol_data);
+                out_protocol_data = NULL;
             }
             break;
         }
@@ -1557,6 +1601,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
+                out_protocol_data = NULL;
             }
             break;
         }
@@ -1579,6 +1624,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
             if (protocol_data_out != NULL) {
                 free(protocol_data_out);
+                protocol_data_out = NULL;
             }
             break;
         }
@@ -1599,6 +1645,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
+                out_protocol_data = NULL;
             }
             break;
         }
@@ -1629,6 +1676,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
             if (protocol_data_out != NULL) {
                 free(protocol_data_out);
+                protocol_data_out = NULL;
             }
             break;
         }
@@ -1651,6 +1699,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
             if (out_protocol_data != NULL) {
                 free(out_protocol_data);
+                out_protocol_data = NULL;
             }
             break;
         }
@@ -1670,7 +1719,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             }
 
             if (SNAP_TEST_WITH_PURE) {
-                hd_camera_produce_on_action_id_changed(out_action_id_timestamps, out_action_id_index, status);
+                hd_camera_produce_on_action_id_changed(out_action_id_timestamps, out_action_id_index, status,0);
                 return 0;
             }
 
@@ -1775,7 +1824,7 @@ static void init_log() {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.3.8"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.4.8"                    // 库版本
 
 
 int hd_uart_init(
@@ -1784,7 +1833,7 @@ int hd_uart_init(
         const char *version,
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event
-//        ,int(*transform_pic)(const char *, char *)
+       ,int(*transform_pic)(const char *, char *)
 ) {
     // 注册信号处理函数
     if (HD_UART_PARSER_DEBUG_Uart) {
@@ -2068,7 +2117,10 @@ int hd_uart_on_pic_add(char *action_id_str, char **array, int array_size) {
         result = hd_pic_infos_add(new_action_id_info, on_action_info_removed);
     } else {
         LOGW("空的pic_info\n");
-        free(new_action_id_info);
+        if (new_action_id_info){
+            free(new_action_id_info);
+            new_action_id_info = NULL;
+        }
         result = 2;
     }
 

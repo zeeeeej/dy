@@ -1385,6 +1385,7 @@ common_host_pull_pic_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1427,6 +1428,7 @@ hd_host_pull_pic_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1723,6 +1725,7 @@ hd_host_ota_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1765,6 +1768,7 @@ hd_host_ota_push_encode(
 //            payload
 //    );
 //    free(payload);
+//    paylaod = NULL;
 //    return ret;
 }
 
@@ -1831,6 +1835,7 @@ uint8_t hd_host_app_upgrade_encode(
             payload
     );
     free(payload);
+    payload = NULL;
     return ret;
 }
 
@@ -1887,6 +1892,7 @@ uint8_t hd_host_action_id_encode(
             default_value
     );
     free(default_value);
+    default_value = NULL;
     return ret;
 }
 
@@ -1944,6 +1950,7 @@ uint8_t hd_host_file_encode(
             out_payload
     );
     free(out_payload);
+    out_payload = NULL;
     return ret;
 }
 
@@ -2079,5 +2086,6 @@ uint8_t hd_slave_file_encode(
     ret = hd_camera_protocol_encode(out_protocol, out_protocol_size, in_addr, CMD_HD_PUSH_FILE_SEND, out_payload_size,
                                     out_payload);
     free(out_payload);
+    out_payload = NULL;
     return ret;
 }

@@ -87,11 +87,11 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.1";
+std::string app_version = "V1.2";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
-int addr_biu = 1;
+int addr_biu = 2;
 
 static uint8_t door_status = 2;  // 默认日志级别为INFO
 
@@ -167,7 +167,106 @@ bool x_cp_file(const char* src_path, const char* dest_path) {
     return true;
 }
 
+/**
+ * 将一张图片进行目标检测，返回目标图片。
+ * 
+ * 步骤：
+ * 1.缩放生成小图
+ * 2.目标检测生成结果
+ * 3.根据结果截图，存入dst_path
+ * 
+ * @param src_path 原始图片
+ * @param dst_path 生成的目标图片
+ * @result 0:成功 其他：错误码。
+ */
+int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
+    int ret = 0;
+    resize_images_in_folder(src_path, 960);
+    std::vector<std::string> frames = get_image_paths(src_path);
+    for (const std::string& img_path : frames) {
+        cv::Mat image_change = cv::imread(img_path);
+        if (image_change.empty()) {
+            std::cerr << "读取图片失败!" << std::endl;
+            return -1;
+        }
+        image_buffer_t src_image;
+            
+        memset(&src_image, 0, sizeof(image_buffer_t));
+        ret = read_image(img_path.c_str(), &src_image);
+
+        //RV1106 rga requires that input and output bufs are memory allocated by dma
+        ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                        (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
+        memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
+        dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
+        free(src_image.virt_addr);
+        src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
+        src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
+        rknn_app_ctx.img_dma_buf.size = src_image.size;
+        if (ret != 0)
+        {
+            printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
+            deinit_post_process();
+
+            ret = release_yolov5_model(&rknn_app_ctx);
+            if (ret != 0)
+            {
+                printf("release_yolov5_model fail! ret=%d\n", ret);
+            }
+        
+            if (src_image.virt_addr != NULL)
+            {dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                            rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
+            }  
+        }
+        object_detect_result_list od_results;
+                
+        ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
+        if (ret != 0)
+        {
+            printf("init_yolov5_model fail! ret=%d\n", ret);
+            deinit_post_process();
+
+            ret = release_yolov5_model(&rknn_app_ctx);
+            if (ret != 0)
+            {
+                printf("release_yolov5_model fail! ret=%d\n", ret);
+            }
+        
+            if (src_image.virt_addr != NULL)
+            {
+                dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                            rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
+            }  
+        }
+        for (int i = 0; i < od_results.count; i++)
+        {
+            object_detect_result *det_result = &(od_results.results[i]);
+            printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
+                det_result->box.left, det_result->box.top,
+                det_result->box.right, det_result->box.bottom,
+                det_result->prop);
+            box[i][0] = det_result->box.left;
+            box[i][1] = det_result->box.top;
+            box[i][2] = det_result->box.right;
+            box[i][3] = det_result->box.bottom;
+        }
+        if (src_image.virt_addr != NULL)
+        {
+            dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                        rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
+        } 
+    }
+    return ret;
+     
+}
+
+
 // 新添加的函数
+/**
+ * @param src_path 原始图片
+ * @param dst_path 生成的目标图片
+ */
 std::string process_image_with_yolov5(const std::string& src_path, const std::string& dst_path, 
                                     const std::string& model_path, int target_width = 960) {
     // 1. 读取原始图像并等比例缩放
@@ -271,7 +370,7 @@ std::string process_image_with_yolov5(const std::string& src_path, const std::st
 
     return dst_path;
 }
-
+  rknn_app_context_t rknn_app_ctx;
 
 /**
  * 
@@ -280,9 +379,33 @@ std::string process_image_with_yolov5(const std::string& src_path, const std::st
  * @return 成功返回0 失败返回1
  */
  int(*transform_pic)(const char * src_path, char * transform_path){
-    process_image_with_yolov5(
-        src_path,transform_path,"",960
-    );   
+    // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx
+    int tmp [5][4];
+    if(rknn_app_ctx){
+        int ret =  process_image_with_yolov5_v2(src_path,tmp,&rknn_app_ctx);
+        std::cout << "process_image_with_yolov5_v2 ret = " << ret <<endl;
+        for (size_t i = 0; i < 5; i++)
+        {
+            std::cout << i <<"<------" << endl;
+
+            for (size_t j = 0; j < 4; j++)
+            {
+                  std::cout <<  tmp[i][j] << endl;
+            }
+            
+              
+        }
+        
+        return 0;
+    }else{
+        return 0;
+    }
+
+
+    // process_image_with_yolov5(
+    //     src_path,transform_path,"",960
+    // );   
+
     // // （1）复制副本bak_path
     // char  bak_path[1024];
     // if(x_cp_file(src_path,bak_path)){
@@ -489,7 +612,7 @@ int main(int argc, char **argv)
     if (addr_biu == 2)
     {
        int ret;
-        rknn_app_context_t rknn_app_ctx;
+      
         memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));
 
         init_post_process();
@@ -509,7 +632,7 @@ int main(int argc, char **argv)
         }
     }
 
-    hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event);
+    hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic);
     
     
 // /*--------------陀螺仪检测并拍照------------------------------*/

@@ -236,6 +236,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
     // 检查是否有足够的组成部分
     if (part_count != 9) {
         free(name);
+        name = NULL;
         return -3;
     }
 
@@ -243,6 +244,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
     // 1. MD5 (parts[1])
     if (strlen(parts[1]) != 32) {
         free(name);
+        name = NULL;
         return -4;
     }
 
@@ -256,6 +258,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
     unsigned long size = strtoul(parts[2], NULL, 10);
     if (errno != 0 || size > UINT32_MAX) {
         free(name);
+        name = NULL;
         return -5;
     }
     infos->file_size = (uint32_t) size;
@@ -265,6 +268,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
     unsigned long long timestamp = strtoull(parts[7], NULL, 10);
     if (errno != 0) {
         free(name);
+        name = NULL;
         return -6;
     }
     infos->snapshot_timestamps = timestamp;
@@ -274,11 +278,13 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
     unsigned long pic_id = strtoul(parts[8], NULL, 10);
     if (errno != 0 || pic_id > UINT32_MAX) {
         free(name);
+        name = NULL;
         return -7;
     }
     infos->pic_id = (uint16_t) pic_id;
 
     free(name);
+    name = NULL;
     return 0;
 }
 

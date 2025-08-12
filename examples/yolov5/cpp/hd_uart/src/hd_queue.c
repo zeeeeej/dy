@@ -16,6 +16,7 @@ HDBlockingQueue* hd_queue_create(int capacity) {
     if (!queue->items) {
         LOGW("Failed to allocate memory for items");
         free(queue);
+        queue = NULL;
         return NULL;
     }
 
@@ -43,9 +44,14 @@ void hd_queue_destroy(HDBlockingQueue *queue,void(*item)(void**)) {
                 item(queue->items[i]);
             }
         }
+        if (queue->items){
+            free(queue->items);
+            queue->items = NULL;
+        }
 
-        free(queue->items);
         free(queue);
+        queue = NULL;
+
     }
 }
 
@@ -172,6 +178,7 @@ HDBlockingQueueUint8* hd_queue_create_uint8(int capacity) {
     if (!queue->items) {
         LOGW("Failed to allocate memory for items");
         free(queue);
+        queue = NULL;
         return NULL;
     }
 
@@ -193,8 +200,13 @@ void hd_queue_destroy_uint8(HDBlockingQueueUint8 *queue) {
         pthread_mutex_destroy(&queue->mutex);
         pthread_cond_destroy(&queue->not_empty);
         pthread_cond_destroy(&queue->not_full);
-        free(queue->items);
+        if (queue->items){
+            free(queue->items);
+            queue->items = NULL;
+        }
+
         free(queue);
+        queue = NULL;
     }
 }
 

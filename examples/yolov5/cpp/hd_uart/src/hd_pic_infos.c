@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "hd_pic_infos.h"
+#include "hd_camera_protocol.h"
 
 #define HD_PIC_INFOS_TAG   "hd_pic_infos.c"
 #define HD_PIC_INFOS_DEBUG  1
@@ -62,12 +63,21 @@ void collection_free(OrderedCollection *col) {
         if (current->action_info) {
             for (int i = 0; i < current->action_info->pic_count; i++) {
                 if (current->action_info->pics[i]) {
-                    free(current->action_info->pics[i]->path);
+                    if (current->action_info->pics[i]->path) {
+                        free(current->action_info->pics[i]->path);
+                        current->action_info->pics[i]->path = NULL;
+                    }
+
                     free(current->action_info->pics[i]);
+                    current->action_info->pics[i] = NULL;
                 }
             }
-            free(current->action_info->path);
+            if (current->action_info->path) {
+                free(current->action_info->path);
+                current->action_info->path = NULL;
+            }
             free(current->action_info);
+            current->action_info = NULL;
         }
 
         free(current);
@@ -77,6 +87,7 @@ void collection_free(OrderedCollection *col) {
     pthread_mutex_unlock(&col->lock);
     pthread_mutex_destroy(&col->lock);
     free(col);
+    col = NULL;
 }
 
 // 比较两个action info
@@ -129,9 +140,18 @@ insert_node(OrderedCollection *col, CollectionNode *new_node, int (*on_action_id
         }
 
         // 释放资源（但不释放pics，因为它们将被新节点接管）
-        free(to_remove->action_info->path);
-        free(to_remove->action_info);
+        if (to_remove->action_info->path){
+            free(to_remove->action_info->path);
+            to_remove->action_info->path = NULL;
+        }
+        if (to_remove->action_info){
+            free(to_remove->action_info);
+            to_remove->action_info = NULL;
+        }
+
         free(to_remove);
+        to_remove = NULL;
+
         col->size--;
     }
 
@@ -203,15 +223,26 @@ int collection_add_action(OrderedCollection *col, HD_ACTION_ID_INFO *action_info
             if (oldest->action_info) {
                 for (int i = 0; i < oldest->action_info->pic_count; i++) {
                     if (oldest->action_info->pics[i]) {
-                        free(oldest->action_info->pics[i]->path);
+                        if (oldest->action_info->pics[i]->path){
+                            free(oldest->action_info->pics[i]->path);
+                            oldest->action_info->pics[i]->path = NULL;
+                        }
                         free(oldest->action_info->pics[i]);
+                        oldest->action_info->pics[i] = NULL;
                     }
                 }
-                free(oldest->action_info->path);
+
+                if (oldest->action_info->path){
+                    free(oldest->action_info->path);
+                    oldest->action_info->path = NULL;
+                }
+
                 free(oldest->action_info);
+                oldest->action_info = NULL;
             }
 
             free(oldest);
+            oldest = NULL;
             col->size--;
 
         }
@@ -288,14 +319,25 @@ int collection_remove_action(OrderedCollection *col,
             if (current->action_info) {
                 for (int i = 0; i < current->action_info->pic_count; i++) {
                     if (current->action_info->pics[i]) {
-                        free(current->action_info->pics[i]->path);
+                        if (current->action_info->pics[i]->path){
+                            free(current->action_info->pics[i]->path);
+                            current->action_info->pics[i]->path = NULL;
+                        }
+
                         free(current->action_info->pics[i]);
+                        current->action_info->pics[i] = NULL;
                     }
                 }
-                free(current->action_info->path);
+                if (current->action_info->path){
+                    free(current->action_info->path);
+                    current->action_info->path  = NULL;
+                }
+
                 free(current->action_info);
+                current->action_info = NULL;
             }
             free(current);
+            current = NULL;
             col->size--;
 
             pthread_mutex_unlock(&col->lock);
@@ -602,13 +644,12 @@ int collection_remove_pic(OrderedCollection *col,
             for (int i = 0; i < current->action_info->pic_count; i++) {
                 if (current->action_info->pics[i] &&
                     current->action_info->pics[i]->id == pic_id) {
-                    if (on_pic_removed!=NULL){
+                    if (on_pic_removed != NULL) {
                         on_pic_removed(current->action_info->pics[i]);
                     }
                     if (do_free) {
-                        // 释放pic资源
-                        free(current->action_info->pics[i]->path);
-                        free(current->action_info->pics[i]);
+                        HD_PIC_INFO_free(current->action_info->pics[i]);
+                        current->action_info->pics[i] = NULL;
                     }
                     // 将数组后面的元素前移
                     for (int j = i; j < current->action_info->pic_count - 1; j++) {
@@ -628,14 +669,14 @@ int collection_remove_pic(OrderedCollection *col,
                 if (current->action_info->pics[i] &&
                     current->action_info->pics[i]->id == pic_id) {
 
-                    if (on_pic_removed!=NULL){
+                    if (on_pic_removed != NULL) {
                         on_pic_removed(current->action_info->pics[i]);
                     }
 
                     if (do_free) {
                         // 释放pic资源
-                        free(current->action_info->pics[i]->path);
-                        free(current->action_info->pics[i]);
+                        HD_PIC_INFO_free(current->action_info->pics[i]);
+                        current->action_info->pics[i] = NULL;
                     }
 
                     // 将数组后面的元素前移
@@ -973,8 +1014,10 @@ void HD_PIC_INFO_free(HD_PIC_INFO *info) {
     if (info == NULL)return;
     if (info->path != NULL) {
         free(info->path);
+        info->path = NULL;
     }
     free(info);
+    info = NULL;
 }
 
 void HD_ACTION_ID_INFOs_free(HD_ACTION_ID_INFO **infos, size_t size) {
@@ -983,7 +1026,9 @@ void HD_ACTION_ID_INFOs_free(HD_ACTION_ID_INFO **infos, size_t size) {
     }
     for (int i = 0; i < size; ++i) {
         HD_ACTION_ID_INFO_free(infos[i]);
+        infos[i] = NULL;
     }
+
     free(infos);
 }
 
@@ -991,6 +1036,7 @@ void HD_ACTION_ID_INFO_free(HD_ACTION_ID_INFO *info) {
     if (info == NULL)return;
     if (info->path != NULL) {
         free(info->path);
+        info->path = NULL;
     }
     HD_PIC_INFOs_free(info->pics, info->pic_count);
     free(info);
@@ -1003,10 +1049,12 @@ void HD_PIC_INFOs_free(HD_PIC_INFO **infos, size_t size) {
     if (size > 0) {
         for (int i = 0; i < size; ++i) {
             HD_PIC_INFO_free(infos[i]);
+            infos[i] = NULL;
         }
     }
 
     free(infos);
+    infos = NULL;
 }
 
 HD_PIC_INFO *HD_PIC_INFO_free_deep_copy(HD_PIC_INFO *info) {
@@ -1024,7 +1072,7 @@ HD_PIC_INFO *HD_PIC_INFO_free_deep_copy(HD_PIC_INFO *info) {
         copy->md5[i] = info->md5[i];
     }
     copy->sort = info->sort;
-    copy->path = strdup (info->path);
+    copy->path = strdup(info->path);
     return copy;
 }
 
@@ -1072,8 +1120,28 @@ static int hd_pic_infos_load_file_get(unsigned char *result, size_t in_size,
         printf("real_read_size==0,没有数据可读了\n");
         return 1;
     }
-    *result_size = real_read_size;
+    // 添加边界检查
+    if (in_offset >= MAX_FILE_SIZE ||
+        real_read_size > MAX_FILE_SIZE ||
+        (in_offset + real_read_size) > MAX_FILE_SIZE ||
+            (in_offset + real_read_size) > PROTOCOL_MAX_FRAME_LEN ||
+
+        result == NULL) {
+        printf("[read_from_buffer] invalid parameters: offset=%zu, size=%zu\n",
+               in_offset, real_read_size);
+        return 4;  // 返回错误码或采取其他处理
+    }
+
+// 确保目标缓冲区足够大
+    if (result_size != NULL) {
+        *result_size = real_read_size;
+    }
+
+    printf("[read_from_buffer] memcpy %zu, %zu\n", in_offset, real_read_size);
+
     memcpy(result, g_file_buffer + in_offset, real_read_size);
+
+    printf("[read_from_buffer] memcpy end %zu, %zu\n", in_offset, real_read_size);
 
     return 0;
 }
@@ -1114,7 +1182,7 @@ int hd_pic_infos_pull(uint16_t pic_id,
         if (loaded) {
             error = 0;
         } else {
-            printf("没有正在上传的图片,查找图片中...\n");
+            printf("没有正在上传的图片,查找图片中...1\n");
             HD_PIC_INFO *found = collection_find_pic_malloc(g_all_pic_infos, action_id_timestamps,
                                                             action_id_index, pic_id); // 复制一个新的保证不能其他线程free掉当前上传的指针
             if (found == NULL) {
@@ -1123,7 +1191,7 @@ int hd_pic_infos_pull(uint16_t pic_id,
                 break;
             }
             print__pic_info(found);
-            printf("没有正在上传的图片,加载图片数据中...\n");
+            printf("没有正在上传的图片,加载图片数据中...2\n");
             int ret = load_file_to_buffer(found->path, g_file_buffer, sizeof(g_file_buffer), &g_file_buffer_size);
             if (ret) {
                 error = 3;
@@ -1132,7 +1200,7 @@ int hd_pic_infos_pull(uint16_t pic_id,
             }
             g_doing_info = found;
 
-            printf("没有正在上传的图片,加载图片数据成功！删除图片信息。\n");
+            printf("没有正在上传的图片,加载图片数据成功！删除图片信息。 g_file_buffer_size=%zu\n",g_file_buffer_size);
             ret = collection_remove_pic(g_all_pic_infos, action_id_timestamps, action_id_index, pic_id, 1,
                                         on_pic_removed);
             if (ret) {
@@ -1155,12 +1223,12 @@ int hd_pic_infos_pull(uint16_t pic_id,
             ret = error;
             break;
         }
-        printf("分段加载图片数据... \n");
+        printf("分段加载图片数据... %zu %zu\n",in_size,in_offset);
         ret = hd_pic_infos_load_file_get(result, in_size, in_offset, result_size);
         if (ret) {
             break;
         }
-
+        printf("分段加载图片数据 end !... %zu %zu ,result_size = %zu\n",in_size,in_offset,(*result_size));
         if (*result_size < in_offset) {
             printf("分段加载图片数据,完整拉取了！ \n");
             // TODO 需要清除吗？还是等温控器发命令来，否则数据就没了 。
