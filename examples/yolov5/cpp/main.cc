@@ -385,14 +385,14 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
     int tmp [5][4] = {0};
     if(rknn_app_ctx){
         int ret =  process_image_with_yolov5_v2(src_path,tmp,&rknn_app_ctx);
-        std::cout << "process_image_with_yolov5_v2 ret = " << ret <<endl;
+        std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
             std::cout << i <<"<------" << endl;
 
             for (size_t j = 0; j < 4; j++)
             {
-                  std::cout <<  tmp[i][j] << endl;
+                  std::cout <<  tmp[i][j] << std::endl;
             }
             
               
