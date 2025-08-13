@@ -87,7 +87,7 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.2";
+std::string app_version = "V1.3";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
@@ -373,6 +373,37 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
 }
   rknn_app_context_t rknn_app_ctx;
 
+  bool cropImage(const char* src_path, const char* transform_path, 
+               int left, int top, int right, int bottom) {
+    // 读取原始图像
+    cv::Mat image = cv::imread(src_path);
+    if (image.empty()) {
+        std::cerr << "Error: Could not read the image at " << src_path << std::endl;
+        return false;
+    }
+
+    // 检查坐标是否有效
+    if (left < 0 || top < 0 || right > image.cols || bottom > image.rows || 
+        left >= right || top >= bottom) {
+        std::cerr << "Error: Invalid coordinates for cropping" << std::endl;
+        return false;
+    }
+
+    // 定义ROI (Region of Interest)
+    cv::Rect roi(left, top, right - left, bottom - top);
+
+    // 裁剪图像
+    cv::Mat croppedImage = image(roi);
+
+    // 保存裁剪后的图像
+    if (!cv::imwrite(transform_path, croppedImage)) {
+        std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * 
  * @param src_path 原图path
@@ -398,7 +429,27 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
               
         }
         
-        return 0;
+        int left = tmp[0][0];
+        int top = tmp[0][1];
+        int right = tmp[0][2];
+        int bottom = tmp[0][3];
+        if (left!=0 && top !=0 && right !=0 && bottom !=0)
+        {
+
+                bool result =cropImage (src_path,transform_path,left,top,right,bottom);
+                if (result)
+                {
+                    std::cout << "cropImage success !"  << std::endl;
+                }
+                else{
+                     std::cout << "cropImage false !"  << std::endl;
+                }
+            return result?0:2;
+        }
+        
+
+
+        return 1;
     // }else{
     //     return 0;
     // }
@@ -657,6 +708,7 @@ int main(int argc, char **argv)
     }
 
     hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic_my);
+
     
     
 // /*--------------陀螺仪检测并拍照------------------------------*/

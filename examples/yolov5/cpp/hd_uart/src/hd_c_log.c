@@ -30,7 +30,7 @@ typedef struct {
     SnapshotItem **pics;
     int pic_count;
     char *name;
-    uint8_t  trigger_type;
+    uint8_t trigger_type;
 } SnapshotTask;
 
 typedef struct {
@@ -90,7 +90,7 @@ void SnapshotResource_free(SnapshotResource *res) {
 #define CAMERA_TYPE_S       0       // 静态类型摄像头
 #define CAMERA_TYPE_D       1       // 动态类型摄像头
 #define MAX_PICS            100     // 单次开门事件图片最大数量
-#define SNAPSHOT_COUNT      5      // 每秒拍多少张
+#define SNAPSHOT_COUNT      3      // 每秒拍多少张
 #define SNAP_SRC            "src"
 
 static int (*g_callback)(char *, char **, int) = NULL;
@@ -240,6 +240,53 @@ static void refresh_pic_id(int camera_type) {
 }
 
 /** *** 拍摄照片线程 *** */
+//static void *snap_thread_func_at_stop(void *arg) {
+//    printf("[%s]snap_thread_func_at_stop \n", tag);
+//    while (g_running && snap_count < total) {
+//        if (current_task == NULL)break;
+//        if (!current_task->running)break;
+//        angel = get_angle();
+//        angel = angel >= 0 ? angel : -angel;
+//        print_fq++;
+////        if (angel > 0 && print_fq > 3) {
+////            print_fq = 0;
+////            printf("[%s]snap_thread_func take_photo >>> %d angel=%d \n", tag, *snap_pic_id, angel);
+////        }
+//        if (current_task->trigger_type == 0 && angel < current_task->triggerAngel) {
+//            continue;
+//        }
+//        // 重置时间和pic_id
+//        snap_timestamp = time(NULL);
+//        refresh_pic_id(current_task->cameraType);
+//        // 生成file_name
+//        snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
+//        // 生成action_path
+//        snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
+//        mkdir_recursive(action_id_src_path); // todo 判断结果
+//        printf("[%s]snap_thread_func >>> 准备拍照 %s/%s \n", tag, action_id_src_path, tmp_img_name);
+//        // 拍照
+//        ret = qjy_take_photo(2, snap_pic_id, tmp_img_name, action_id_src_path);
+//        if (ret) {
+//            printf("[%s]snap error %d \n", tag, ret);
+//            continue;
+//        }
+//        usleep(1000000 / SNAPSHOT_COUNT);
+//        // 生成记录
+//        SnapshotItem *item = malloc(sizeof(SnapshotItem));
+//        if (item == NULL) {
+//            continue;
+//        }
+//        item->pic_id = *snap_pic_id;
+//        item->timestamp = snap_timestamp;
+//        item->file_name = strdup(tmp_img_name);
+//        current_task->pics[snap_count] = item;
+//        *snap_pic_id = *snap_pic_id + 1;
+//        snap_count++;
+//    }
+//    printf("[%s]snap_thread_func_at_stop end \n", tag);
+//    return NULL;
+//}
+
 static void *snap_thread_func(void *arg) {
     printf("[%s]snap_thread_func \n", tag);
 
@@ -251,20 +298,30 @@ static void *snap_thread_func(void *arg) {
     char action_id_src_path[1024]; // src action_id 文件夹path
     char tmp_img_name[1024]; // timestamp_index.jpg
     int print_fq = 0;
-
-    while (g_running && snap_count < total) {
+    while (g_running) {
         if (current_task == NULL)break;
         if (!current_task->running)break;
         angel = get_angle();
         angel = angel >= 0 ? angel : -angel;
-        print_fq++;
+//        print_fq++;
+        if (angel == 0)continue;
+//        int can = 0;
+//        if (last_angel < angel) {
+//            last_angel = angel;
+//        } else {
+//            if (angel <= 20 && angel < last_angel) {
+//                can = 1;
+//            }
+//        }
+
 //        if (angel > 0 && print_fq > 3) {
 //            print_fq = 0;
 //            printf("[%s]snap_thread_func take_photo >>> %d angel=%d \n", tag, *snap_pic_id, angel);
 //        }
-        if (current_task->trigger_type==0 && angel < current_task->triggerAngel) {
+        if (current_task->trigger_type == 0 && angel < current_task->triggerAngel) {
             continue;
         }
+//        if (!can)continue;
         // 重置时间和pic_id
         snap_timestamp = time(NULL);
         refresh_pic_id(current_task->cameraType);
@@ -273,7 +330,7 @@ static void *snap_thread_func(void *arg) {
         // 生成action_path
         snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
         mkdir_recursive(action_id_src_path); // todo 判断结果
-        printf("[%s]snap_thread_func >>> 准备拍照 %s/%s \n", tag, action_id_src_path, tmp_img_name);
+        printf("[%s]snap_thread_func >>> 准备拍照(%d) %s/%s \n", tag,angel ,action_id_src_path, tmp_img_name);
         // 拍照
         ret = qjy_take_photo(2, snap_pic_id, tmp_img_name, action_id_src_path);
         if (ret) {
@@ -367,8 +424,8 @@ static void *handle_thread_func(void *arg) {
                 copy_file(src_file_path, dest_file_path);
                 result_pic_size++;
                 SnapshotItem_free(res->pics[i]);
-                if (res->triggerType == 1 ){ // action_id一致
-                     // 通知
+                if (res->triggerType == 1) { // action_id一致
+                    // 通知
                     pthread_mutex_lock(&my_mutex);
                     my_ready = 1;
                     printf("[Notify Thread] Signaling condition...\n");
@@ -379,6 +436,8 @@ static void *handle_thread_func(void *arg) {
             } else if (res->cameraType == CAMERA_TYPE_D) { // 动态图片
                 if (res->pic_count - i > 5) {
                     SnapshotItem_free(res->pics[i]);
+                    res->pics[i] = NULL;
+
                     continue;
                 }
 
@@ -390,6 +449,7 @@ static void *handle_thread_func(void *arg) {
                     int ret = g_transform_pic(src_file_path, transform_pic_path);
                     if (ret) {
                         SnapshotItem_free(res->pics[i]);
+                        res->pics[i] = NULL;
                         continue;
                     }
                 }
@@ -419,7 +479,9 @@ static void *handle_thread_func(void *arg) {
                 printf("[%s]handle_thread_func  动态处理：复制 %s => %s\n", tag, transform_pic_path, dest_file_path);
                 result_pics[result_pic_size] = strdup(dest_file_path);
                 copy_file(transform_pic_path, dest_file_path);
-                delete_file_if_exists(transform_pic_path);
+                if (g_transform_pic != NULL) {
+                    delete_file_if_exists(transform_pic_path);
+                }
                 result_pic_size++;
                 SnapshotItem_free(res->pics[i]);
             }
@@ -449,7 +511,7 @@ static void *handle_thread_func(void *arg) {
 }
 
 
-static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_index,uint8_t trigger_type) {
+static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t trigger_type) {
     printf("[%s]do_snapshot_start %d %d\n", tag, action_id_timestamp, action_id_index);
     // 1.创建任务
     pthread_mutex_lock(&g_lock);
@@ -489,7 +551,7 @@ static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_ind
 static int do_snapshot_stop(uint32_t action_id_timestamp, uint8_t action_id_index) {
     printf("[%s]do_snapshot_stop \n", tag);
     pthread_mutex_lock(&g_lock);
-    if (current_task == NULL){
+    if (current_task == NULL) {
         pthread_mutex_unlock(&g_lock);
         return 0;
     }
@@ -558,7 +620,9 @@ int hd_camera_produce_init(uint8_t addr,
     snprintf(g_demo_path, sizeof(g_demo_path), "%s", demo_path);
 
     mkdir_recursive(g_src_path);
-    mkdir_recursive(g_dst_path);
+    if (0 != strcmp("/userdata/crop.jpg",g_dst_path)){
+        mkdir_recursive(g_dst_path);
+    }
 
     printf("[%s]hd_camera_produce_init %d %s %s %s \n", tag, g_addr, g_dst_path, g_src_path, g_demo_path);
     g_pic_id = malloc(sizeof(uint16_t *));
@@ -573,13 +637,13 @@ int hd_camera_produce_init(uint8_t addr,
     return 0;
 }
 
-int hd_camera_produce_take_photos_actively(uint16_t * pic_id){
+int hd_camera_produce_take_photos_actively(uint16_t *pic_id) {
     printf("hd_camera_produce_take_photos_actively Waiting...\n");
     uint32_t action_id_timestamp = time(NULL);
     uint8_t action_id_index = 0xfe;
-    hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index, 1,1);
-    usleep(100*1000);
-    hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index+1, 0,1);
+    hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index, 1, 1);
+    usleep(100 * 1000);
+    hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index + 1, 0, 1);
 
     pthread_mutex_lock(&my_mutex);
     printf("[Wait Thread] Waiting for condition (timeout=3s)...\n");
@@ -602,8 +666,8 @@ int hd_camera_produce_take_photos_actively(uint16_t * pic_id){
         printf("[Wait Thread] Condition met!\n");
         *pic_id = sem_pic_id;
         ret = 0;
-    }else{
-        ret=1;
+    } else {
+        ret = 1;
     }
     pthread_mutex_unlock(&my_mutex);
 
@@ -614,16 +678,17 @@ int hd_camera_produce_take_photos_actively(uint16_t * pic_id){
     return ret;
 }
 
-int hd_camera_produce_on_action_id_changed(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t status,uint8_t trigger_type) {
-    printf("[%s]hd_camera_produce_on_action_id_changed status %d\n", tag,status);
+int hd_camera_produce_on_action_id_changed(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t status,
+                                           uint8_t trigger_type) {
+    printf("[%s]hd_camera_produce_on_action_id_changed status %d\n", tag, status);
     int ret;
     ret = do_snapshot_stop(action_id_timestamp, action_id_index); // 关闭拍摄
-    printf("[%s]do_snapshot_stop ret = %d\n", tag,ret);
+    printf("[%s]do_snapshot_stop ret = %d\n", tag, ret);
     if (status == 0) {
         restore_sensor();
     } else {
-        ret = do_snapshot_start(action_id_timestamp, action_id_index,trigger_type);
-        printf("[%s]do_snapshot_start ret = %d\n", tag,ret);
+        ret = do_snapshot_start(action_id_timestamp, action_id_index, trigger_type);
+        printf("[%s]do_snapshot_start ret = %d\n", tag, ret);
     }
 
     return 0;

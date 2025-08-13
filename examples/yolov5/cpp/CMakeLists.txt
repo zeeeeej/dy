@@ -36,9 +36,9 @@ set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g
 
 set(My_SO 0)
 if(My_SO EQUAL 1)
-    project(rkipc_v1.1_camera1_so)
+    project(rkipc_v1.3_camera1_so)
 elseif(My_SO EQUAL 0 )  
-    project(rkipc_v1.1_camera1_app)
+    project(rkipc_v1.3_camera1_app)
 endif()
 
 

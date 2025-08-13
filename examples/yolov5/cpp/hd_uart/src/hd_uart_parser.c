@@ -35,7 +35,7 @@
 #define JPG_SUFFIX                              ".jpg"                      // 图片格式
 #define JPG_SUFFIX_LEN                          4                           // 图片格式长度
 
-#define SNAP_TEST_WITH_PURE                         0
+#define SNAP_TEST_WITH_PURE                         1
 #define SNAP_PATH                                   "/userdata/hadlinks"           // 图片地址
 #define SNAP_DEMO_CROP_PIC                          "/userdata/crop.jpg"           // 动态截图副本
 //#define SNAP_PATH                                     "/Users/xiangpengle/CLionProjects/hd_camera/test_case/userdata/hadlinks"
@@ -1529,7 +1529,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
     }
 
     if (g_addr == 0 || (g_addr != out_addr && out_addr != PROTOCOL_BROADCAST)) {
-        LOGD(">从机地址错误。当前地址：%d , 接收到的数据地址:%d \n", g_addr, out_addr);
+        LOGD(">从机地址错误#当前地址：%d , 接收到的数据地址:%d \n", g_addr, out_addr);
         return 3;
     }
     LOGD("------------------------------handle_uart_data------------------------%d------\n", raw_size);
@@ -1546,7 +1546,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
     }
 
     if (g_addr == 0 || (g_addr != slave_addr_out && slave_addr_out != PROTOCOL_BROADCAST)) {
-        LOGD("从机地址错误。当前地址：%d , 接收到的数据地址:%d \n", g_addr, slave_addr_out);
+        LOGD("从机地址错误，当前地址：%d , 接收到的数据地址:%d \n", g_addr, slave_addr_out);
         return 5;
     }
 
@@ -1824,7 +1824,7 @@ static void init_log() {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.4.8"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.4"                    // 库版本
 
 
 int hd_uart_init(
@@ -1833,7 +1833,7 @@ int hd_uart_init(
         const char *version,
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event
-       ,int(*transform_pic)(const char *, char *)
+        ,int(*transform_pic)(const char *, char *)
 ) {
     // 注册信号处理函数
     if (HD_UART_PARSER_DEBUG_Uart) {
@@ -1886,7 +1886,7 @@ int hd_uart_init(
     if (SNAP_TEST_WITH_PURE) {
         my_remove_directory(SNAP_PATH);
 
-        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, NULL);
+        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, transform_pic);
         if (ret) {
             LOGE("hd_camera_produce_init error! %d\n", ret);
             return 0;

@@ -41,7 +41,7 @@ int hd_uart_init(
         const char *version,
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event
-       ,int(*transform_pic)(const char *, char *)
+        ,int(*transform_pic)(const char *, char *)
 );
 
 /**
