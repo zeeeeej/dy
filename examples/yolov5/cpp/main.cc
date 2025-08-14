@@ -230,7 +230,7 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
         object_detect_result_list od_results;
                 
         ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
-            std::cout<< "process_image_with_yolov5_v2 inference_yolov5_model ok "< std::endl;
+            std::cout<< "process_image_with_yolov5_v2 inference_yolov5_model ok "<< std::endl;
         if (ret != 0)
         {
             printf("init_yolov5_model fail! ret=%d\n", ret);
