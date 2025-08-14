@@ -23,7 +23,7 @@ set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s")
 # set(CMAKE_BUILD_TYPE Debug)
 
 
-    set(ULBIC_DIR /home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf)
+set(ULBIC_DIR /home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf)
 
 
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
@@ -32,7 +32,7 @@ set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g
 
 set(My_SO 1)
 if(My_SO EQUAL 1)
-    project(rkipc_v1.4_camera_app)
+    project(rkipc_v1.4_camera_so)
 elseif(My_SO EQUAL 0 )  
     project(rkipc_v1.4_camera_app)
 endif()
@@ -65,16 +65,18 @@ message( xxx CMAKE_CURRENT_SOURCE_DIR => ${CMAKE_CURRENT_SOURCE_DIR})
 
 # file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
+
+
+file(GLOB urat_files hd_uart/src/*.c)
+add_executable(${PROJECT_NAME}
+main.cc
+postprocess.cc
+utils_biu.cpp
+${rknpu_yolov5_file}
+
 if(My_SO EQUAL 1)
-    project(rkipc_v1.4_camera_app)
+
 elseif(My_SO EQUAL 0 )  
-    file(GLOB urat_files hd_uart/src/*.c)
-    project(rkipc_v1.4_camera_app)
-    add_executable(${PROJECT_NAME}
-    main.cc
-    postprocess.cc
-    utils_biu.cpp
-    ${rknpu_yolov5_file}
     ${urat_files}
 )
 endif()
