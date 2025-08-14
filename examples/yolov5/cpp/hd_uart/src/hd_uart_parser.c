@@ -611,6 +611,57 @@ static void do_uart_recv_take(uint8_t str) {
  * @param action_id_index
  * @return
  */
+//static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_timestamps, uint8_t *action_id_index) {
+//    // 检查输入参数是否有效
+//    if (action_id_str == NULL || action_id_timestamps == NULL || action_id_index == NULL) {
+//        return -1;
+//    }
+//
+//    size_t len = strlen(action_id_str);
+//
+//    // 检查是否全是数字
+////    for (size_t i = 0; i < len; i++) {
+////        if (!isdigit(action_id_str[i])) {
+////            return -1;
+////        }
+////    }
+//
+//    // 时间戳部分至少需要10位（可以表示到2286年）
+////    if (len < 10) {
+////        return -1;
+////    }
+//
+//    // 分离时间戳和索引
+//    char ts_str[11] = {0};  // 10位时间戳 + null终止符
+//    char idx_str[4] = {0};   // 最多3位索引 + null终止符
+//
+//    // 拷贝时间戳部分（前10位）
+//    strncpy(ts_str, action_id_str, 10);
+//
+//    // 拷贝索引部分（剩余部分，最多3位）
+//    size_t idx_len = len - 10;
+//    if (idx_len > 3) {
+//        idx_len = 3;  // 索引最多3位
+//    }
+//    strncpy(idx_str, action_id_str + 10, idx_len);
+//
+//    // 转换为数值
+//    char *endptr;
+//    unsigned long ts = strtoul(ts_str, &endptr, 10);
+//    if (*endptr != '\0' || ts > UINT32_MAX) {
+//        return -1;
+//    }
+//
+//    unsigned long idx = strtoul(idx_str, &endptr, 10);
+//    if (*endptr != '\0' || idx > UINT8_MAX) {
+//        return -1;
+//    }
+//
+//    *action_id_timestamps = (uint32_t) ts;
+//    *action_id_index = (uint8_t) idx;
+//    return 0;
+//}
+
 static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_timestamps, uint8_t *action_id_index) {
     // 检查输入参数是否有效
     if (action_id_str == NULL || action_id_timestamps == NULL || action_id_index == NULL) {
@@ -620,30 +671,33 @@ static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_tim
     size_t len = strlen(action_id_str);
 
     // 检查是否全是数字
-//    for (size_t i = 0; i < len; i++) {
-//        if (!isdigit(action_id_str[i])) {
-//            return -1;
-//        }
-//    }
+    for (size_t i = 0; i < len; i++) {
+        if (!isdigit(action_id_str[i])) {
+            return -1;
+        }
+    }
 
-    // 时间戳部分至少需要10位（可以表示到2286年）
-//    if (len < 10) {
-//        return -1;
-//    }
+    // 至少需要1位时间戳和1位索引（总共至少4位才能有3位索引）
+    if (len < 4) {
+        return -1;
+    }
 
     // 分离时间戳和索引
-    char ts_str[11] = {0};  // 10位时间戳 + null终止符
-    char idx_str[4] = {0};   // 最多3位索引 + null终止符
+    size_t ts_len = len - 3;  // 前面部分作为时间戳
+    size_t idx_len = 3;        // 最后3位作为索引
 
-    // 拷贝时间戳部分（前10位）
-    strncpy(ts_str, action_id_str, 10);
+    char ts_str[32] = {0};     // 足够大的缓冲区存放时间戳
+    char idx_str[4] = {0};     // 3位索引 + null终止符
 
-    // 拷贝索引部分（剩余部分，最多3位）
-    size_t idx_len = len - 10;
-    if (idx_len > 3) {
-        idx_len = 3;  // 索引最多3位
+    // 拷贝时间戳部分
+    if (ts_len > 0) {
+        strncpy(ts_str, action_id_str, ts_len);
+    } else {
+        ts_str[0] = '0';  // 如果没时间戳部分，设为0
     }
-    strncpy(idx_str, action_id_str + 10, idx_len);
+
+    // 拷贝索引部分（最后3位）
+    strncpy(idx_str, action_id_str + ts_len, idx_len);
 
     // 转换为数值
     char *endptr;
@@ -657,8 +711,8 @@ static int do_str_2_action_id(const char *action_id_str, uint32_t *action_id_tim
         return -1;
     }
 
-    *action_id_timestamps = (uint32_t) ts;
-    *action_id_index = (uint8_t) idx;
+    *action_id_timestamps = (uint32_t)ts;
+    *action_id_index = (uint8_t)idx;
     return 0;
 }
 
@@ -1822,7 +1876,7 @@ static void init_log() {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.5.12"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.5.13"                    // 库版本
 
 
 int hd_uart_init(
