@@ -24,13 +24,14 @@
 #include "hd_camera_ota.h"
 #include "hd_pic_infos.h"
 #include "hd_c_log.h"
+#include "hd_camera_protocol.h"
 
 #define HD_UART_PARSER_DEBUG_APp                0                           // debug开启
 #define HD_UART_PARSER_DEBUG_Uart               0                           // debug开启
 #define HD_UART_PARSER_DEBUG                    0                           // debug开启
 #define FRAME_HEADER_H                          PROTOCOL_HEADER_1           // 头1
 #define FRAME_HEADER_L                          PROTOCOL_HEADER_0           // 头2
-#define MAX_FILE_SIZE                           PROTOCOL_MAX_FRAME_LEN      // 最大图片传输大小
+//#define MAX_FILE_SIZE                           PROTOCOL_MAX_FRAME_LEN      // 最大图片传输大小
 #define MAX_FILE_PATH_SIZE                      1024                        // path大小
 #define JPG_SUFFIX                              ".jpg"                      // 图片格式
 #define JPG_SUFFIX_LEN                          4                           // 图片格式长度
@@ -847,9 +848,9 @@ static int on_pic_info_removed(const HD_PIC_INFO *info) {
     LOGI("on_pic_info_removed %s\n", info->path);
     if (SNAP_TEST_WITH_PURE) {
         if (info->path) {
-            if (access(info->path,F_OK)){
-                remove(info->path);
-            }
+            //if (access(info->path,F_OK)){
+                remove(info->path); // 测试不删除
+            //}
         }
     } else {
         if (g_hd_on_event != NULL) {
@@ -1147,6 +1148,7 @@ static u_int8_t handle_snapshot_pic(
 }
 
 /* 处理 3.9拉取图片（0x09）*/
+static unsigned char read_data[PROTOCOL_MAX_FRAME_LEN];
 static int
 handle_pull_pic(const unsigned char *payload_data,
                 uint32_t payload_data_size,
@@ -1168,7 +1170,7 @@ handle_pull_pic(const unsigned char *payload_data,
         LOGD("offset            :       %d(0x%02x)\n", out_offset, out_offset);
         LOGD("read_len          :       %d(0x%02x)\n", out_read_len, out_read_len);
     }
-    unsigned char read_data[PROTOCOL_MAX_FRAME_LEN];
+
     size_t offset = out_offset;
     size_t read_len = out_read_len;
     size_t real_read_len = 0;
@@ -1425,14 +1427,10 @@ static char *debug_file_2 = "/userdata/1_e99a18c428cb38d5f260853678922e03_123456
 static char *debug_file_dest = "/userdata/hadlinks/1753422798";
 
 static void my_remove_directory(const char *path) {
-    if (!access(path,F_OK)){
-        perror("my_remove_directory access error ");
-        return;
-    }
     DIR *dir = opendir(path);
     if (!dir) {
-        perror("无法打开目录");
         printf("path=%s\n",path);
+        perror("无法打开目录");
         return;
     }
 
@@ -1824,7 +1822,7 @@ static void init_log() {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.4"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.5.12"                    // 库版本
 
 
 int hd_uart_init(
@@ -1886,7 +1884,7 @@ int hd_uart_init(
     if (SNAP_TEST_WITH_PURE) {
         my_remove_directory(SNAP_PATH);
 
-        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, transform_pic);
+        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, NULL);
         if (ret) {
             LOGE("hd_camera_produce_init error! %d\n", ret);
             return 0;

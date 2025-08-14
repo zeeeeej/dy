@@ -780,7 +780,7 @@ void collection_print(OrderedCollection *col) {
 /***** 业务代码 *****/
 
 #define KEY_MAX_SIZE                            512
-#define MAX_FILE_SIZE                           (512*1024)      // 最大图片传输大小
+#define MAX_FILE_SIZE                           PROTOCOL_MAX_FRAME_LEN     // 最大图片传输大小
 #define PRINT_PIC_INFO_LEVEL                    0
 #define PRINT_PIC_INFO_ITEM_LEVEL               0
 

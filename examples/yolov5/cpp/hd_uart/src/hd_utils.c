@@ -302,8 +302,8 @@ uint32_t calculate_3_5_char_time(uint32_t baud_rate, uint8_t data_bits, uint8_t 
 static int hd_md5_str(const char *file_path, unsigned char result[16]) {
     if (file_path == NULL)return -1;
     size_t size = strlen(file_path);
-    printf("size = %zu\n",size);
-    if (size==0)return -1;
+    printf("size = %zu\n", size);
+    if (size == 0)return -1;
     unsigned char buff[1024];
     for (int i = 0; i < size; ++i) {
         buff[i] = file_path[i];
@@ -315,8 +315,8 @@ static int hd_md5_str(const char *file_path, unsigned char result[16]) {
     return 0;
 }
 
-int hd_md5_file(const char *file_name, uint8_t *result){
-    FILE *file = NULL ;
+int hd_md5_file(const char *file_name, uint8_t *result) {
+    FILE *file = NULL;
     if ((file = fopen(file_name, "rb")) == NULL) {
         perror("fopen");
         return -1;
@@ -327,11 +327,11 @@ int hd_md5_file(const char *file_name, uint8_t *result){
     HD_MD5_CTX ctx;
     hd_MD5_Init(&ctx);
 
-    while((input_size = fread(input_buffer, 1, 1024, file)) > 0){
-        hd_MD5_Update(&ctx, (uint8_t *)input_buffer, input_size);
+    while ((input_size = fread(input_buffer, 1, 1024, file)) > 0) {
+        hd_MD5_Update(&ctx, (uint8_t *) input_buffer, input_size);
     }
 
-    hd_MD5_Final(&ctx,result);
+    hd_MD5_Final(&ctx, result);
     return 0;
 }
 
@@ -465,6 +465,7 @@ int hd_find_model_name(const char *dir_path, char *model_version, const char *pr
     DIR *dir = opendir(dir_path);
     if (!dir) {
         perror("opendir failed");
+        printf("%s\n", dir_path);
         return 1;
     }
 
@@ -497,7 +498,7 @@ int create_directory_if_not_exists(const char *path) {
         if (stat(dir_path, &st) != 0) {
             // 目录不存在，尝试创建
             if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
-                if (dir_path){
+                if (dir_path) {
                     free(dir_path);
                     dir_path = NULL;
                 }
@@ -506,7 +507,7 @@ int create_directory_if_not_exists(const char *path) {
         }
     }
 
-    if (dir_path){
+    if (dir_path) {
         free(dir_path);
         dir_path = NULL;
     }
@@ -528,9 +529,18 @@ int delete_file_if_exists(const char *filename) {
 }
 
 void hd_delete_directory(const char *path) {
+    if (path == NULL) {
+        perror("hd_delete_directory path == NULL");
+        return;
+    }
+//    if (!access(path, F_OK)) {
+//        perror("hd_delete_directory access failed");
+//        return;
+//    }
     DIR *dir = opendir(path);
     if (!dir) {
-        perror("opendir failed");
+        perror("hd_delete_directory opendir failed");
+        printf("%s\n", path);
         return;
     }
 
