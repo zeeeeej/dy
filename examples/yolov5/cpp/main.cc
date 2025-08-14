@@ -87,11 +87,11 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.3";
+std::string app_version = "V1.4";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
-int addr_biu = 2;
+int addr_biu = 1;
 
 static uint8_t door_status = 2;  // 默认日志级别为INFO
 
@@ -197,7 +197,7 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
         image_buffer_t src_image;
             
         memset(&src_image, 0, sizeof(image_buffer_t));
-        ret = read_image(img_path.c_str(), &src_image);
+        ret = read_image(img_path.c_str(), &src_image);git 
          std::cout<< "process_image_with_yolov5_v2 read_image ok "< std::endl;
 
         //RV1106 rga requires that input and output bufs are memory allocated by dma
@@ -696,6 +696,9 @@ int main(int argc, char **argv)
     } else {
         model_path_std = userdata_rknn_path_old;
     }
+
+
+     if (addr_biu == 2){
     const char* model_path = model_path_std.c_str();
        int ret;
       
@@ -717,6 +720,7 @@ int main(int argc, char **argv)
             return 0;
         }
     }
+}
 
     hd_uart_init(addr_biu, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic_my);
 

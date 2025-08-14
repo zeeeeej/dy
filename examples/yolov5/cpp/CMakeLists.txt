@@ -20,21 +20,17 @@ set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_C_FLAGS_RELEASE "-Os -ffunction-sections -fdata-sections")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s")
 
-set(MY_CTX 1) # 1:hdlinux 0:default 2:mac
-
 # set(CMAKE_BUILD_TYPE Debug)
-message(ctx = ${MY_CTX})
-if(MY_CTX EQUAL 1)
+
+
     set(ULBIC_DIR /home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockchip830-linux-uclibcgnueabihf)
-elseif(MY_CTX EQUAL 0 )  
-    set(ULBIC_DIR /mnt/c/Users/11198/Documents/C++_libs/arm-rockchip830-linux-uclibcgnueabihf-master)
-endif()
+
 
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
 
-set(My_SO 0)
+set(My_SO 1)
 if(My_SO EQUAL 1)
     project(rkipc_v1.3_camera_so)
 elseif(My_SO EQUAL 0 )  
@@ -69,9 +65,6 @@ message( xxx CMAKE_CURRENT_SOURCE_DIR => ${CMAKE_CURRENT_SOURCE_DIR})
 
 # file(GLOB SRCS ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 
-
-
-
 if(My_SO EQUAL 1)
     project(rkipc_v1.1_camera1_so)
 elseif(My_SO EQUAL 0 )  
@@ -87,87 +80,53 @@ elseif(My_SO EQUAL 0 )
 endif()
 
 
+set(My_Root /home/book/proj/yo/camera-rv1103/examples/yolov5/cpp)
 
-if(MY_CTX EQUAL 1)
-        set(My_Root /home/book/proj/yo/camera-rv1103/examples/yolov5/cpp)
+set(OpenCV_INCLUDE_DIRS ${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4/)
+set(OpenCV_LIBS ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/)
 
-        set(OpenCV_INCLUDE_DIRS ${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4/)
-        set(OpenCV_LIBS ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/)
+include_directories(${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4)
 
-        include_directories(${My_Root}/lib_opencv/arm32_rockchip830_install/include/opencv4)
+message(STATUS "OpenCV Libraries: ${OpenCV_LIBS}")
+message(STATUS "OpenCV Include Path: ${OpenCV_INCLUDE_DIRS}")
 
-        message(STATUS "OpenCV Libraries: ${OpenCV_LIBS}")
-        message(STATUS "OpenCV Include Path: ${OpenCV_INCLUDE_DIRS}")
+include_directories(${My_Root}/include)
+include_directories(${My_Root}/hd_uart/include)
 
-        include_directories(${My_Root}/include)
-        include_directories(${My_Root}/hd_uart/include)
+link_directories(${My_Root}/libs)
 
-        link_directories(${My_Root}/libs)
+message(STATUS "Link directories: ${CMAKE_LINK_DIRECTORIES}")
 
-        message(STATUS "Link directories: ${CMAKE_LINK_DIRECTORIES}")
-
-
-
-        #target_link_libraries(${PROJECT_NAME}
-    #    imageutils
-    #    fileutils
-    #    imagedrawing    
-    #    stdc++fs
-    #    ${LIBRKNNRT}
-    #    
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_core.so
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgcodecs.so
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgproc.so
-    #    
-    #    pthread 
-    #    rockit 
-    #    rockchip_mpp 
-    #    rkaiq 
-    #    aec_bf_process 
-    #    rkaudio_common 
-    #    m 
-    #    freetype 
-    #    rockiva 
-    #    iconv 
-    #    rknnmrt 
-    #    rga 
-    #    stdc++ 
-    #    rksysutils 
-    #    app_shared
-    #    
-    #    /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
-    #    dl
-    #)
-
+if(My_SO EQUAL 1)
 ##### so #####
-# target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
-#         ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
-#         ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgcodecs.so
-#         ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgproc.so
-#         pthread 
-#         ${My_Root}/libs/librockit.so 
-#         ${My_Root}/libs/librockchip_mpp.so
-#         ${My_Root}/libs/librkaiq.so
-#         ${My_Root}/libs/libaec_bf_process.so
-#         ${My_Root}/libs/librkaudio_common.so 
-#         m 
-#         ${My_Root}/libs/libfreetype.so
-#         ${My_Root}/libs/librockiva.so
-#         ${My_Root}/libs/libiconv.so 
-#         ${My_Root}/libs/librknnmrt.so 
-#         ${My_Root}/libs/librga.so
-#         stdc++ 
-#         ${My_Root}/libs/librksysutils.so
-#         ${My_Root}/libs/libapp_shared.so
+target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_core.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgcodecs.so
+        ${My_Root}/lib_opencv/arm32_rockchip830_install/lib/libopencv_imgproc.so
+        pthread 
+        ${My_Root}/libs/librockit.so 
+        ${My_Root}/libs/librockchip_mpp.so
+        ${My_Root}/libs/librkaiq.so
+        ${My_Root}/libs/libaec_bf_process.so
+        ${My_Root}/libs/librkaudio_common.so 
+        m 
+        ${My_Root}/libs/libfreetype.so
+        ${My_Root}/libs/librockiva.so
+        ${My_Root}/libs/libiconv.so 
+        ${My_Root}/libs/librknnmrt.so 
+        ${My_Root}/libs/librga.so
+        stdc++ 
+        ${My_Root}/libs/librksysutils.so
+        ${My_Root}/libs/libapp_shared.so
         
-#         ${My_Root}/libs/libhd_uart.so
+        ${My_Root}/libs/libhd_uart.so
     
-#         ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
-#         dl
+        ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
+        dl
 
-#     )
+    )
 
-
+elseif(My_SO EQUAL 0 )  
     
 ##### app ######
       target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
@@ -192,86 +151,8 @@ if(MY_CTX EQUAL 1)
         ${My_Root}/lib_libz/arm32_rockchip830_install/lib/libz.so
         dl
       )
-
-
-
-elseif(MY_CTX EQUAL 0)
-    set(OpenCV_INCLUDE_DIRS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4/)
-    set(OpenCV_LIBS /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/lib/)
-
-    include_directories(/mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_install/include/opencv4)
-
-    message(STATUS "OpenCV Libraries: ${OpenCV_LIBS}")
-    message(STATUS "OpenCV Include Path: ${OpenCV_INCLUDE_DIRS}")
-
-    include_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/include)
-    include_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/hd_uart/include)
-
-    link_directories(/mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs)
-
-    message(STATUS "Link directories: ${CMAKE_LINK_DIRECTORIES}")
-
-
-
-    #target_link_libraries(${PROJECT_NAME}
-    #    imageutils
-    #    fileutils
-    #    imagedrawing    
-    #    stdc++fs
-    #    ${LIBRKNNRT}
-    #    
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_core.so
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgcodecs.so
-    #    /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgproc.so
-    #    
-    #    pthread 
-    #    rockit 
-    #    rockchip_mpp 
-    #    rkaiq 
-    #    aec_bf_process 
-    #    rkaudio_common 
-    #    m 
-    #    freetype 
-    #    rockiva 
-    #    iconv 
-    #    rknnmrt 
-    #    rga 
-    #    stdc++ 
-    #    rksysutils 
-    #    app_shared
-    #    
-    #    /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
-    #    dl
-    #)
-
-
-
-    target_link_libraries(${PROJECT_NAME} -Wl,--no-as-needed imageutils fileutils imagedrawing stdc++fs ${LIBRKNNRT}
-        /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_core.so
-        /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgcodecs.so
-        /mnt/c/Users/11198/Documents/C++_libs/opencv-4.5.3/arm32_rockchip830_without_ffmpeg_install/lib/libopencv_imgproc.so
-        pthread 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librockit.so 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librockchip_mpp.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librkaiq.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libaec_bf_process.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librkaudio_common.so 
-        m 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libfreetype.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librockiva.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libiconv.so 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librknnmrt.so 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librga.so
-        stdc++ 
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/librksysutils.so
-        /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libapp_shared.so
-        # /mnt/c/Users/11198/Documents/RV1103_demo/test_demo/rknn_model_zoo-2.3.2/examples/yolov5/cpp/libs/libhd_uart.so
-    
-        /mnt/c/Users/11198/Documents/C++_libs/zlib-1.2.11/arm32_rockchip830_install/lib/libz.so
-        dl
-
-    )
 endif()
+
 
 add_compile_options(-Wno-psabi)
 
