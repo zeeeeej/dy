@@ -67,18 +67,23 @@ message( xxx CMAKE_CURRENT_SOURCE_DIR => ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 
-file(GLOB urat_files hd_uart/src/*.c)
-add_executable(${PROJECT_NAME}
-main.cc
-postprocess.cc
-utils_biu.cpp
-${rknpu_yolov5_file}
 
 if(My_SO EQUAL 1)
-
+    add_executable(${PROJECT_NAME}
+    main.cc
+    postprocess.cc
+    utils_biu.cpp
+    ${rknpu_yolov5_file}
+    )
 elseif(My_SO EQUAL 0 )  
+    file(GLOB urat_files hd_uart/src/*.c)
+    add_executable(${PROJECT_NAME}
+    main.cc
+    postprocess.cc
+    utils_biu.cpp
+    ${rknpu_yolov5_file}
     ${urat_files}
-)
+    )
 endif()
 
 
