@@ -82,6 +82,7 @@
         "queue": "cpp",
         "typeindex": "cpp",
         "unordered_set": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "rs485.h": "c"
     }
 }

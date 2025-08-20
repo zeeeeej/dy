@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-#define HD_PIC_INFO_MAX             50
-#define HD_ACTION_INFO_MAX          50
+#define HD_PIC_INFO_MAX             50          // 每个action_id最多50个图片
+#define HD_ACTION_INFO_MAX          10          // 最多10个action_id文件
 
 
 /**
@@ -73,6 +73,7 @@ typedef struct {
  * @return          0：成功 1：失败
  */
 int hd_pic_infos_init(int max);
+void  hd_pic_infos_clear(int (*on_action_id_removed)(const HD_ACTION_ID_INFO *));
 
 /**
  * 添加图片

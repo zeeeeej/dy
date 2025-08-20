@@ -7,7 +7,8 @@
 #include "hd_camera_protocol.h"
 
 #define HD_PIC_INFOS_TAG   "hd_pic_infos.c"
-#define HD_PIC_INFOS_DEBUG  1
+#define HD_PIC_INFOS_DEBUG  0
+static HD_PIC_INFO *g_doing_info = NULL;
 
 //<editor-fold desc="集合">
 
@@ -53,7 +54,7 @@ OrderedCollection *collection_init(int max_size, int keep_ordered) {
 void collection_free(OrderedCollection *col) {
     if (!col) return;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     CollectionNode *current = col->head;
     while (current) {
@@ -84,8 +85,8 @@ void collection_free(OrderedCollection *col) {
         current = next;
     }
 
-    pthread_mutex_unlock(&col->lock);
-    pthread_mutex_destroy(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_destroy(&col->lock);
     free(col);
     col = NULL;
 }
@@ -140,11 +141,11 @@ insert_node(OrderedCollection *col, CollectionNode *new_node, int (*on_action_id
         }
 
         // 释放资源（但不释放pics，因为它们将被新节点接管）
-        if (to_remove->action_info->path){
+        if (to_remove->action_info->path) {
             free(to_remove->action_info->path);
             to_remove->action_info->path = NULL;
         }
-        if (to_remove->action_info){
+        if (to_remove->action_info) {
             free(to_remove->action_info);
             to_remove->action_info = NULL;
         }
@@ -196,19 +197,33 @@ insert_node(OrderedCollection *col, CollectionNode *new_node, int (*on_action_id
 
 // 添加action到集合
 int collection_add_action(OrderedCollection *col, HD_ACTION_ID_INFO *action_info,
-                          int (*on_action_id_removed)(const HD_ACTION_ID_INFO *)) {
+                          int (*on_action_id_removed)(const HD_ACTION_ID_INFO *)
+) {
     if (!col || !action_info) return -1;
+//    pthread_mutex_lock(&col->lock);
 
-    pthread_mutex_lock(&col->lock);
-
-    // 检查容量并移除最老的（如果有必要）
     if (col->size >= col->max_size) {
-#if(HD_PIC_INFOS_DEBUG == 1)
         printf("collection_add_action over max : %d %d \n", col->size, col->max_size);
-#endif
-        CollectionNode *oldest = col->head;
-        if (oldest) {
-            col->head = oldest->next;
+        CollectionNode *to_remove = NULL;
+
+        HD_PIC_INFO *uploading = g_doing_info;
+        if (uploading == NULL) {
+            to_remove = col->head;
+        } else {
+            CollectionNode *current = col->head;
+            while (current) {
+                if (!current->action_info->empty &&
+                    current->action_info->action_id_timestamps == uploading->action_id_timestamps &&
+                    current->action_info->action_id_index == uploading->action_id_index) {
+                    to_remove = current;
+                    break;
+                }
+                current = current->next;
+            }
+        }
+
+        if (to_remove) {
+            col->head = to_remove->next;
             if (col->head) {
                 col->head->prev = NULL;
             } else {
@@ -216,42 +231,92 @@ int collection_add_action(OrderedCollection *col, HD_ACTION_ID_INFO *action_info
             }
 
             if (on_action_id_removed != NULL) {
-                on_action_id_removed(oldest->action_info); // 通知删除文件
+                on_action_id_removed(to_remove->action_info); // 通知删除文件
             }
 
             // 释放资源
-            if (oldest->action_info) {
-                for (int i = 0; i < oldest->action_info->pic_count; i++) {
-                    if (oldest->action_info->pics[i]) {
-                        if (oldest->action_info->pics[i]->path){
-                            free(oldest->action_info->pics[i]->path);
-                            oldest->action_info->pics[i]->path = NULL;
+            if (to_remove->action_info) {
+                for (int i = 0; i < to_remove->action_info->pic_count; i++) {
+                    if (to_remove->action_info->pics[i]) {
+                        if (to_remove->action_info->pics[i]->path) {
+                            free(to_remove->action_info->pics[i]->path);
+                            to_remove->action_info->pics[i]->path = NULL;
                         }
-                        free(oldest->action_info->pics[i]);
-                        oldest->action_info->pics[i] = NULL;
+                        free(to_remove->action_info->pics[i]);
+                        to_remove->action_info->pics[i] = NULL;
                     }
                 }
 
-                if (oldest->action_info->path){
-                    free(oldest->action_info->path);
-                    oldest->action_info->path = NULL;
+                if (to_remove->action_info->path) {
+                    free(to_remove->action_info->path);
+                    to_remove->action_info->path = NULL;
                 }
 
-                free(oldest->action_info);
-                oldest->action_info = NULL;
+                free(to_remove->action_info);
+                to_remove->action_info = NULL;
             }
 
-            free(oldest);
-            oldest = NULL;
+            free(to_remove);
+            to_remove = NULL;
             col->size--;
 
         }
+
+
     }
+
+    /* // 检查容量并移除最老的（如果有必要）
+     if (col->size >= col->max_size) {
+ #if(HD_PIC_INFOS_DEBUG )
+         printf("collection_add_action over max : %d %d \n", col->size, col->max_size);
+ #endif
+         CollectionNode *oldest = col->head;
+         if (oldest) {
+             col->head = oldest->next;
+             if (col->head) {
+                 col->head->prev = NULL;
+             } else {
+                 col->tail = NULL;
+             }
+
+             // 不删除文件
+ //            if (on_action_id_removed != NULL) {
+ //                on_action_id_removed(oldest->action_info); // 通知删除文件
+ //            }
+
+             // 释放资源
+             if (oldest->action_info) {
+                 for (int i = 0; i < oldest->action_info->pic_count; i++) {
+                     if (oldest->action_info->pics[i]) {
+                         if (oldest->action_info->pics[i]->path){
+                             free(oldest->action_info->pics[i]->path);
+                             oldest->action_info->pics[i]->path = NULL;
+                         }
+                         free(oldest->action_info->pics[i]);
+                         oldest->action_info->pics[i] = NULL;
+                     }
+                 }
+
+                 if (oldest->action_info->path){
+                     free(oldest->action_info->path);
+                     oldest->action_info->path = NULL;
+                 }
+
+                 free(oldest->action_info);
+                 oldest->action_info = NULL;
+             }
+
+             free(oldest);
+             oldest = NULL;
+             col->size--;
+
+         }
+     }*/
 
     // 创建新节点
     CollectionNode *new_node = (CollectionNode *) malloc(sizeof(CollectionNode));
     if (!new_node) {
-        pthread_mutex_unlock(&col->lock);
+//        pthread_mutex_unlock(&col->lock);
         return -1;
     }
     new_node->action_info = action_info;
@@ -261,7 +326,7 @@ int collection_add_action(OrderedCollection *col, HD_ACTION_ID_INFO *action_info
     // 插入节点
     insert_node(col, new_node, on_action_id_removed);
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return 0;
 }
 
@@ -271,20 +336,20 @@ HD_ACTION_ID_INFO *collection_find_action(OrderedCollection *col,
                                           uint8_t action_id_index) {
     if (!col) return NULL;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     CollectionNode *current = col->head;
     while (current) {
         if (!current->action_info->empty &&
             current->action_info->action_id_timestamps == action_id_timestamps &&
             current->action_info->action_id_index == action_id_index) {
-            pthread_mutex_unlock(&col->lock);
+//            pthread_mutex_unlock(&col->lock);
             return current->action_info;
         }
         current = current->next;
     }
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return NULL;
 }
 
@@ -294,7 +359,7 @@ int collection_remove_action(OrderedCollection *col,
                              uint8_t action_id_index) {
     if (!col) return -1;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     CollectionNode *current = col->head;
     while (current) {
@@ -319,7 +384,7 @@ int collection_remove_action(OrderedCollection *col,
             if (current->action_info) {
                 for (int i = 0; i < current->action_info->pic_count; i++) {
                     if (current->action_info->pics[i]) {
-                        if (current->action_info->pics[i]->path){
+                        if (current->action_info->pics[i]->path) {
                             free(current->action_info->pics[i]->path);
                             current->action_info->pics[i]->path = NULL;
                         }
@@ -328,9 +393,9 @@ int collection_remove_action(OrderedCollection *col,
                         current->action_info->pics[i] = NULL;
                     }
                 }
-                if (current->action_info->path){
+                if (current->action_info->path) {
                     free(current->action_info->path);
-                    current->action_info->path  = NULL;
+                    current->action_info->path = NULL;
                 }
 
                 free(current->action_info);
@@ -340,14 +405,59 @@ int collection_remove_action(OrderedCollection *col,
             current = NULL;
             col->size--;
 
-            pthread_mutex_unlock(&col->lock);
+//            pthread_mutex_unlock(&col->lock);
             return 0;
         }
         current = current->next;
     }
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return -1;
+}
+
+/** 移除集合中的所有元素，并通过回调函数处理每个被移除的元素
+* @param col 指向OrderedCollection的指针
+* @param on_action_id_removed 移除元素时的回调函数，可以为NULL
+* @return 成功移除的元素数量，如果col为NULL则返回-1
+*/
+int collection_remove_all(OrderedCollection *col, int (*on_action_id_removed)(const HD_ACTION_ID_INFO *)) {
+    if (col == NULL) {
+        return -1;
+    }
+
+//    pthread_mutex_lock(&col->lock);
+
+    int removed_count = 0;
+    CollectionNode *current = col->head;
+    CollectionNode *next = NULL;
+
+    // 遍历链表，逐个移除节点
+    while (current != NULL) {
+        next = current->next;
+
+        // 如果有回调函数，先调用回调函数处理元素
+        if (on_action_id_removed != NULL) {
+            on_action_id_removed(current->action_info);
+        }
+
+        HD_ACTION_ID_INFO_free(current->action_info);
+        current->action_info = NULL;
+
+        // 释放节点内存
+        free(current);
+        removed_count++;
+        current = next;
+    }
+
+    // 重置集合的状态
+    col->head = NULL;
+    col->tail = NULL;
+    col->size = 0;
+
+//    pthread_mutex_unlock(&col->lock);
+
+    return removed_count;
+
 }
 
 //// 添加pic到指定的action（如果没有则创建）
@@ -452,7 +562,7 @@ HD_PIC_INFO *collection_find_pic_malloc(OrderedCollection *col,
                                         uint16_t pic_id) {
     if (!col) return NULL;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     HD_PIC_INFO *found_pic = NULL;
     HD_PIC_INFO *new_pic = NULL;
@@ -506,7 +616,7 @@ HD_PIC_INFO *collection_find_pic_malloc(OrderedCollection *col,
         }
     }
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return new_pic;
 }
 
@@ -517,7 +627,7 @@ HD_PIC_INFO *collection_find_pic(OrderedCollection *col,
                                  uint16_t pic_id) {
     if (!col) return NULL;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     // 查找对应的action
     CollectionNode *current = col->head;
@@ -530,7 +640,7 @@ HD_PIC_INFO *collection_find_pic(OrderedCollection *col,
             for (int i = 0; i < current->action_info->pic_count; i++) {
                 if (current->action_info->pics[i] &&
                     current->action_info->pics[i]->id == pic_id) {
-                    pthread_mutex_unlock(&col->lock);
+//                    pthread_mutex_unlock(&col->lock);
                     return current->action_info->pics[i];
                 }
             }
@@ -540,7 +650,7 @@ HD_PIC_INFO *collection_find_pic(OrderedCollection *col,
             for (int i = 0; i < current->action_info->pic_count; i++) {
                 if (current->action_info->pics[i] &&
                     current->action_info->pics[i]->id == pic_id) {
-                    pthread_mutex_unlock(&col->lock);
+//                    pthread_mutex_unlock(&col->lock);
                     return current->action_info->pics[i];
                 }
             }
@@ -549,7 +659,7 @@ HD_PIC_INFO *collection_find_pic(OrderedCollection *col,
     }
 
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return NULL;
 }
 
@@ -563,7 +673,7 @@ HD_PIC_INFO *collection_find_pic(OrderedCollection *col,
 static int collection_to_array(OrderedCollection *col, HD_PIC_INFO ***infos, size_t *size) {
     if (!col || !infos || !size) return -1;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     // 首先计算总图片数量
     size_t total_pics = 0;
@@ -576,13 +686,13 @@ static int collection_to_array(OrderedCollection *col, HD_PIC_INFO ***infos, siz
     if (total_pics == 0) {
         *infos = NULL;
         *size = 0;
-        pthread_mutex_unlock(&col->lock);
+//        pthread_mutex_unlock(&col->lock);
         return 0;
     }
     // 分配数组内存
     HD_PIC_INFO **pic_array = (HD_PIC_INFO **) malloc(total_pics * sizeof(HD_PIC_INFO *));
     if (!pic_array) {
-        pthread_mutex_unlock(&col->lock);
+//        pthread_mutex_unlock(&col->lock);
         return -1;
     }
 
@@ -601,7 +711,7 @@ static int collection_to_array(OrderedCollection *col, HD_PIC_INFO ***infos, siz
     *infos = pic_array;
     *size = total_pics;
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return 0;
 }
 
@@ -631,7 +741,7 @@ int collection_remove_pic(OrderedCollection *col,
 ) {
     if (!col) return -1;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
 
     // 查找对应的action
     CollectionNode *current = col->head;
@@ -658,7 +768,7 @@ int collection_remove_pic(OrderedCollection *col,
                     current->action_info->pics[current->action_info->pic_count - 1] = NULL;
                     current->action_info->pic_count--;
 
-                    pthread_mutex_unlock(&col->lock);
+//                    pthread_mutex_unlock(&col->lock);
                     return 0;
                 }
             }
@@ -686,7 +796,7 @@ int collection_remove_pic(OrderedCollection *col,
                     current->action_info->pics[current->action_info->pic_count - 1] = NULL;
                     current->action_info->pic_count--;
 
-                    pthread_mutex_unlock(&col->lock);
+//                    pthread_mutex_unlock(&col->lock);
                     return 0;
                 }
             }
@@ -694,7 +804,7 @@ int collection_remove_pic(OrderedCollection *col,
         current = current->next;
     }
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
     return -1;
 }
 
@@ -702,36 +812,32 @@ int collection_remove_pic(OrderedCollection *col,
 void collection_set_ordered(OrderedCollection *col, int keep_ordered) {
     if (!col) return;
 
-    pthread_mutex_lock(&col->lock);
+//    pthread_mutex_lock(&col->lock);
     col->keep_ordered = keep_ordered;
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
 }
 
 // 打印集合内容（用于调试）
 void collection_print(OrderedCollection *col) {
     if (!col) return;
 
-    pthread_mutex_lock(&col->lock);
-#if(HD_PIC_INFOS_DEBUG == 1)
+//    pthread_mutex_lock(&col->lock);
     printf("Collection (size=%d, ordered=%d):\n", col->size, col->keep_ordered);
-#endif
     CollectionNode *current = col->head;
     while (current) {
         HD_ACTION_ID_INFO *action = current->action_info;
-#if(HD_PIC_INFOS_DEBUG == 1)
+
         printf("  Action: ts=%u, idx=%u, sort=%u, empty=%d, pic_count=%d\n",
                action->action_id_timestamps, action->action_id_index,
                action->sort, action->empty, action->pic_count);
-#endif
         for (int i = 0; i < action->pic_count; i++) {
             HD_PIC_INFO *pic = action->pics[i];
             printf("    Pic: id=%u, path=%s\n", pic->id, pic->path);
         }
-
         current = current->next;
     }
 
-    pthread_mutex_unlock(&col->lock);
+//    pthread_mutex_unlock(&col->lock);
 }
 
 /* 示例用法 */
@@ -780,14 +886,13 @@ void collection_print(OrderedCollection *col) {
 /***** 业务代码 *****/
 
 #define KEY_MAX_SIZE                            512
-#define MAX_FILE_SIZE                           PROTOCOL_MAX_FRAME_LEN     // 最大图片传输大小
+#define MAX_FILE_SIZE                           (PROTOCOL_MAX_FRAME_LEN-11)     // 最大图片传输大小
 #define PRINT_PIC_INFO_LEVEL                    0
 #define PRINT_PIC_INFO_ITEM_LEVEL               0
 
 pthread_mutex_t HD_PIC_INFOS_MUTEX;
 static OrderedCollection *g_all_pic_infos;
-static int g_max = HD_PIC_INFO_MAX;
-static HD_PIC_INFO *g_doing_info = NULL;
+
 static unsigned char g_file_buffer[MAX_FILE_SIZE];              // 图片文件缓冲区
 static size_t g_file_buffer_size = -1;                          // 当前上传文件大小
 
@@ -851,7 +956,10 @@ static int load_file_to_buffer(const char *filename, unsigned char *data, size_t
 //    HD_PIC_INFO_free(free_info);
 //}
 //
+static void reset_file_buffer();
+
 static void print__pic_info(void *info) {
+#ifdef HD_PIC_INFOS_DEBUG
     if (info == NULL)return;
 
     HD_PIC_INFO *print_info = (HD_PIC_INFO *) info;
@@ -859,7 +967,8 @@ static void print__pic_info(void *info) {
 //        printf("%s\n", print_info->path);
 //        return;
 //    }
-    printf("[%s]id                      :        %d\n", HD_PIC_INFOS_TAG, print_info->id);
+
+    printf("[%s]id                      :        0x%02x\n", HD_PIC_INFOS_TAG, print_info->id);
     printf("[%s]action_id_timestamps    :        %d\n", HD_PIC_INFOS_TAG, print_info->action_id_timestamps);
     printf("[%s]action_id_index         :        %d\n", HD_PIC_INFOS_TAG, print_info->action_id_index);
     printf("[%s]trigger_type            :        %d\n", HD_PIC_INFOS_TAG, print_info->trigger_type);
@@ -873,7 +982,9 @@ static void print__pic_info(void *info) {
         printf("%02x ", print_info->md5[i]);
     }
     printf("]\n");
-    printf("---\n");
+    printf("---\n"
+#endif
+    );
 }
 
 static void hd_pic_infos_print(const char *tag) {
@@ -886,6 +997,12 @@ static void hd_pic_infos_print(const char *tag) {
 //    }
 
 
+}
+
+void hd_pic_infos_clear(int (*on_action_id_removed)(const HD_ACTION_ID_INFO *)) {
+    if (g_all_pic_infos == NULL)return;
+    collection_remove_all(g_all_pic_infos, on_action_id_removed);
+    reset_file_buffer();
 }
 
 int hd_pic_infos_init(int max) {
@@ -1078,9 +1195,6 @@ HD_PIC_INFO *HD_PIC_INFO_free_deep_copy(HD_PIC_INFO *info) {
 
 static int hd_pic_infos_load_file_get(unsigned char *result, size_t in_size,
                                       size_t in_offset, size_t *result_size) {
-//    if (HD_UART_PARSER_DEBUG) {
-//        LOGI("[read_from_buffer] g_file_buffer_size = %d\n", g_file_buffer_size);
-//    }
     // 参数检查
     if (result == NULL) {
         fprintf(stderr, "错误：目标数组不能为NULL\n");
@@ -1103,19 +1217,10 @@ static int hd_pic_infos_load_file_get(unsigned char *result, size_t in_size,
         return -2;
     }
     size_t real_read_size = in_size;
-//    if (HD_UART_PARSER_DEBUG) {
-//        LOGI("[read_from_buffer] in_offset = %d \n", in_offset);
-//        LOGI("[read_from_buffer] in_size = %d \n", in_size);
-//        LOGI("[read_from_buffer] g_file_buffer_size = %d \n", g_file_buffer_size);
-//        LOGI("[read_from_buffer] in_offset + in_size - g_file_buffer_size = %d \n", g_file_buffer_size - in_offset);
-//    }
     if (g_file_buffer_size - in_offset < in_size) {
         real_read_size = g_file_buffer_size - in_offset;
     }
 
-//    if (HD_UART_PARSER_DEBUG) {
-    printf("[read_from_buffer] real_read_size = %zu \n", real_read_size);
-//    }
     if (real_read_size <= 0) {
         printf("real_read_size==0,没有数据可读了\n");
         return 1;
@@ -1124,7 +1229,7 @@ static int hd_pic_infos_load_file_get(unsigned char *result, size_t in_size,
     if (in_offset >= MAX_FILE_SIZE ||
         real_read_size > MAX_FILE_SIZE ||
         (in_offset + real_read_size) > MAX_FILE_SIZE ||
-            (in_offset + real_read_size) > PROTOCOL_MAX_FRAME_LEN ||
+        (in_offset + real_read_size) > PROTOCOL_MAX_FRAME_LEN ||
 
         result == NULL) {
         printf("[read_from_buffer] invalid parameters: offset=%zu, size=%zu\n",
@@ -1136,13 +1241,7 @@ static int hd_pic_infos_load_file_get(unsigned char *result, size_t in_size,
     if (result_size != NULL) {
         *result_size = real_read_size;
     }
-
-    printf("[read_from_buffer] memcpy %zu, %zu\n", in_offset, real_read_size);
-
     memcpy(result, g_file_buffer + in_offset, real_read_size);
-
-    printf("[read_from_buffer] memcpy end %zu, %zu\n", in_offset, real_read_size);
-
     return 0;
 }
 
@@ -1154,35 +1253,36 @@ int hd_pic_infos_pull(uint16_t pic_id,
                       int (*on_pic_removed)(const HD_PIC_INFO *)
 
 ) {
-    printf("[%s]拉取图片信息 \n", HD_PIC_INFOS_TAG);
+    printf("[%s]拉取图片信息 pic_id=%d,action_id=%d-%d,offset=%zu,len=%zu\n", HD_PIC_INFOS_TAG, pic_id, action_id_timestamps,
+           action_id_index, in_offset, in_size);
     // 1.加锁
-    pthread_mutex_lock(&HD_PIC_INFOS_MUTEX);
+//    pthread_mutex_lock(&HD_PIC_INFOS_MUTEX);
 
     int error = 0;
     while (1) {
 
         // 1.检查是否在上传
-        printf("1.检查是否在上传... ...\n");
+        //printf("1.检查是否在上传... ...\n");
         int loaded = 0;
         if (g_doing_info != NULL && g_file_buffer_size > 0) {
-            printf("正在上传的图片... ...\n");
-            print__pic_info(g_doing_info);
+            printf("正在上传的图片... ... pic_id=%d,action_id=%d-%d\n",g_doing_info->id,g_doing_info->action_id_timestamps,g_doing_info->action_id_index);
+            //print__pic_info(g_doing_info);
             if (compare_pic_info(pic_id, action_id_timestamps, action_id_index, g_doing_info, 1) == 0) {
-                printf("正在上传的图片匹配成功\n");
+                //printf("正在上传的图片匹配成功\n");
                 loaded = 1;
             } else {
-                printf("正在上传的图片匹配失败,加载新的图片\n");
+                //printf("正在上传的图片匹配失败,加载新的图片\n");
                 reset_file_buffer();
                 loaded = 0;
             }
         }
 
         // 2.预加载图片
-        printf("2.预加载图片... ...\n");
+        //printf("2.预加载图片... ...\n");
         if (loaded) {
             error = 0;
         } else {
-            printf("没有正在上传的图片,查找图片中...1\n");
+            //printf("没有正在上传的图片,查找图片中...1\n");
             HD_PIC_INFO *found = collection_find_pic_malloc(g_all_pic_infos, action_id_timestamps,
                                                             action_id_index, pic_id); // 复制一个新的保证不能其他线程free掉当前上传的指针
             if (found == NULL) {
@@ -1190,8 +1290,8 @@ int hd_pic_infos_pull(uint16_t pic_id,
                 error = 2;
                 break;
             }
-            print__pic_info(found);
-            printf("没有正在上传的图片,加载图片数据中...2\n");
+            //print__pic_info(found);
+            //printf("没有正在上传的图片,加载图片数据中...2\n");
             int ret = load_file_to_buffer(found->path, g_file_buffer, sizeof(g_file_buffer), &g_file_buffer_size);
             if (ret) {
                 error = 3;
@@ -1200,22 +1300,24 @@ int hd_pic_infos_pull(uint16_t pic_id,
             }
             g_doing_info = found;
 
-            printf("没有正在上传的图片,加载图片数据成功！删除图片信息。 g_file_buffer_size=%zu\n",g_file_buffer_size);
-            ret = collection_remove_pic(g_all_pic_infos, action_id_timestamps, action_id_index, pic_id, 1,
-                                        on_pic_removed);
-            if (ret) {
-                printf("没有正在上传的图片,加载图片数据成功！删除图片信息 失败 %d\n", ret);
-                error = 4;
-            } else {
-                error = 0;
-            }
+//            printf("没有正在上传的图片,加载图片数据成功！删除图片信息。 g_file_buffer_size=%zu\n", g_file_buffer_size);
+//            ret = collection_remove_pic(g_all_pic_infos, action_id_timestamps, action_id_index, pic_id, 1,
+//                                        on_pic_removed);
+//            if (ret) {
+//                printf("没有正在上传的图片,加载图片数据成功！删除图片信息 失败 %d\n", ret);
+//                error = 4;
+//            } else {
+//                error = 0;
+//            }
+            error = 0;
+
             break;
         }
         break; // 保底break
     }
 
     // 3.检查完毕,读取数据
-    printf("3.检查完毕,读取数据... ...\n");
+    //printf("3.检查完毕,读取数据... ...\n");
     int ret;
     while (1) {
         if (error) {
@@ -1223,20 +1325,20 @@ int hd_pic_infos_pull(uint16_t pic_id,
             ret = error;
             break;
         }
-        printf("分段加载图片数据... %zu %zu\n",in_size,in_offset);
+        //printf("分段加载图片数据... %zu %zu\n", in_size, in_offset);
         ret = hd_pic_infos_load_file_get(result, in_size, in_offset, result_size);
         if (ret) {
             break;
         }
-        printf("分段加载图片数据 end !... %zu %zu ,result_size = %zu\n",in_size,in_offset,(*result_size));
+        printf("加载图片数据完毕，大小=%zu\n", (*result_size));
         if (*result_size < in_offset) {
-            printf("分段加载图片数据,完整拉取了！ \n");
+            printf("完整拉取了！\n");
             // TODO 需要清除吗？还是等温控器发命令来，否则数据就没了 。
         }
         break;
     }
 
     // 3.释放锁
-    pthread_mutex_unlock(&HD_PIC_INFOS_MUTEX);
+//    pthread_mutex_unlock(&HD_PIC_INFOS_MUTEX);
     return ret;
 }

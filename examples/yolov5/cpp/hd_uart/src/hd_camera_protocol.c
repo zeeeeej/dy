@@ -88,13 +88,13 @@ uint8_t hd_camera_protocol_decode(
 
     // 最小帧长度检查：帧头(2) + 地址(1) + 命令(1) + 长度(4) + CRC(2) = 10
     if (recv_data_size_in < 10) {
-        return -1; // 数据长度不足
+        return 1; // 数据长度不足
     }
 
     // 检查帧头
     if (recv_data_in[0] != PROTOCOL_HEADER_1 || recv_data_in[1] != PROTOCOL_HEADER_0) {
         LOGW("[uart]recv_data[0][1]:%02x,%02x\n", recv_data_in[0], recv_data_in[1]);
-        return -2; // 帧头错误
+        return 2; // 帧头错误
     }
 
     // 获取从机地址
@@ -107,9 +107,11 @@ uint8_t hd_camera_protocol_decode(
     uint32_t length = (recv_data_in[7] << 24) | (recv_data_in[6] << 16) |
                       (recv_data_in[5] << 8) | recv_data_in[4];
 
+
     // 检查数据长度是否合理
-    if (length > (recv_data_size_in - 10)) {
-        return -4; // 数据长度超过实际数据
+    if (length != (recv_data_size_in - 10)) {
+        printf("length=%d,recv_data_size_in=%d \n",length,recv_data_size_in );
+        return 4; // 数据长度超过实际数据
     }
 
     *payload_data_size_out = length;
@@ -130,7 +132,7 @@ uint8_t hd_camera_protocol_decode(
 
     if (received_crc != calculated_crc) {
         LOGW("%02x vs %02x \n", received_crc, calculated_crc);
-        return -5; // CRC校验失败
+        return 5; // CRC校验失败
     }
     if (DEBUG) {
         LOGW("->cmd = %u \n", *cmd_out);
@@ -291,7 +293,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
 int
 hd_camera_protocol_pic_info_encode( char result[1024], uint8_t index_1, unsigned char md5[16], uint32_t file_size,
                                    uint8_t index_2, uint8_t addr, uint8_t trigger_angel, uint8_t trigger_type,
-                                   uint32_t timestamp, uint8_t pic_id
+                                   uint32_t timestamp, uint16_t pic_id
 ) {
     if (result == NULL)return 1;
     // 将MD5转为可打印的十六进制字符串

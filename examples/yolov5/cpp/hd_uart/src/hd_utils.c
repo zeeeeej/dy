@@ -315,6 +315,14 @@ static int hd_md5_str(const char *file_path, unsigned char result[16]) {
     return 0;
 }
 
+int hd_md5_data(unsigned char *data, size_t size, uint8_t *result) {
+    HD_MD5_CTX ctx;
+    hd_MD5_Init(&ctx);
+    hd_MD5_Update(&ctx, data, size);
+    hd_MD5_Final(&ctx, result);
+    return 0;
+}
+
 int hd_md5_file(const char *file_name, uint8_t *result) {
     FILE *file = NULL;
     if ((file = fopen(file_name, "rb")) == NULL) {
@@ -374,47 +382,21 @@ int hd_md5(const char *file_path, unsigned char result[16]) {
 }
 
 void hd_printf_buff(const unsigned char *buf, size_t buf_size, const char *tag, int full) {
-//    printf("打印开始<%s> \n", tag);
-    size_t size = buf_size;
-    if (buf_size > 64) {
-        size = 64;
-    }
-
-    if (full) {
-        printf("size : %zu\n", size);
-
-        for (int i = 0; i < size; ++i) {
-            printf("[%-3d]%02x \n", i, buf[i]);
+    printf("[%s]", tag);
+    if (buf_size > 45) {
+        for (int i = 0; i < 33; ++i) {
+            printf("%02x ", buf[i]);
+        }
+        printf("... ");
+        for (size_t i = (buf_size - 1); i >= buf_size - 10; --i) {
+            printf("%02x ", buf[i]);
+        }
+    } else {
+        for (int i = 0; i < buf_size; ++i) {
+            printf("%02x ", buf[i]);
         }
     }
-    if (full) {
-        printf("[%s][i]", tag);
-        for (int i = 0; i < size; ++i) {
-            if (i > 0xff) {
-                printf("%-1s%04x", "", i);
-            } else {
-                printf("%-1s%02x", "", i);
-            }
-
-        }
-    }
-    if (full) {
-        printf("\n");
-    }
-    printf("[%s][%zu]", tag, size);
-    for (int i = 0; i < size; ++i) {
-//        if (i > 0xff) {
-//            printf("%-1s%04x", "", buf[i]);
-//        } else {
-        printf("%-1s%02x", "", buf[i]);
-//        }
-    }
-    printf("\n");
-    if (full) {
-        printf("打印结束<%s> \n", tag);
-    }
-    //printf("\n");
-
+    printf("（总大小:%zu）\n", buf_size);
 }
 
 // 毫秒级睡眠函数

@@ -34,6 +34,8 @@ static struct {
     uint8_t rw;
 } HDCameraProperty;
 
+//#define HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
+
 static uint8_t hd_host_property_set_push_pull_encode(
         unsigned char **out_payload,
         uint32_t *out_payload_size,
@@ -83,12 +85,16 @@ uint8_t hd_slave_property_set_push_pull_decode(
         return 2;
     }
     int pos = 0;
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("解析file_md5 pos=%d\n", pos);
+#endif
     for (int i = 0; i < 16; ++i) {
         out_file_md5[i] = in_payload[i];
         pos++;
     }
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("解析file_size pos=%d\n", pos);
+#endif
     *out_file_size = (uint64_t) in_payload[pos] |
                      (uint64_t) in_payload[pos + 1] << 8 |
                      (uint64_t) in_payload[pos + 2] << 16 |
@@ -99,12 +105,17 @@ uint8_t hd_slave_property_set_push_pull_decode(
                      (uint64_t) in_payload[pos + 7] << 56;
     pos += 8;
 
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("解析file_path pos=%d\n", pos);
+#endif
     size_t file_path_size = in_payload_size - 16 - 8;
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("解析file_path size=%zu\n", file_path_size);
+#endif
     for (int i = 0; i < file_path_size; ++i) {
         out_file_path[i] = in_payload[pos + i];
     }
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("md5 = [");
     for (int i = 0; i < 16; ++i) {
         LOGD("%02x ", out_file_md5[i]);
@@ -112,6 +123,7 @@ uint8_t hd_slave_property_set_push_pull_decode(
         LOGD("out_file_size = %llx\n", *out_file_size);
         LOGD("out_file_path = %s\n", out_file_path);
     }
+#endif
     return 0;
 
 }
@@ -151,32 +163,36 @@ uint8_t hd_host_property_set_push_encode_ext(
     int fd;
     fd = open(src_file_path, O_RDWR);
     if (fd == -1) {
-        LOGD("打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
+        LOGW("打开文件失败:%s 原因：%d->%s \n ", src_file_path, errno, strerror(errno));
         return 11;
     }
     // 2。获取文件长度
     // 获取文件长度
     struct stat file_stat;
     if (fstat(fd, &file_stat) == -1) {
-        LOGD("获取文件大小失败。fd:%d\n", fd);
+        LOGW("获取文件大小失败。fd:%d\n", fd);
         close(fd);
         return 12;
     }
     off_t file_size = file_stat.st_size;
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("file_size   :  < %lld >bytes\n", file_size);
+#endif
     // 3。获取文件md5
     unsigned char md5[16];
     int ret = hd_md5(src_file_path, md5);
     if (ret) {
-        LOGD("获取文件md5失败。fd:%d\n", fd);
+        LOGW("获取文件md5失败。fd:%d\n", fd);
         close(fd);
         return 13;
     }
+#ifdef HD_CAMERA_PROTOCOL_PROPERTY_LOG_ON
     LOGD("file_md5    :  ");
     for (int i = 0; i < sizeof(md5); ++i) {
         LOGD("%02x ", md5[i]);
     }
     LOGD("\n");
+#endif
     return hd_host_property_set_push_encode(
             out_payload, out_payload_size, md5, file_size, dest_file_path
     );

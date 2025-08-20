@@ -13,9 +13,377 @@
 #include "hd_queue.h"
 #include "hd_utils.h"
 #include <errno.h>
+#include <stdio.h>
+
+/************************* 双端队列 a **********************************/
+
+
+// 双端队列节点结构
+typedef struct Node {
+    void *data;         // 存储任意类型的数据指针
+    struct Node *prev;
+    struct Node *next;
+} Node;
+
+// 定义foreach回调函数类型
+typedef void (*deque_foreach_callback)(void *data, void *user_data, int index);
+
+// 双端队列结构
+typedef struct {
+    Node *front;        // 队首指针
+    Node *rear;         // 队尾指针
+    int size;           // 当前队列大小
+    int capacity;       // 队列容量
+    pthread_mutex_t lock; // 互斥锁
+    void (*free_data)(void *); // 数据释放函数
+} Deque;
+
+// 初始化双端队列
+Deque *deque_init(int capacity, void (*free_data)(void *)) {
+    if (capacity <= 0) {
+        return NULL;
+    }
+
+    Deque *deque = (Deque *) malloc(sizeof(Deque));
+    if (!deque) {
+        return NULL;
+    }
+
+    deque->front = NULL;
+    deque->rear = NULL;
+    deque->size = 0;
+    deque->capacity = capacity;
+    deque->free_data = free_data;
+    pthread_mutex_init(&deque->lock, NULL);
+
+    return deque;
+}
+
+// 销毁双端队列
+void deque_destroy(Deque *deque) {
+    if (!deque) return;
+
+    pthread_mutex_lock(&deque->lock);
+
+    Node *current = deque->front;
+    while (current) {
+        Node *temp = current;
+        current = current->next;
+
+        // 如果有提供free_data函数，则释放数据
+        if (deque->free_data) {
+            deque->free_data(temp->data);
+        }
+        free(temp);
+    }
+
+    pthread_mutex_unlock(&deque->lock);
+    pthread_mutex_destroy(&deque->lock);
+    free(deque);
+}
+
+// 检查队列是否为空
+int deque_is_empty(Deque *deque) {
+    if (!deque) return 1;
+
+    pthread_mutex_lock(&deque->lock);
+    int empty = (deque->size == 0);
+    pthread_mutex_unlock(&deque->lock);
+
+    return empty;
+}
+
+// 检查队列是否已满
+int deque_is_full(Deque *deque) {
+    if (!deque) return 0;
+
+    pthread_mutex_lock(&deque->lock);
+    int full = (deque->size == deque->capacity);
+    pthread_mutex_unlock(&deque->lock);
+
+    return full;
+}
+
+// 获取队列当前大小
+int deque_size(Deque *deque) {
+    if (!deque) return 0;
+
+    pthread_mutex_lock(&deque->lock);
+    int size = deque->size;
+    pthread_mutex_unlock(&deque->lock);
+
+    return size;
+}
+
+// 从队首插入元素
+int deque_push_front(Deque *deque, void *data) {
+    if (!deque) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size >= deque->capacity) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列已满
+    }
+
+    Node *new_node = (Node *) malloc(sizeof(Node));
+    if (!new_node) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1;
+    }
+
+    new_node->data = data;
+    new_node->prev = NULL;
+    new_node->next = deque->front;
+
+    if (deque->front) {
+        deque->front->prev = new_node;
+    } else {
+        deque->rear = new_node; // 队列为空时，rear也指向新节点
+    }
+
+    deque->front = new_node;
+    deque->size++;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 从队尾插入元素
+int deque_push_rear(Deque *deque, void *data) {
+    if (!deque) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size >= deque->capacity) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列已满
+    }
+
+    Node *new_node = (Node *) malloc(sizeof(Node));
+    if (!new_node) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1;
+    }
+
+    new_node->data = data;
+    new_node->next = NULL;
+    new_node->prev = deque->rear;
+
+    if (deque->rear) {
+        deque->rear->next = new_node;
+    } else {
+        deque->front = new_node; // 队列为空时，front也指向新节点
+    }
+
+    deque->rear = new_node;
+    deque->size++;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 从队首移除元素
+int deque_pop_front(Deque *deque, void **data) {
+    if (!deque || !data) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size == 0) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列为空
+    }
+
+    Node *temp = deque->front;
+    *data = temp->data;
+
+    deque->front = temp->next;
+    if (deque->front) {
+        deque->front->prev = NULL;
+    } else {
+        deque->rear = NULL; // 队列为空时，rear也置为NULL
+    }
+
+    free(temp);
+    deque->size--;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 从队尾移除元素
+int deque_pop_rear(Deque *deque, void **data) {
+    if (!deque || !data) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size == 0) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列为空
+    }
+
+    Node *temp = deque->rear;
+    *data = temp->data;
+
+    deque->rear = temp->prev;
+    if (deque->rear) {
+        deque->rear->next = NULL;
+    } else {
+        deque->front = NULL; // 队列为空时，front也置为NULL
+    }
+
+    free(temp);
+    deque->size--;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 获取队首元素但不移除
+int deque_peek_front(Deque *deque, void **data) {
+    if (!deque || !data) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size == 0) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列为空
+    }
+
+    *data = deque->front->data;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 获取队尾元素但不移除
+int deque_peek_rear(Deque *deque, void **data) {
+    if (!deque || !data) return -1;
+
+    pthread_mutex_lock(&deque->lock);
+
+    if (deque->size == 0) {
+        pthread_mutex_unlock(&deque->lock);
+        return -1; // 队列为空
+    }
+
+    *data = deque->rear->data;
+
+    pthread_mutex_unlock(&deque->lock);
+    return 0;
+}
+
+// 线程安全的foreach功能
+void deque_foreach(Deque *deque, deque_foreach_callback callback, void *user_data) {
+    if (!deque || !callback) return;
+
+    pthread_mutex_lock(&deque->lock);
+
+    Node *current = deque->front;
+    int index = 0;
+    while (current) {
+        callback(current->data, user_data, index);
+        current = current->next;
+        index++;
+    }
+
+    pthread_mutex_unlock(&deque->lock);
+}
+
+// 打印队列内容 (用于调试)
+void deque_print(Deque *deque, void (*print_func)(void *)) {
+    if (!deque) return;
+
+    pthread_mutex_lock(&deque->lock);
+
+    printf("Deque (size=%d/%d): [", deque->size, deque->capacity);
+
+    Node *current = deque->front;
+    while (current) {
+        if (print_func) {
+            print_func(current->data);
+        } else {
+            printf("%p", current->data);
+        }
+        if (current->next) {
+            printf(", ");
+        }
+        current = current->next;
+    }
+
+    printf("]\n");
+
+    pthread_mutex_unlock(&deque->lock);
+}
+
+//// 测试用例
+//
+//// 示例数据结构和相关函数
+//typedef struct {
+//    int id;
+//    char name[32];
+//} Person;
+//
+//void print_person(void* data) {
+//    Person* p = (Person*)data;
+//    printf("Person{id=%d, name='%s'}", p->id, p->name);
+//}
+//
+//void free_person(void* data) {
+//    free(data);
+//}
+//
+//void sum_person_ids(void* data, void* user_data) {
+//    Person* p = (Person*)data;
+//    int* sum = (int*)user_data;
+//    *sum += p->id;
+//}
+//
+//int main() {
+//    // 创建一个容量为3的双端队列，指定数据释放函数
+//    Deque* deque = deque_init(3, free_person);
+//
+//    // 创建并添加一些Person对象
+//    Person* p1 = malloc(sizeof(Person));
+//    p1->id = 1; strcpy(p1->name, "Alice");
+//    deque_push_rear(deque, p1);
+//
+//    Person* p2 = malloc(sizeof(Person));
+//    p2->id = 2; strcpy(p2->name, "Bob");
+//    deque_push_rear(deque, p2);
+//
+//    Person* p3 = malloc(sizeof(Person));
+//    p3->id = 3; strcpy(p3->name, "Charlie");
+//    deque_push_front(deque, p3);
+//
+//    // 打印队列内容
+//    deque_print(deque, print_person);
+//
+//    // 使用foreach计算ID总和
+//    int total_id = 0;
+//    deque_foreach(deque, sum_person_ids, &total_id);
+//    printf("Total ID sum: %d\n", total_id);
+//
+//    // 测试弹出元素
+//    void* data;
+//    if (deque_pop_front(deque, &data) == 0) {
+//        Person* p = (Person*)data;
+//        printf("Popped front: ");
+//        print_person(p);
+//        printf("\n");
+//        free_person(p); // 手动释放，因为已经从队列中移除
+//    }
+//
+//    deque_print(deque, print_person);
+//
+//    // 销毁队列(会自动释放剩余元素)
+//    deque_destroy(deque);
+//    return 0;
+//}
+/************************* 双端队列 z **********************************/
 
 typedef struct {
-    uint8_t pic_id;
+    uint8_t snap_id;
     uint32_t timestamp;
     char *file_name;
 } SnapshotItem;
@@ -27,21 +395,24 @@ typedef struct {
     int running;
     int triggerAngel;
     int cameraType;
-    SnapshotItem **pics;
-    int pic_count;
+    Deque *pics;
+    SnapshotItem **head_pics;
+    int head_pics_count;
     char *name;
     uint8_t trigger_type;
+    int snap_max;
 } SnapshotTask;
 
 typedef struct {
     uint32_t action_id_timestamp;
     uint8_t action_id_index;
-    int triggerAngel;
-    uint8_t triggerType;
-    int cameraType;
-    SnapshotItem **pics;
-    int pic_count;
-    char *action_id_name;
+    int triggerAngel;           // 拍照角度
+    uint8_t triggerType;        // 主动抓图 or 正常拍摄
+    int cameraType;             // 静态 or 动态
+    SnapshotItem **pics;        // 照片数据 （pic_id 时间戳 名称）
+    int pic_count;              // 照片数据大小
+    char *action_id_name;       // action_id文件夹名称
+    // array[n]                 // 前几张照片
 } SnapshotResource;
 
 void SnapshotItem_free(SnapshotItem *item) {
@@ -55,20 +426,15 @@ void SnapshotItem_free(SnapshotItem *item) {
 void SnapshotTask_free(SnapshotTask *task) {
     if (!task)return;
     if (task->pics) {
-        for (int i = 0; i < task->pic_count; ++i) {
-            free(task->pics[i]);
-            task->pics[i] = NULL;
-        }
-        free(task->pics);
+        deque_destroy(task->pics);
         task->pics = NULL;
-        if (task->name) {
-            free(task->name);
-            task->name = NULL;
+    }
+    if (task->name) {
+        free(task->name);
+        task->name = NULL;
 
-        }
     }
     free(task);
-    task = NULL;
 }
 
 void SnapshotResource_free(SnapshotResource *res) {
@@ -87,11 +453,16 @@ void SnapshotResource_free(SnapshotResource *res) {
     }
 }
 
-#define CAMERA_TYPE_S       0       // 静态类型摄像头
-#define CAMERA_TYPE_D       1       // 动态类型摄像头
-#define MAX_PICS            100     // 单次开门事件图片最大数量
-#define SNAPSHOT_COUNT      3      // 每秒拍多少张
-#define SNAP_SRC            "src"
+#define CAMERA_TYPE_S               0       // 静态类型摄像头
+#define CAMERA_TYPE_D               1       // 动态类型摄像头
+#define MAX_PICS                    20     // 单次开门事件图片最大数量
+#define SNAPSHOT_COUNT              3      // 每秒拍多少张
+#define SNAPSHOT_CHECK_COUNT        5      // 检测角度频率
+#define SNAP_SRC                    "src"
+#define  SNAP_OFFSET                5      // 范围区间 根据实际测试调整
+#define  SNAP_OFFSET_MAX            5     // 范围区间 根据实际测试调整
+#define  CHECK_CLOSE_DOOR_COUNT_MAX 3      // 连续angel减少次数
+#define  FILE_NAME_LENGTH           512
 
 static int (*g_callback)(char *, char **, int) = NULL;
 
@@ -102,13 +473,13 @@ static volatile uint8_t g_running = 0;
 static uint8_t g_addr = 0;
 static uint8_t debug = 1;
 static char *tag = "hd_c_log.c";
-static pthread_mutex_t g_lock;
+static pthread_mutex_t g_current_task_lock;
 static SnapshotTask *current_task;
 static uint16_t *g_pic_id;
 static uint8_t *snap_pic_id;
-static char g_src_path[1024];
-static char g_dst_path[1024];
-static char g_demo_path[1024];
+static char g_src_path[FILE_NAME_LENGTH];
+static char g_dst_path[FILE_NAME_LENGTH];
+static char g_demo_path[FILE_NAME_LENGTH];
 
 static pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t my_cond = PTHREAD_COND_INITIALIZER;
@@ -222,6 +593,15 @@ static int copy_file(const char *src_path, const char *dest_path) {
 }
 
 
+static void refresh_snap_id(int camera_type) {
+    uint8_t cur = *snap_pic_id;
+    if (cur >= 0xff) {
+        *snap_pic_id = 0;
+    } else {
+        *snap_pic_id = cur + 1;
+    }
+}
+
 static void refresh_pic_id(int camera_type) {
     uint16_t cur = *g_pic_id;
     if (CAMERA_TYPE_S == camera_type) {
@@ -239,54 +619,6 @@ static void refresh_pic_id(int camera_type) {
     }
 }
 
-/** *** 拍摄照片线程 *** */
-//static void *snap_thread_func_at_stop(void *arg) {
-//    printf("[%s]snap_thread_func_at_stop \n", tag);
-//    while (g_running && snap_count < total) {
-//        if (current_task == NULL)break;
-//        if (!current_task->running)break;
-//        angel = get_angle();
-//        angel = angel >= 0 ? angel : -angel;
-//        print_fq++;
-////        if (angel > 0 && print_fq > 3) {
-////            print_fq = 0;
-////            printf("[%s]snap_thread_func take_photo >>> %d angel=%d \n", tag, *snap_pic_id, angel);
-////        }
-//        if (current_task->trigger_type == 0 && angel < current_task->triggerAngel) {
-//            continue;
-//        }
-//        // 重置时间和pic_id
-//        snap_timestamp = time(NULL);
-//        refresh_pic_id(current_task->cameraType);
-//        // 生成file_name
-//        snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
-//        // 生成action_path
-//        snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
-//        mkdir_recursive(action_id_src_path); // todo 判断结果
-//        printf("[%s]snap_thread_func >>> 准备拍照 %s/%s \n", tag, action_id_src_path, tmp_img_name);
-//        // 拍照
-//        ret = qjy_take_photo(2, snap_pic_id, tmp_img_name, action_id_src_path);
-//        if (ret) {
-//            printf("[%s]snap error %d \n", tag, ret);
-//            continue;
-//        }
-//        usleep(1000000 / SNAPSHOT_COUNT);
-//        // 生成记录
-//        SnapshotItem *item = malloc(sizeof(SnapshotItem));
-//        if (item == NULL) {
-//            continue;
-//        }
-//        item->pic_id = *snap_pic_id;
-//        item->timestamp = snap_timestamp;
-//        item->file_name = strdup(tmp_img_name);
-//        current_task->pics[snap_count] = item;
-//        *snap_pic_id = *snap_pic_id + 1;
-//        snap_count++;
-//    }
-//    printf("[%s]snap_thread_func_at_stop end \n", tag);
-//    return NULL;
-//}
-
 static int g_angle = 0;
 static pthread_t get_angel_t;
 
@@ -296,7 +628,7 @@ static void *get_angle_func(void *arg) {
         int angel = get_angle();
         if (angel != 0) {
             g_angle = angel >= 0 ? angel : -angel;
-            printf("[%s]get_angle_func  获取陀螺仪 %d\n", tag, angel);
+            //printf("[%s]get_angle_func  获取陀螺仪 %d\n", tag, angel);
         }
         usleep(20 * 1000);
     }
@@ -311,51 +643,73 @@ static void *snap_thread_func(void *arg) {
     int ret;
     int angel = g_angle;
     int snap_count = 0;
-    int snap_max =/* current_task->cameraType == CAMERA_TYPE_S ? 1 :*/ MAX_PICS; // 不超过100张
-    char action_id_src_path[1024]; // src action_id 文件夹path
-    char tmp_img_name[1024]; // timestamp_index.jpg
-    int print_fq = 0;
-    int first = 1;
-    while (g_running &&snap_count <snap_max) {
-        if (first) {
-            first = 0;
-        } else {
-            usleep(1000000 / SNAPSHOT_COUNT);
-        }
+    char action_id_src_path[FILE_NAME_LENGTH];  // src action_id 文件夹path
+    char tmp_img_name[FILE_NAME_LENGTH];        // timestamp_index.jpg
+    char delete_file_path[FILE_NAME_LENGTH];
 
+    int first = 1;                              //第一次不需要延迟
+
+    int last_angel = 0;                         // 上一次角度
+    int check_close_door = 0;                   // 连续3次下降，就代表关门
+    int check_close_door_count = 0;             // 记录连续下降次数
+
+    while (g_running && snap_count < current_task->snap_max) {
         if (!current_task->running) {
             printf("[%s]snap_thread_func  current_task->running = false\n", tag);
             break;
         }
-        angel = g_angle;
-//        angel = angel >= 0 ? angel : -angel;
-//        print_fq++;
-//        if (angel == 0 && ) {
-//            printf("[%s]snap_thread_func  angel ===0 \n", tag);
-//            continue;
-//        }
-//        int can = 0;
-//        if (last_angel < angel) {
-//            last_angel = angel;
-//        } else {
-//            if (angel <= 20 && angel < last_angel) {
-//                can = 1;
-//            }
-//        }
 
-//        if (angel > 0 && print_fq > 3) {
-//            print_fq = 0;
-//            printf("[%s]snap_thread_func take_photo >>> %d angel=%d \n", tag, *snap_pic_id, angel);
-//        }
-        if (current_task->trigger_type == 0 && angel < current_task->triggerAngel) {
-            printf("[%s]snap_thread_func  current_task->trigger_type == 0 && angel < current_task->triggerAngel \n",
-                   tag);
+
+        angel = g_angle;
+
+        // 不在范围内直接不考虑
+        if (current_task->trigger_type == 0 &&
+            (angel < (current_task->triggerAngel - SNAP_OFFSET) ||
+             angel > (current_task->triggerAngel + SNAP_OFFSET_MAX))) {
+            printf("[%s]snap_thread_func  不在角度范围内 %d not in (%d,%d) \n", tag, angel,
+                   current_task->triggerAngel - SNAP_OFFSET,
+                   current_task->triggerAngel + SNAP_OFFSET_MAX);
+            last_angel = angel;
+            if (first) {
+                first = 0;
+            } else {
+                usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
+            }
             continue;
         }
-//        if (!can)continue;
+        if (current_task->trigger_type == 0 && (angel != 0 && last_angel != 0 && angel > last_angel + 1)) {
+            printf("[%s]snap_thread_func  角度趋势不对  %d > %d + 1\n", tag, angel, last_angel);
+            check_close_door_count = 0; // 只要趋势不对 就重置
+            check_close_door = 0;
+            last_angel = angel;
+            if (first) {
+                first = 0;
+            } else {
+                usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
+            }
+            continue;
+        }
+        check_close_door_count++;
+        if (current_task->trigger_type == 0 && check_close_door_count >= CHECK_CLOSE_DOOR_COUNT_MAX) {     // 连续大于CHECK_CLOSE_DOOR_COUNT_MAX，说明是关门
+            printf("[%s]snap_thread_func  连续%d次角度下降\n", tag, CHECK_CLOSE_DOOR_COUNT_MAX);
+            check_close_door = 1;
+            check_close_door_count = 0; // 重置
+        }
+        if (current_task->trigger_type == 0 && !check_close_door) {
+            // 不是关门
+            printf("[%s]snap_thread_func  正在开门不拍照\n", tag);
+            last_angel = angel;
+            if (first) {
+                first = 0;
+            } else {
+                usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
+            }
+            continue;
+        }
+        last_angel = angel;
         // 重置时间和pic_id
         snap_timestamp = time(NULL);
-        refresh_pic_id(current_task->cameraType);
+//        refresh_snap_id(current_task->cameraType);
         // 生成file_name
         snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
         // 生成action_path
@@ -373,44 +727,61 @@ static void *snap_thread_func(void *arg) {
             continue;
         }
 
-        // 生成记录
+        usleep(1000000 / SNAPSHOT_COUNT);
+
+        // 生成记录，检查是否满了
+        int full = deque_is_full(current_task->pics);
+        if (full) {
+            printf("[%s]snap error 满了 \n", tag);
+            void *data;
+            deque_pop_front(current_task->pics, &data);
+            if (data) {
+                SnapshotItem *item = data;
+                SnapshotItem_free(item);
+                // 删除文件
+                snprintf(delete_file_path, sizeof(delete_file_path), "%s/%s/%s", g_dst_path, current_task->name,
+                         item->file_name);
+                delete_file_if_exists(item->file_name);
+            }
+        }
         SnapshotItem *item = malloc(sizeof(SnapshotItem));
         if (item == NULL) {
             printf("[%s]snap error malloc SnapshotItem fail\n", tag);
             continue;
         }
-        item->pic_id = *snap_pic_id;
+        item->snap_id = *snap_pic_id;
         item->timestamp = snap_timestamp;
         item->file_name = strdup(tmp_img_name);
-        current_task->pics[snap_count] = item;
-        *snap_pic_id = *snap_pic_id + 1;
+
+
+        deque_push_rear(current_task->pics, item);
+        refresh_snap_id(current_task->cameraType);
         snap_count++;
-        if (current_task->trigger_type == 1){
+
+
+        if (current_task->trigger_type == 1) {
             printf("[%s]snap error 抓图结束 \n", tag);
             break;
         }
     }
 
-    current_task->pic_count = snap_count;
     printf("[%s]snap_thread_func. end!  一共%d张\n", tag, snap_count);
     return NULL;
 }
 
 static void *handle_thread_func(void *arg) {
     printf("[%s]handle_thread_func \n", tag);
-    int index_1 = 0;
-    int index_2 = 0;
-    char src_action_id_path[1024];      // src action_id 文件夹绝对地址
-
-    char dest_action_id_path[1024];     // dst action_id 文件夹绝对地址
-    char dest_file_name[1024];          // dst 文件名称
-    char dest_file_path[1024];          // dst 文件绝对地址
-    char src_file_path[1024];           // src 文件绝对地址
-    char transform_pic_path[1024];     //
-    unsigned char file_md5[16];         // 文件md5
-    long file_size;                    // 文件大小
-
-    int result_pic_size = 0;            // 所有文件大小
+    static int index_1 = 0;
+    static int index_2 = 0;
+    static char src_action_id_path[FILE_NAME_LENGTH];       // src action_id 文件夹绝对地址
+    static char dest_action_id_path[FILE_NAME_LENGTH];      // dst action_id 文件夹绝对地址
+    static char dest_file_name[FILE_NAME_LENGTH];           // dst 文件名称
+    static char dest_file_path[FILE_NAME_LENGTH];           // dst 文件绝对地址
+    static char src_file_path[FILE_NAME_LENGTH];            // src 文件绝对地址
+    static char transform_pic_path[FILE_NAME_LENGTH];       //
+    unsigned char file_md5[16];                             // 文件md5
+    long file_size;                                         // 文件大小
+    int result_pic_size = 0;                                // 所有文件大小
 
     while (g_running) {
 
@@ -422,7 +793,7 @@ static void *handle_thread_func(void *arg) {
 //        char **result_pics = malloc(sizeof(char *) * MAX_PICS);        // 所有文件
         char *result_pics[MAX_PICS];
         // 每次处理sleep一会 让拍摄的照片存到本地
-        usleep(1000000);
+        usleep(500000);
 
         result_pic_size = 0;
         snprintf(src_action_id_path, sizeof(src_action_id_path), "%s/%s", g_src_path, res->action_id_name);
@@ -436,8 +807,9 @@ static void *handle_thread_func(void *arg) {
 //            for (int i =0; i <res->pic_count; ++i) {
                 snprintf(src_file_path, sizeof(src_file_path), "%s/%s/%s", g_src_path, res->action_id_name,
                          res->pics[i]->file_name);
-                int retry = 0;
-                int access_result = 0;
+
+//                int retry = 0;
+//                int access_result = 0;
 //                while (retry < 20) {
 //                    if (access(src_file_path, F_OK)) {
 //                        access_result = 1;
@@ -495,6 +867,7 @@ static void *handle_thread_func(void *arg) {
                 printf("静态只要一张\n");
                 break;
             }
+            printf("静态处理完毕！！！\n");
         } else if (res->cameraType == CAMERA_TYPE_D) { // 动态图片
             for (int i = res->pic_count - 1; i >= 0; --i) {
 
@@ -545,6 +918,7 @@ static void *handle_thread_func(void *arg) {
                     continue;
                 }
             }
+            printf("动态处理完毕！！！\n");
         }
 
 
@@ -552,7 +926,7 @@ static void *handle_thread_func(void *arg) {
         // 清理
         SnapshotResource_free(res);
 
-        if (result_pic_size > 0) {
+        if (result_pic_size > 0 && g_callback!=NULL ) {
             g_callback(dest_action_id_path, result_pics, result_pic_size);
         }
 
@@ -566,59 +940,81 @@ static void *handle_thread_func(void *arg) {
 
         // 删除action_id文件夹
         hd_delete_directory(src_action_id_path);
-
+        printf("一次任务处理完毕！！！\n");
     }
     printf("[%s]handle_thread_func. end! \n", tag);
     return NULL;
 }
 
+void free_data_func(void *item) {
+    if (item) {
+        SnapshotItem *snapshotItem = item;
+        SnapshotItem_free(snapshotItem);
+    }
+}
 
 static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t trigger_type) {
     printf("[%s]do_snapshot_start %d %d\n", tag, action_id_timestamp, action_id_index);
     // 1.创建任务
-    pthread_mutex_lock(&g_lock);
+    pthread_mutex_lock(&g_current_task_lock);
     SnapshotTask *task = malloc(sizeof(SnapshotTask));
     if (task == NULL) {
         printf("[%s]do_snapshot_start malloc error\n", tag);
-        pthread_mutex_unlock(&g_lock);
+        pthread_mutex_unlock(&g_current_task_lock);
         return 1;
     }
     task->action_id_index = action_id_index;
     task->action_id_timestamp = action_id_timestamp;
 
-    char tmp_name[1024];
+    char tmp_name[FILE_NAME_LENGTH];
     do_action_id_2_str(tmp_name, sizeof(tmp_name), action_id_timestamp, action_id_index);
     task->name = strdup(tmp_name);
     task->triggerAngel = g_addr == 1 ? 40 : 20;
     task->trigger_type = trigger_type;
     task->cameraType = g_addr == 1 ? CAMERA_TYPE_S : CAMERA_TYPE_D;
-    SnapshotItem **pics = malloc(sizeof(SnapshotItem *) * MAX_PICS);
+    Deque *pics = deque_init(MAX_PICS, free_data_func);
     if (NULL == pics) {
         printf("[%s]do_snapshot_start malloc error\n", tag);
-        pthread_mutex_unlock(&g_lock);
+        pthread_mutex_unlock(&g_current_task_lock);
         return 2;
     }
     task->pics = pics;
     task->running = 1;
+    task->snap_max = 100000; // 暂时默认一个最大值，表示可以一直拍。
+    task->head_pics = NULL;
+    task->head_pics_count = 0;
 
     current_task = task;
-    printf("[%s]do_snapshot_start pthread_create\n", tag);
     pthread_create(&get_angel_t, NULL, get_angle_func, NULL);
     pthread_create(&current_task->snap_t, NULL, snap_thread_func, NULL);
-    printf("[%s]do_snapshot_start pthread_create end\n", tag);
-    pthread_mutex_unlock(&g_lock);
-    printf("[%s]do_snapshot_start 8\n", tag);
+    pthread_mutex_unlock(&g_current_task_lock);
+    printf("[%s]do_snapshot_start %d %d ok.\n", tag, action_id_timestamp, action_id_index);
     return 0;
+}
+
+static void snap_convert(void *data, void *res, int index) {
+    SnapshotResource *resource = res;
+    SnapshotItem *src = data;
+    SnapshotItem *item = malloc(sizeof(SnapshotItem));
+    if (!item) {
+        printf("SnapshotItem mail fail");
+        return;
+    }
+    item->file_name = strdup(src->file_name);
+    item->timestamp = src->timestamp;
+    item->snap_id = src->snap_id;
+    resource->pics[index] = item;
+    printf("    >snap_convert   %d   %s\n", item->snap_id, item->file_name);
+
 }
 
 static int do_snapshot_stop(uint32_t action_id_timestamp, uint8_t action_id_index) {
     printf("[%s]do_snapshot_stop \n", tag);
-    pthread_mutex_lock(&g_lock);
+    pthread_mutex_lock(&g_current_task_lock);
     if (current_task == NULL) {
-        pthread_mutex_unlock(&g_lock);
-        return 0;
+        pthread_mutex_unlock(&g_current_task_lock);
+        return 1;
     }
-    printf("[%s]do_snapshot_stop 222\n", tag);
     current_task->running = 0;
     // 添加到处理队列
     pthread_join(current_task->snap_t, NULL);
@@ -633,29 +1029,23 @@ static int do_snapshot_stop(uint32_t action_id_timestamp, uint8_t action_id_inde
             res->cameraType = current_task->cameraType;
             res->action_id_name = strdup(current_task->name);
             res->triggerType = current_task->trigger_type;
-            res->pic_count = (current_task->pic_count);
-            res->pics = malloc(sizeof(SnapshotItem *) * current_task->pic_count);
-            printf("生成资源文件\n");
-            printf("action_id   %d   %d\n", action_id_timestamp, action_id_index);
-            for (int i = 0; i < current_task->pic_count; ++i) {
-
-                SnapshotItem *item = malloc(sizeof(SnapshotItem));
-                item->file_name = strdup(current_task->pics[i]->file_name);
-                item->timestamp = current_task->pics[i]->timestamp;
-                item->pic_id = current_task->pics[i]->pic_id;
-                res->pics[i] = item;
-                printf("    >pic   %d   %s\n", item->pic_id, item->file_name);
+            res->pic_count = (current_task->pics->size);
+            res->pics = malloc(sizeof(SnapshotItem *) * current_task->pics->size);
+            if (res->pics) {
+                printf("do_snapshot_stop 生成资源文件,action_id   %d   %d\n", action_id_timestamp, action_id_index);
+                deque_foreach(current_task->pics, snap_convert, res);
+                hd_queue_put(g_queue, res);
+            }else{
+                SnapshotResource_free(res);
+                res = NULL;
             }
-
-
-            hd_queue_put(g_queue, res);
         }
         printf("[%s]do_snapshot_stop 333\n", tag);
-        SnapshotTask_free(current_task);
-        current_task = NULL;
     }
-    printf("[%s]do_snapshot_stop 444\n", tag);
-    pthread_mutex_unlock(&g_lock);
+    SnapshotTask_free(current_task); // SnapshotItem 在snap_convert已经释放
+    current_task = NULL;
+    pthread_mutex_unlock(&g_current_task_lock);
+    printf("[%s]do_snapshot_stop ok.\n", tag);
     return 0;
 }
 
@@ -689,10 +1079,16 @@ int hd_camera_produce_init(uint8_t addr,
 
     printf("[%s]hd_camera_produce_init %d %s %s %s \n", tag, g_addr, g_dst_path, g_src_path, g_demo_path);
     g_pic_id = malloc(sizeof(uint16_t *));
+    if (!g_pic_id){
+        return 1;
+    }
     snap_pic_id = malloc(sizeof(uint8_t *));
+    if (!snap_pic_id){
+        return 2;
+    }
     *g_pic_id = 0;
     g_queue = hd_queue_create(100);
-    if (g_queue == NULL)return 1;
+    if (g_queue == NULL)return 3;
     restore_sensor();
     g_running = 1;
     pthread_t handle_t;
@@ -705,7 +1101,7 @@ int hd_camera_produce_take_photos_actively(uint16_t *pic_id) {
     uint32_t action_id_timestamp = time(NULL);
     uint8_t action_id_index = 0xfe;
     hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index, 1, 1);
-    usleep(1000 * 1000);
+    usleep(100 * 1000);
     hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index + 1, 0, 1);
 
     pthread_mutex_lock(&my_mutex);
@@ -714,7 +1110,7 @@ int hd_camera_produce_take_photos_actively(uint16_t *pic_id) {
     // 设置超时时间（当前时间 + 3秒）
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += 3;
+    ts.tv_sec += 1;
 
     // 带超时的条件等待
     while (!my_ready) {
@@ -761,6 +1157,7 @@ static void item_free(void **item) {
     if (item) {
         SnapshotResource *res = (SnapshotResource *) item;
         SnapshotResource_free(res);
+        res = NULL;
     }
 }
 

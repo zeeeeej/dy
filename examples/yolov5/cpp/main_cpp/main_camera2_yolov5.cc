@@ -516,213 +516,213 @@ int main(int argc, char **argv)
         std::string action_id_path_biu;
         while (action_id_record.try_pop(action_id_path_biu)) {
         
-        // video_flag.store(true);
-        
-        std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
-        resize_images_in_folder(action_id_path_biu, 960);
-        std::vector<std::string> frames = get_image_paths(action_id_path_biu);
-    
-
-
-       
-
-/*--------------事件id检测的文件夹------------------------------*/
-        std::string txt1_name_path;
-        std::string txt2_name_path;
-        
-        if (!frames.empty()) {
+            // video_flag.store(true);
             
-            for (const std::string& img_path : frames) {
-                    // print_meminfo();
-                    std::cout << "图片路径: " << img_path << std::endl;
+            std::string action_id_biu = std::filesystem::path(action_id_path_biu).filename().string();
+            resize_images_in_folder(action_id_path_biu, 960);
+            std::vector<std::string> frames = get_image_paths(action_id_path_biu);
+        
 
-                    std::string new_path = replace_folder_name_in_path(img_path, "images_dir_path", "images_oridinal_dir_path");
 
-                    cv::Mat image_change = cv::imread(img_path);
+        
 
-                    if (image_change.empty()) {
-                        std::cerr << "读取图片失败!" << std::endl;
-                        return -1;
-                    }
-
-                    int width = image_change.cols;
-                    int height = image_change.rows;
-
-                    std::string frame_id = std::filesystem::path(img_path).stem().string();
-
-                    image_buffer_t src_image;
+            /*--------------事件id检测的文件夹------------------------------*/
+            std::string txt1_name_path;
+            std::string txt2_name_path;
             
-                    memset(&src_image, 0, sizeof(image_buffer_t));
-                    ret = read_image(img_path.c_str(), &src_image);
-
-                    //RV1106 rga requires that input and output bufs are memory allocated by dma
-                    ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                    (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
-                    memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
-                    dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
-                    free(src_image.virt_addr);
-                    src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
-                    src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
-                    rknn_app_ctx.img_dma_buf.size = src_image.size;
+            if (!frames.empty()) {
                 
+                for (const std::string& img_path : frames) {
+                        // print_meminfo();
+                        std::cout << "图片路径: " << img_path << std::endl;
 
-                    if (ret != 0)
-                    {
-                        printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
-                        deinit_post_process();
-            
-                        ret = release_yolov5_model(&rknn_app_ctx);
+                        std::string new_path = replace_folder_name_in_path(img_path, "images_dir_path", "images_oridinal_dir_path");
+
+                        cv::Mat image_change = cv::imread(img_path);
+
+                        if (image_change.empty()) {
+                            std::cerr << "读取图片失败!" << std::endl;
+                            return -1;
+                        }
+
+                        int width = image_change.cols;
+                        int height = image_change.rows;
+
+                        std::string frame_id = std::filesystem::path(img_path).stem().string();
+
+                        image_buffer_t src_image;
+                
+                        memset(&src_image, 0, sizeof(image_buffer_t));
+                        ret = read_image(img_path.c_str(), &src_image);
+
+                        //RV1106 rga requires that input and output bufs are memory allocated by dma
+                        ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                        (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
+                        memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
+                        dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
+                        free(src_image.virt_addr);
+                        src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
+                        src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
+                        rknn_app_ctx.img_dma_buf.size = src_image.size;
+                    
+
                         if (ret != 0)
                         {
-                            printf("release_yolov5_model fail! ret=%d\n", ret);
-                        }
-                    
-                        if (src_image.virt_addr != NULL)
-                        {dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                        rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
-                        }  
-                    }
+                            printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
+                            deinit_post_process();
                 
-                    object_detect_result_list od_results;
-                
-                    ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
-                    if (ret != 0)
-                    {
-                        printf("init_yolov5_model fail! ret=%d\n", ret);
-                        deinit_post_process();
-            
-                        ret = release_yolov5_model(&rknn_app_ctx);
-                        if (ret != 0)
-                        {
-                            printf("release_yolov5_model fail! ret=%d\n", ret);
-                        }
-                    
-                        if (src_image.virt_addr != NULL)
-                        {
-                            dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                        rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
-                        }  
-                    }
-                
-
-                    for (int i = 0; i < od_results.count; i++)
-                    {
-                        object_detect_result *det_result = &(od_results.results[i]);
-                        printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
-                            det_result->box.left, det_result->box.top,
-                            det_result->box.right, det_result->box.bottom,
-                            det_result->prop);
-                        int x1 = det_result->box.left;
-                        int y1 = det_result->box.top;
-                        int x2 = det_result->box.right;
-                        int y2 = det_result->box.bottom;
-
-                    
-                        int x1_new = static_cast<int>((static_cast<float>(x1) / width) * width_original);
-                        int y1_new = static_cast<int>((static_cast<float>(y1) / height) * hight_original);
-                        int x2_new = static_cast<int>((static_cast<float>(x2) / width) * width_original);
-                        int y2_new = static_cast<int>((static_cast<float>(y2) / height) * hight_original);
-
-
-                        std::string frame_number_str = action_id_biu + "_" + frame_id + "_" + std::to_string(i);
-
-        
-
-                        if (od_results.count >= 1 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
-                            txt1_name_path = std::string(txt_dir) + "/" + action_id_biu + "_1" + ".txt";
-
-                            std::ofstream outfile(txt1_name_path, std::ios::app); 
-                            if (outfile.is_open()) {
-                                outfile << new_path << " "     //***2222222 */
-                                        << det_result->cls_id << " "
-                                        // << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
-                                        << x1_new << " " << y1_new << " " << x2_new << " " << y2_new << " " << det_result->prop <<std::endl;   //***333333 */
-                                outfile.close();  // 关闭文件
-                                std::cout << "写入成功！" << std::endl;
-                            } else {
-                                std::cout << "无法打开文件！" << std::endl;
+                            ret = release_yolov5_model(&rknn_app_ctx);
+                            if (ret != 0)
+                            {
+                                printf("release_yolov5_model fail! ret=%d\n", ret);
                             }
+                        
+                            if (src_image.virt_addr != NULL)
+                            {dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                            rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
+                            }  
                         }
-
-                        // if (od_results.count == 2 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
-                        //     std::string txt2_name_path = std::string(txt_dir) + "/" + action_id_biu + "_2" + ".txt";
-                        //     // create_empty_txt(txt2_name_path);
-                        //     std::ofstream outfile(txt2_name_path, std::ios::app); 
-                        //     if (outfile.is_open()) {
-                        //         outfile << new_path << " "
-                        //                 << det_result->cls_id << " "
-                        //                 // << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
-                        //                 << x1_new << " " << y1_new << " " << x2_new << " " << y2_new << std::endl;
-                        //         outfile.close();  // 关闭文件
-                        //         std::cout << "写入成功！" << std::endl;
-                        //     } else {
-                        //         std::cout << "无法打开文件！" << std::endl;
-                        //     }        
-                        // }
-
-                    }
-
-                    if (src_image.virt_addr != NULL)
-                        {
-                            dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
-                                        rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
-                        }  
                     
-            }
- 
-        }
+                        object_detect_result_list od_results;
+                    
+                        ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
+                        if (ret != 0)
+                        {
+                            printf("init_yolov5_model fail! ret=%d\n", ret);
+                            deinit_post_process();
+                
+                            ret = release_yolov5_model(&rknn_app_ctx);
+                            if (ret != 0)
+                            {
+                                printf("release_yolov5_model fail! ret=%d\n", ret);
+                            }
+                        
+                            if (src_image.virt_addr != NULL)
+                            {
+                                dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                            rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
+                            }  
+                        }
+                    
+
+                        for (int i = 0; i < od_results.count; i++)
+                        {
+                            object_detect_result *det_result = &(od_results.results[i]);
+                            printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
+                                det_result->box.left, det_result->box.top,
+                                det_result->box.right, det_result->box.bottom,
+                                det_result->prop);
+                            int x1 = det_result->box.left;
+                            int y1 = det_result->box.top;
+                            int x2 = det_result->box.right;
+                            int y2 = det_result->box.bottom;
+
+                        
+                            int x1_new = static_cast<int>((static_cast<float>(x1) / width) * width_original);
+                            int y1_new = static_cast<int>((static_cast<float>(y1) / height) * hight_original);
+                            int x2_new = static_cast<int>((static_cast<float>(x2) / width) * width_original);
+                            int y2_new = static_cast<int>((static_cast<float>(y2) / height) * hight_original);
 
 
-  
-        
-        if (file_exists_and_not_empty(txt2_name_path)){
-           
-            // final_result = analyse_two(txt2_name_path);
-     
-            std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
-        
-            if (process_last_n_lines(txt2_name_path, crop_img_path, line_n5, pic_id)) {
-                std::cout << "有截图保存成功" << std::endl;
-            } else {
-                std::cout << "没有任何截图保存成功" << std::endl;
-            }
-      
-            // std::filesystem::path path(txt2_name_path);
-            // if (std::filesystem::remove(path)) {
-            //     std::cout << "删除成功: " << txt2_name_path << std::endl;
-            // } else {
-            //     std::cerr << "删除失败: " << txt2_name_path << std::endl;
-            // }
-
-
-
-        } else {
-            // final_result = analyse_one(txt1_name_path);
-           
-            std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
-          
-            if (process_last_n_lines(txt1_name_path, crop_img_path, line_n10, pic_id)) {
-                std::cout << "有截图保存成功" << std::endl;
-            } else {
-                std::cout << "没有任何截图保存成功" << std::endl;
-                std::filesystem::create_directories(crop_img_path);
-                createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
-            }
+                            std::string frame_number_str = action_id_biu + "_" + frame_id + "_" + std::to_string(i);
 
             
-            // std::filesystem::path path(txt1_name_path);
-            // if (std::filesystem::remove(path)) {
-            //     std::cout << "删除成功: " << txt1_name_path << std::endl;
-            // } else {
-            //     std::cerr << "删除失败: " << txt1_name_path << std::endl;
-            // }
 
-        }  
+                            if (od_results.count >= 1 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
+                                txt1_name_path = std::string(txt_dir) + "/" + action_id_biu + "_1" + ".txt";
+
+                                std::ofstream outfile(txt1_name_path, std::ios::app); 
+                                if (outfile.is_open()) {
+                                    outfile << new_path << " "     //***2222222 */
+                                            << det_result->cls_id << " "
+                                            // << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
+                                            << x1_new << " " << y1_new << " " << x2_new << " " << y2_new << " " << det_result->prop <<std::endl;   //***333333 */
+                                    outfile.close();  // 关闭文件
+                                    std::cout << "写入成功！" << std::endl;
+                                } else {
+                                    std::cout << "无法打开文件！" << std::endl;
+                                }
+                            }
+
+                            // if (od_results.count == 2 && std::strcmp(coco_cls_to_name(det_result->cls_id), "full")==0 && det_result->prop >= 0.5){
+                            //     std::string txt2_name_path = std::string(txt_dir) + "/" + action_id_biu + "_2" + ".txt";
+                            //     // create_empty_txt(txt2_name_path);
+                            //     std::ofstream outfile(txt2_name_path, std::ios::app); 
+                            //     if (outfile.is_open()) {
+                            //         outfile << new_path << " "
+                            //                 << det_result->cls_id << " "
+                            //                 // << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
+                            //                 << x1_new << " " << y1_new << " " << x2_new << " " << y2_new << std::endl;
+                            //         outfile.close();  // 关闭文件
+                            //         std::cout << "写入成功！" << std::endl;
+                            //     } else {
+                            //         std::cout << "无法打开文件！" << std::endl;
+                            //     }        
+                            // }
+
+                        }
+
+                        if (src_image.virt_addr != NULL)
+                            {
+                                dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
+                                            rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
+                            }  
+                        
+                }
+    
+            }
+
+
+    
+            
+            if (file_exists_and_not_empty(txt2_name_path)){
+            
+                // final_result = analyse_two(txt2_name_path);
+        
+                std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
+            
+                if (process_last_n_lines(txt2_name_path, crop_img_path, line_n5, pic_id)) {
+                    std::cout << "有截图保存成功" << std::endl;
+                } else {
+                    std::cout << "没有任何截图保存成功" << std::endl;
+                }
+        
+                // std::filesystem::path path(txt2_name_path);
+                // if (std::filesystem::remove(path)) {
+                //     std::cout << "删除成功: " << txt2_name_path << std::endl;
+                // } else {
+                //     std::cerr << "删除失败: " << txt2_name_path << std::endl;
+                // }
+
+
+
+            } else {
+                // final_result = analyse_one(txt1_name_path);
+            
+                std::string crop_img_path = crop_img_dirs + "/" + action_id_biu;
+            
+                if (process_last_n_lines(txt1_name_path, crop_img_path, line_n10, pic_id)) {
+                    std::cout << "有截图保存成功" << std::endl;
+                } else {
+                    std::cout << "没有任何截图保存成功" << std::endl;
+                    std::filesystem::create_directories(crop_img_path);
+                    createBlankImage(crop_img_path + "/empty_2_1749549124_254.jpg");  // 创建空白图片以避免目录为空
+                }
+
+                
+                // std::filesystem::path path(txt1_name_path);
+                // if (std::filesystem::remove(path)) {
+                //     std::cout << "删除成功: " << txt1_name_path << std::endl;
+                // } else {
+                //     std::cerr << "删除失败: " << txt1_name_path << std::endl;
+                // }
+
+            }  
        
-    }
-    // video_flag.store(false);
+        }
+        // video_flag.store(false);
                
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         
     } 
 

@@ -193,20 +193,20 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
             std::cerr << "读取图片失败!" << std::endl;
             return -1;
         }
-         std::cout<< "process_image_with_yolov5_v2 imread ok "< std::endl;
+         std::cout<< "process_image_with_yolov5_v2 imread ok "<< std::endl;
         image_buffer_t src_image;
             
         memset(&src_image, 0, sizeof(image_buffer_t));
-        ret = read_image(img_path.c_str(), &src_image);git 
-         std::cout<< "process_image_with_yolov5_v2 read_image ok "< std::endl;
+        ret = read_image(img_path.c_str(), &src_image);
+         std::cout<< "process_image_with_yolov5_v2 read_image ok "<< std::endl;
 
         //RV1106 rga requires that input and output bufs are memory allocated by dma
         ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
                         (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
-                         std::cout<< "process_image_with_yolov5_v2 dma_buf_alloc ok "< std::endl;
+                         std::cout<< "process_image_with_yolov5_v2 dma_buf_alloc ok "<< std::endl;
         memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
         dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
-         std::cout<< "process_image_with_yolov5_v2 dma_sync_cpu_to_device ok "< std::endl;
+         std::cout<< "process_image_with_yolov5_v2 dma_sync_cpu_to_device ok "<< std::endl;
         free(src_image.virt_addr);
         src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
         src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
@@ -422,7 +422,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
  * int(*transform_pic)(const char *, char *)
  */
  int transform_pic_my(const char * src_path, char * transform_path){
-    // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx
+    // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx 111
      std::cout << "transform_pic_my =>"<< src_path<<std::endl;
     int tmp [5][4] = {0};
     //if(rknn_app_ctx){
@@ -612,6 +612,8 @@ int main(int argc, char **argv)
         }
     }
 
+
+    
     // start_watchdog();
     std::cout << "主程序开始运行,PID: " << getpid() << std::endl;
 
@@ -677,8 +679,8 @@ int main(int argc, char **argv)
     {
         std::string model_path_std;
     
-    std::string userdata_rknn_path_new = findRknnFile("/userdata");
-    std::string userdata_rknn_path_old = findRknnFile("/oem/usr/share");
+        std::string userdata_rknn_path_new = findRknnFile("/userdata");
+        std::string userdata_rknn_path_old = findRknnFile("/oem/usr/share");
 
     if (!userdata_rknn_path_new.empty()){
         if (deleteFile(userdata_rknn_path_old)){

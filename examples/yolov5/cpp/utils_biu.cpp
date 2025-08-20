@@ -456,14 +456,14 @@ void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_
 void resize_images_in_folder(const std::string& folder_path, int max_length) {
     for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
         if (entry.is_regular_file()) {
-            std::string file_path = entry.path().string();
+           std::string file_path = entry.path().string();
             std::string extension = entry.path().extension().string();
 
             // 支持的图片格式
             if (extension == ".jpg" || extension == ".png" || extension == ".bmp") {
                 cv::Mat img = cv::imread(file_path);
                 if (img.empty()) {
-                    std::cerr << "无法读取图片: " << file_path << std::endl;
+                    st d::cerr << "无法读取图片: " << file_path << std::endl;
                     continue;
                 }
 

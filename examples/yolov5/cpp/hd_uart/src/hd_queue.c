@@ -8,7 +8,7 @@
 HDBlockingQueue* hd_queue_create(int capacity) {
     HDBlockingQueue *queue = (HDBlockingQueue*)malloc(sizeof(HDBlockingQueue));
     if (!queue) {
-        LOGD("Failed to allocate memory for queue");
+        LOGE("Failed to allocate memory for queue");
         return NULL;
     }
 

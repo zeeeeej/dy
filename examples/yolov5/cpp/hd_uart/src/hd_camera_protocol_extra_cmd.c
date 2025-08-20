@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include "hd_utils.h"
 #include "hd_camera_protocol_extra_cmd.h"
+//#define HD_CAMERA_PROTOCOL_EXTRA_CMD  HD_CAMERA_PROTOCOL_EXTRA_CMD
 
 static uint8_t hd_host_push_pull_encode(
         unsigned char **out_payload,
@@ -240,13 +241,20 @@ uint8_t hd_slave_pull_decode(
     if (in_payload == NULL || in_payload_size <= 0) {
         return 2;
     }
+
+#ifdef HD_CAMERA_PROTOCOL_EXTRA_CMD
     printf("解析pull file_path\n");
+#endif
     size_t file_path_size = in_payload_size;
+#ifdef HD_CAMERA_PROTOCOL_EXTRA_CMD
     printf("解析pull file_path size=%zu\n", file_path_size);
+#endif
     for (int i = 0; i < file_path_size; ++i) {
         out_file_path[i] = in_payload[i];
     }
+#ifdef HD_CAMERA_PROTOCOL_EXTRA_CMD
     printf("解析pull out_file_path = %s\n", out_file_path);
+#endif
     return 0;
 }
 
@@ -324,7 +332,9 @@ uint8_t hd_host_pull_encode(
     uint8_t ret;
     ret = hd_host_pull_encode_payload(&out_payload_resp, &out_payload_size_resp,
                                        in_file_path);
+#ifdef HD_CAMERA_PROTOCOL_EXTRA_CMD
     hd_printf_buff(out_payload_resp,out_payload_size_resp,"hd_host_pull_encode",0);
+#endif
     if (ret)return -1;
     ret = hd_camera_protocol_encode(out_protocol, out_protocol_size, in_slave_addr, CMD_HD_EXTRA_PULL,
                                     out_payload_size_resp, out_payload_resp);

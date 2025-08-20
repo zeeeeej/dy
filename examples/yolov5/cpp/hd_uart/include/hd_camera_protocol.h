@@ -12,7 +12,7 @@ extern "C" {
 #define DEBUG         0  // 1:打开 0：关闭
 #define CONTEXT       0  // 1:mac 0:板子
 
-#define PROTOCOL_VERSION                "1.0.2"                       // 协议版本
+#define PROTOCOL_VERSION                "1.0"                       // 协议版本
 #define PROTOCOL_HEADER_0               0x5A                        // 协议头标识0
 #define PROTOCOL_HEADER_1               0xAA                        // 协议头标识1
 #define PROTOCOL_SLAVE_STATIC           0x01                        // 静态摄像头从机地址
@@ -21,7 +21,7 @@ extern "C" {
 #define PROTOCOL_RATE_DEFAULT           460800                      // 默认485串口波特率
 #define PROTOCOL_UART_SUCCESS           0                           // result 成功
 #define PROTOCOL_UART_FAIL              1                           // result 失败
-#define PROTOCOL_MAX_FRAME_LEN          (512*1024)                  // 定义最大帧长度
+#define PROTOCOL_MAX_FRAME_LEN          (500*1024)                  // 定义最大帧长度
 
 uint16_t hd_crc16(const uint8_t *data, uint32_t length);
 
@@ -79,7 +79,7 @@ int hd_camera_protocol_parse_pic_info(const char *file_name, hd_parse_pic_infos 
 // %d_%s_%d_%d_%d_%d_%d_%d_%03d.jpg
 int hd_camera_protocol_pic_info_encode(char result[1024], uint8_t index_1, unsigned char md5[16], uint32_t file_size,
                                        uint8_t index_2, uint8_t addr, uint8_t trigger_angel, uint8_t trigger_type,
-                                       uint32_t timestamp, uint8_t pic_id
+                                       uint32_t timestamp, uint16_t pic_id
 );
 
 #ifdef __cplusplus

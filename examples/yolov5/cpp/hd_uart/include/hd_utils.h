@@ -41,6 +41,7 @@ void hd_logger_print(HDLoggerLevel level, const char *tag, const char *msg, ...)
 // 计算3.5个字符时间（单位：微秒）
 uint32_t calculate_3_5_char_time(uint32_t baud_rate, uint8_t data_bits, uint8_t parity, uint8_t stop_bits);
 
+int hd_md5_data( unsigned char  *data,size_t size,uint8_t *result);
 int hd_md5_file(const char *file, uint8_t *result);
 
 int hd_md5(const char *file_path, unsigned char result[16]);
