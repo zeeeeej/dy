@@ -154,7 +154,7 @@ int hd_camera_uart_write(const unsigned char *raw, size_t raw_size) {
     usleep(9000);
     for (int i = 0; i < raw_size; ++i) {
         rk_uart_sendbyte(raw[i]);
-        // usleep(0);
+        usleep(16);
     }
     usleep(4000);
     rs485_pwr_off();
@@ -1506,7 +1506,43 @@ void hd_camera_change_serial_mode(HD_SERIAL_MODE mode) {
     pthread_mutex_unlock(&g_serial_mode_mutex);
 }
 
+
+// #define  DEBUG_UART_WRITE DEBUG_UART_WRITE
+static pthread_t debug_uart_write;
+
+#ifdef DEBUG_UART_WRITE
+static void *send_uart(void *arg) {
+    usleep(1000000);
+    rs485_pwr_on();
+    usleep(9000);
+    int size = 200000;
+    rk_uart_sendbyte(0xaa);
+    rk_uart_sendbyte(0x5a);
+    for (size_t i = 0; i < size - 4; ++i) {
+        rk_uart_sendbyte(0xfe);
+        //usleep(0);
+    }
+    rk_uart_sendbyte(0xaa);
+    rk_uart_sendbyte(0x5a);
+    usleep(4000);
+    rs485_pwr_off();
+
+    return NULL;
+}
+
+#endif
+
 void hd_uart_recv(uint8_t byte) {
+#ifdef DEBUG_UART_WRITE
+    printf("hd_uart_recv 不延迟\n");
+    printf("收到%02x\n", byte);
+    printf("开始发送\n");
+    pthread_create(&debug_uart_write, NULL, send_uart, NULL);
+    pthread_join(debug_uart_write,NULL);
+    printf("发送完毕\n");
+    return;
+#endif
+
     if (g_running == 0)return;
     pthread_mutex_lock(&g_serial_mode_mutex);
     uint8_t mode = g_serial_mode;
@@ -1856,7 +1892,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
             ret = handle_pull_pic(payload_data_out, payload_data_size_out, &protocol_data_out, &protocol_data_size_out);
             if (ret == 0) {
                 LOGI("[从机%d] HD拉取图片（0xC9） 大小=%d\n", g_addr, protocol_data_size_out);
-                usleep(20 * 1000);
+                usleep(200 * 1000);
                 ret = hd_camera_uart_write(protocol_data_out, protocol_data_size_out);
                 if (ret) {
                     LOGW("hd_camera_uart_write error \n");
@@ -1956,7 +1992,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.6.2"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.7"                    // 库版本
 
 int hd_uart_init(
         uint8_t addr,
@@ -1965,7 +2001,10 @@ int hd_uart_init(
         hd_on_action_id_changed on_action_id_changed,
         hd_on_event on_event, int(*transform_pic)(const char *, char *)
 ) {
-
+#ifdef DEBUG_UART_WRITE
+    printf("测试串口拉取200000字节\n");
+    return 0;
+#endif
     hd_logger_set_level(HD_LOGGER_LEVEL_DEBUG);
     init_log();
     uint32_t delay = calculate_3_5_char_time(PROTOCOL_RATE_DEFAULT, 8, 0, 1);
@@ -2033,8 +2072,6 @@ int hd_uart_init(
 #ifdef HD_UART_USE_QUEUE
     pthread_create(&g_frame_consume_t, NULL, handle_uart_data_thread, NULL);
 #endif
-
-
     LOGI("hd_uart_init completed !!!\n");
     return 0;
 }

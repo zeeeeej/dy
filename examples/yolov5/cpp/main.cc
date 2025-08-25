@@ -87,7 +87,7 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V1.4";
+std::string app_version = "V0.4";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
@@ -658,6 +658,7 @@ int main(int argc, char **argv)
 	
 	qjy_uart_init(&func, addr_biu);
 	gsensor_init(addr_biu==1?0:1);
+    usleep(1000);
     restore_sensor();
 	qjy_photo_init();
 	heat_pwm_init();
@@ -838,7 +839,7 @@ int main(int argc, char **argv)
 	
 	RK_MPI_SYS_Exit();
 	
-	pthread_sem_deinit();
+	//pthread_sem_deinit();
 	qjy_uart_deinit();
 	gsensor_deinit();
       

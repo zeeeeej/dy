@@ -455,14 +455,15 @@ void SnapshotResource_free(SnapshotResource *res) {
 
 #define CAMERA_TYPE_S               0       // 静态类型摄像头
 #define CAMERA_TYPE_D               1       // 动态类型摄像头
-#define MAX_PICS                    20     // 单次开门事件图片最大数量
-#define SNAPSHOT_COUNT              3      // 每秒拍多少张
-#define SNAPSHOT_CHECK_COUNT        5      // 检测角度频率
-#define SNAP_SRC                    "src"
-#define  SNAP_OFFSET                5      // 范围区间 根据实际测试调整
-#define  SNAP_OFFSET_MAX            5     // 范围区间 根据实际测试调整
-#define  CHECK_CLOSE_DOOR_COUNT_MAX 3      // 连续angel减少次数
-#define  FILE_NAME_LENGTH           512
+#define MAX_PICS                    20      // 单次开门事件图片最大数量
+#define SNAPSHOT_COUNT              3       // 每秒拍多少张
+#define SNAPSHOT_CHECK_COUNT        5       // 检测角度频率
+#define SNAP_SRC                    "src"   // 源文件文件夹名称
+#define SNAP_OFFSET                 5       // 范围区间 根据实际测试调整
+#define SNAP_OFFSET_MAX             5       // 范围区间 根据实际测试调整
+#define CHECK_CLOSE_DOOR_COUNT_MAX  3       // 连续angel减少次数
+#define FILE_NAME_LENGTH            512     // 文件path最大长度
+#define HD_SNAP_TYPE_STATIC_DYNAMIC HD_SNAP_TYPE_STATIC_DYNAMIC      // 动销项目
 
 static int (*g_callback)(char *, char **, int) = NULL;
 
@@ -481,9 +482,9 @@ static char g_src_path[FILE_NAME_LENGTH];
 static char g_dst_path[FILE_NAME_LENGTH];
 static char g_demo_path[FILE_NAME_LENGTH];
 
-static pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t my_cond = PTHREAD_COND_INITIALIZER;
-static int my_ready = 0;  // 条件变量
+static pthread_mutex_t my_mutex = PTHREAD_MUTEX_INITIALIZER;    // 主动抓图
+static pthread_cond_t my_cond = PTHREAD_COND_INITIALIZER;       // 主动抓图
+static int my_ready = 0;                                        // 主动抓图条件变量
 
 static uint16_t sem_pic_id;
 
@@ -647,21 +648,29 @@ static void *snap_thread_func(void *arg) {
     char tmp_img_name[FILE_NAME_LENGTH];        // timestamp_index.jpg
     char delete_file_path[FILE_NAME_LENGTH];
 
+#ifndef HD_SNAP_TYPE_STATIC_DYNAMIC
     int first = 1;                              //第一次不需要延迟
 
     int last_angel = 0;                         // 上一次角度
     int check_close_door = 0;                   // 连续3次下降，就代表关门
     int check_close_door_count = 0;             // 记录连续下降次数
+#endif
 
     while (g_running && snap_count < current_task->snap_max) {
         if (!current_task->running) {
             printf("[%s]snap_thread_func  current_task->running = false\n", tag);
+            usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
             break;
         }
 
 
         angel = g_angle;
-
+#ifdef  HD_SNAP_TYPE_STATIC_DYNAMIC
+        if (current_task->trigger_type == 0 && angel < current_task->triggerAngel) {
+            printf("[%s]snap_thread_func  不在角度范围内 %d < %d \n", tag, angel, current_task->triggerAngel);
+            continue;
+        }
+#else
         // 不在范围内直接不考虑
         if (current_task->trigger_type == 0 &&
             (angel < (current_task->triggerAngel - SNAP_OFFSET) ||
@@ -706,7 +715,10 @@ static void *snap_thread_func(void *arg) {
             }
             continue;
         }
+
         last_angel = angel;
+#endif
+
         // 重置时间和pic_id
         snap_timestamp = time(NULL);
 //        refresh_snap_id(current_task->cameraType);
@@ -926,7 +938,7 @@ static void *handle_thread_func(void *arg) {
         // 清理
         SnapshotResource_free(res);
 
-        if (result_pic_size > 0 && g_callback!=NULL ) {
+        if (result_pic_size > 0 && g_callback != NULL) {
             g_callback(dest_action_id_path, result_pics, result_pic_size);
         }
 
@@ -952,6 +964,7 @@ void free_data_func(void *item) {
         SnapshotItem_free(snapshotItem);
     }
 }
+
 
 static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_index, uint8_t trigger_type) {
     printf("[%s]do_snapshot_start %d %d\n", tag, action_id_timestamp, action_id_index);
@@ -981,6 +994,9 @@ static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_ind
     task->pics = pics;
     task->running = 1;
     task->snap_max = 100000; // 暂时默认一个最大值，表示可以一直拍。
+#ifdef HD_SNAP_TYPE_STATIC_DYNAMIC
+    task->snap_max = 1; // 动销只拍一张
+#endif
     task->head_pics = NULL;
     task->head_pics_count = 0;
 
@@ -1035,7 +1051,7 @@ static int do_snapshot_stop(uint32_t action_id_timestamp, uint8_t action_id_inde
                 printf("do_snapshot_stop 生成资源文件,action_id   %d   %d\n", action_id_timestamp, action_id_index);
                 deque_foreach(current_task->pics, snap_convert, res);
                 hd_queue_put(g_queue, res);
-            }else{
+            } else {
                 SnapshotResource_free(res);
                 res = NULL;
             }
@@ -1072,6 +1088,10 @@ int hd_camera_produce_init(uint8_t addr,
     snprintf(g_dst_path, sizeof(g_dst_path), "%s", path);
     snprintf(g_demo_path, sizeof(g_demo_path), "%s", demo_path);
 
+#ifdef HD_SNAP_TYPE_STATIC_DYNAMIC
+    printf("玄武项目动销项目\n");
+#endif
+
     mkdir_recursive(g_src_path);
 //    if (0 != strcmp("/userdata/crop.jpg", g_dst_path)) {
     mkdir_recursive(g_dst_path);
@@ -1079,11 +1099,11 @@ int hd_camera_produce_init(uint8_t addr,
 
     printf("[%s]hd_camera_produce_init %d %s %s %s \n", tag, g_addr, g_dst_path, g_src_path, g_demo_path);
     g_pic_id = malloc(sizeof(uint16_t *));
-    if (!g_pic_id){
+    if (!g_pic_id) {
         return 1;
     }
     snap_pic_id = malloc(sizeof(uint8_t *));
-    if (!snap_pic_id){
+    if (!snap_pic_id) {
         return 2;
     }
     *g_pic_id = 0;
