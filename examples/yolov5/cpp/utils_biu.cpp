@@ -463,7 +463,7 @@ void resize_images_in_folder(const std::string& folder_path, int max_length) {
             if (extension == ".jpg" || extension == ".png" || extension == ".bmp") {
                 cv::Mat img = cv::imread(file_path);
                 if (img.empty()) {
-                    st d::cerr << "无法读取图片: " << file_path << std::endl;
+                    std::cerr << "无法读取图片: " << file_path << std::endl;
                     continue;
                 }
 
