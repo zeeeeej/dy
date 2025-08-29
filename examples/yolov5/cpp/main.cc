@@ -528,10 +528,10 @@ static int scale_index = 0;
                         std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
                         return 3;
                     }
-                    std::cout << "cropImage success !"  << std::endl;
+                    std::cout << "cropImage success !!!!!"  << std::endl;
                     result = true;
                 } catch (const std::exception& e) {
-                    cerr << "错误: " << e.what() << endl;
+                    std::cerr << "错误: " << e.what() << std::endl;
                 }
 
 
