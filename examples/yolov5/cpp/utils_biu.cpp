@@ -451,7 +451,7 @@ void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_
 }
 
 
-void resize_images_single(const std::string& file_path, int max_length) {
+void resize_images_single(const std::string& file_path, const std::string& scale_path , int max_length) {
     // for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
         // if (entry.is_regular_file()) {
            
@@ -482,7 +482,7 @@ void resize_images_single(const std::string& file_path, int max_length) {
                 cv::resize(img, resized, cv::Size(new_width, new_height));
 
                 // 覆盖保存
-                if (!cv::imwrite(file_path, resized)) {
+                if (!cv::imwrite(scale_path, resized)) {
                     std::cerr << "保存失败: " << file_path << std::endl;
                 } else {
                     std::cout << "处理完成: " << file_path << std::endl;

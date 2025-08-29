@@ -179,10 +179,10 @@ bool x_cp_file(const char* src_path, const char* dest_path) {
  * @param dst_path 生成的目标图片
  * @result 0:成功 其他：错误码。
  */
-int process_image_with_yolov5_v2(const std::string& src_path,const std::string& trans_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
+int process_image_with_yolov5_v2(const std::string& src_path,const std::string& scale_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
     int ret = 0;
-    printf("<$>process_image_with_yolov5_v2 %s\n", src_path);
-    resize_images_single(src_path, 960);
+    printf("<$>process_image_with_yolov5_v2 %s %s\n", src_path,scale_path);
+    resize_images_single(src_path,scale_path, 960);
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
 
     std::vector<std::string> frames;
@@ -214,6 +214,7 @@ int process_image_with_yolov5_v2(const std::string& src_path,const std::string& 
         src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
         src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
         rknn_app_ctx.img_dma_buf.size = src_image.size;
+        printf("free\n");
         if (ret != 0)
         {
             printf("read image fail! ret=%d img_path=%s\n", ret, img_path);
@@ -417,6 +418,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
     return true;
 }
 
+static int scale_index = 0;
 /**
  * 
  * @param src_path 原图path
@@ -427,9 +429,11 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
  int transform_pic_my(const char * src_path, char * transform_path){
     // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx 111
      std::cout << "transform_pic_my =>"<< src_path<<std::endl;
+     char  salce_path[1024];
+     snprintf(salce_path,1024,"/userdata/%s_%05d.jpg","hd_scale",scale_index++);
     int tmp [5][4] = {0};
     //if(rknn_app_ctx){
-        int ret =  process_image_with_yolov5_v2(src_path,transform_path,tmp,rknn_app_ctx);
+        int ret =  process_image_with_yolov5_v2(src_path,salce_path,tmp,rknn_app_ctx);
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
