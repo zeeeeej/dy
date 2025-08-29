@@ -455,14 +455,14 @@ void resize_images_single(const std::string& file_path, int max_length) {
     // for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
         // if (entry.is_regular_file()) {
            
-            std::string extension = efile_path.extension().string();
+            std::string extension = ".jpg";//file_path.extension().string();//todo
 
             // 支持的图片格式
             if (extension == ".jpg" || extension == ".png" || extension == ".bmp") {
                 cv::Mat img = cv::imread(file_path);
                 if (img.empty()) {
-                    st d::cerr << "无法读取图片: " << file_path << std::endl;
-                    continue;
+                    std::cerr << "无法读取图片: " << file_path << std::endl;
+                    return ;
                 }
 
                 int width = img.cols;
@@ -471,7 +471,7 @@ void resize_images_single(const std::string& file_path, int max_length) {
                 int long_side = std::max(width, height);
 
                 // 如果已经小于等于 max_length，则跳过
-                if (long_side <= max_length) continue;
+                if (long_side <= max_length) return;
 
                 // 计算缩放比例
                 double scale = static_cast<double>(max_length) / long_side;
