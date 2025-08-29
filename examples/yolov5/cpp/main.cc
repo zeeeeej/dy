@@ -91,7 +91,7 @@ std::string app_version = "V0.4";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
 
-int addr_biu = 1;
+int addr_biu = 2;
 
 static uint8_t door_status = 2;  // 默认日志级别为INFO
 
@@ -182,7 +182,7 @@ bool x_cp_file(const char* src_path, const char* dest_path) {
 int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
     int ret = 0;
     printf("process_image_with_yolov5_v2 %s\n", src_path);
-    resize_images_in_folder(src_path, 960);
+    resize_images_single(src_path, 960);
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
     std::vector<std::string> frames = get_image_paths(src_path);
     printf("process_image_with_yolov5_v2 get_image_paths ok.\n");
