@@ -179,34 +179,37 @@ bool x_cp_file(const char* src_path, const char* dest_path) {
  * @param dst_path 生成的目标图片
  * @result 0:成功 其他：错误码。
  */
-int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
+int process_image_with_yolov5_v2(const std::string& src_path,const std::string& trans_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
     int ret = 0;
-    printf("process_image_with_yolov5_v2 %s\n", src_path);
+    printf("<$>process_image_with_yolov5_v2 %s\n", src_path);
     resize_images_single(src_path, 960);
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
-    std::vector<std::string> frames = get_image_paths(src_path);
+
+    std::vector<std::string> frames;
+    frames.push_back(src_path);
+    // std::vector<std::string> frames = get_image_paths(src_path);
     printf("process_image_with_yolov5_v2 get_image_paths ok.\n");
     for (const std::string& img_path : frames) {
-          std::cout<< "process_image_with_yolov5_v2 ==> "<<img_path<< std::endl;
+        std::cout<< "<1>process_image_with_yolov5_v2 ==> "<<img_path<< std::endl;
         cv::Mat image_change = cv::imread(img_path);
         if (image_change.empty()) {
             std::cerr << "读取图片失败!" << std::endl;
             return -1;
         }
-         std::cout<< "process_image_with_yolov5_v2 imread ok "<< std::endl;
+        std::cout<< "<2>process_image_with_yolov5_v2 imread ok "<< std::endl;
         image_buffer_t src_image;
             
         memset(&src_image, 0, sizeof(image_buffer_t));
         ret = read_image(img_path.c_str(), &src_image);
-         std::cout<< "process_image_with_yolov5_v2 read_image ok "<< std::endl;
+        std::cout<< "<3>process_image_with_yolov5_v2 read_image ok "<< std::endl;
 
         //RV1106 rga requires that input and output bufs are memory allocated by dma
         ret = dma_buf_alloc(RV1106_CMA_HEAP_PATH, src_image.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
                         (void **) & (rknn_app_ctx.img_dma_buf.dma_buf_virt_addr));
-                         std::cout<< "process_image_with_yolov5_v2 dma_buf_alloc ok "<< std::endl;
+        std::cout<< "<4>process_image_with_yolov5_v2 dma_buf_alloc ok "<< std::endl;
         memcpy(rknn_app_ctx.img_dma_buf.dma_buf_virt_addr, src_image.virt_addr, src_image.size);
         dma_sync_cpu_to_device(rknn_app_ctx.img_dma_buf.dma_buf_fd);
-         std::cout<< "process_image_with_yolov5_v2 dma_sync_cpu_to_device ok "<< std::endl;
+        std::cout<< "<5>process_image_with_yolov5_v2 dma_sync_cpu_to_device ok "<< std::endl;
         free(src_image.virt_addr);
         src_image.virt_addr = (unsigned char *)rknn_app_ctx.img_dma_buf.dma_buf_virt_addr;
         src_image.fd = rknn_app_ctx.img_dma_buf.dma_buf_fd;
@@ -230,7 +233,7 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
         object_detect_result_list od_results;
                 
         ret = inference_yolov5_model(&rknn_app_ctx, &src_image, &od_results);
-            std::cout<< "process_image_with_yolov5_v2 inference_yolov5_model ok "<< std::endl;
+        std::cout<< "<6>process_image_with_yolov5_v2 inference_yolov5_model ok "<< std::endl;
         if (ret != 0)
         {
             printf("init_yolov5_model fail! ret=%d\n", ret);
@@ -266,7 +269,7 @@ int process_image_with_yolov5_v2(const std::string& src_path, int box[5][4], rkn
                         rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
         } 
     }
-    printf("process_image_with_yolov5_v2 resize_images_in_folder result ret = %d.\n",ret);
+    printf("<#>process_image_with_yolov5_v2 resize_images_in_folder result ret = %d.\n",ret);
     return ret;
      
 }
@@ -426,7 +429,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
      std::cout << "transform_pic_my =>"<< src_path<<std::endl;
     int tmp [5][4] = {0};
     //if(rknn_app_ctx){
-        int ret =  process_image_with_yolov5_v2(src_path,tmp,rknn_app_ctx);
+        int ret =  process_image_with_yolov5_v2(src_path,transform_path,tmp,rknn_app_ctx);
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
