@@ -414,11 +414,6 @@ using namespace std;
     double width_ratio = static_cast<double>(src_width) / scale_width;
     double height_ratio = static_cast<double>(src_height) / scale_height;
     
-    // 解包缩放图片上的坐标
-    if (scaled_coords.size() != 4) {
-        throw runtime_error("坐标参数必须包含4个值: left, top, right, bottom");
-    }
-    
     int left_scale = left;
     int top_scale = top;
     int right_scale = right;
@@ -438,7 +433,7 @@ using namespace std;
     
     // 验证坐标有效性
     if (left_src >= right_src || top_src >= bottom_src) {
-        throw runtime_error("无效的坐标范围");
+        throw runtime_error("无效的坐标范围!!");
     }
     
     // 从原图中截取对应区域
@@ -498,7 +493,7 @@ static int scale_index = 0;
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
-            std::cout << i <<"<------" << std::endl;
+            std::cout << i <<"<----" << std::endl;
 
             for (size_t j = 0; j < 4; j++)
             {
@@ -535,9 +530,6 @@ static int scale_index = 0;
                 } catch (const std::exception& e) {
                     std::cerr << "错误: " << e.what() << std::endl;
                 }
-
-
-               
             return result?0:2;
         }
         
