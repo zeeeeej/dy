@@ -390,7 +390,7 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
 
   cv::Mat cropFromScaledCoordinates(const string& src_path, 
                              const string& scale_path, 
-                             const vector<int>& scaled_coords) {
+                             int left, int top, int right, int bottom) {
     // 读取原图和缩放图片
     cv::Mat src_image = cv::imread(src_path);
     cv::Mat scale_image = cv::imread(scale_path);
@@ -417,10 +417,10 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
         throw runtime_error("坐标参数必须包含4个值: left, top, right, bottom");
     }
     
-    int left_scale = scaled_coords[0];
-    int top_scale = scaled_coords[1];
-    int right_scale = scaled_coords[2];
-    int bottom_scale = scaled_coords[3];
+    int left_scale = left;
+    int top_scale = top;
+    int right_scale = right;
+    int bottom_scale = bottom;
     
     // 将缩放图片坐标映射到原图坐标
     int left_src = static_cast<int>(left_scale * width_ratio);
@@ -523,15 +523,14 @@ static int scale_index = 0;
                 // }
                 bool result = false;
                 try{
-                    vector<int> scaled_coords = {left, top, right, bottom};
-                    cv::Mat r = cropFromScaledCoordinates(src_path,salce_path,scaled_coords);
+                    cv::Mat r = cropFromScaledCoordinates(src_path,salce_path,left, top, right, bottom);
                      if (!cv::imwrite(transform_path, r)) {
                         std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
                         return 3;
                     }
                     std::cout << "cropImage success !"  << std::endl;
                     result = true;
-                } catch (const exception& e) {
+                } catch (const std::exception& e) {
                     cerr << "错误: " << e.what() << endl;
                 }
 
