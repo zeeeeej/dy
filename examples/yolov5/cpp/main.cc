@@ -388,6 +388,8 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
   rknn_app_context_t rknn_app_ctx;
 
 
+  using namespace cv;
+using namespace std;
   cv::Mat cropFromScaledCoordinates(const string& src_path, 
                              const string& scale_path, 
                              int left, int top, int right, int bottom) {
