@@ -392,8 +392,8 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
                              const string& scale_path, 
                              const vector<int>& scaled_coords) {
     // 读取原图和缩放图片
-    cv::Mat src_image = imread(src_path);
-    cv::Mat scale_image = imread(scale_path);
+    cv::Mat src_image = cv::imread(src_path);
+    cv::Mat scale_image = cv::imread(scale_path);
     
     if (src_image.empty()) {
         throw runtime_error("无法读取原图: " + src_path);
@@ -440,8 +440,8 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
     }
     
     // 从原图中截取对应区域
-    Rect roi(left_src, top_src, right_src - left_src, bottom_src - top_src);
-    Mat cropped_image = src_image(roi);
+    cv::Rect roi(left_src, top_src, right_src - left_src, bottom_src - top_src);
+    cv::Mat cropped_image = src_image(roi);
     
     return cropped_image;
 }
@@ -512,15 +512,31 @@ static int scale_index = 0;
         int bottom = tmp[0][3];
         if (left!=0 && top !=0 && right !=0 && bottom !=0)
         {
-                int sacle = 2; // todo 计算scale
-                bool result =cropImage (src_path,transform_path,left*sacle,top*sacle,right*sacle,bottom*sacle);
-                if (result)
-                {
+                // int sacle = 2; // todo 计算scale
+                // bool result =cropImage (src_path,transform_path,left*sacle,top*sacle,right*sacle,bottom*sacle);
+                // if (result)
+                // {
+                //     std::cout << "cropImage success !"  << std::endl;
+                // }
+                // else{
+                //      std::cout << "cropImage false !"  << std::endl;
+                // }
+                bool result = false;
+                try{
+                    vector<int> scaled_coords = {left, top, right, bottom};
+                    cv::Mat r = cropFromScaledCoordinates(src_path,salce_path,scaled_coords);
+                     if (!cv::imwrite(transform_path, r)) {
+                        std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
+                        return 3;
+                    }
                     std::cout << "cropImage success !"  << std::endl;
+                    result = true;
+                } catch (const exception& e) {
+                    cerr << "错误: " << e.what() << endl;
                 }
-                else{
-                     std::cout << "cropImage false !"  << std::endl;
-                }
+
+
+               
             return result?0:2;
         }
         
