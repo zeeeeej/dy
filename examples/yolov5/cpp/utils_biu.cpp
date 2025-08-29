@@ -451,6 +451,47 @@ void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_
 }
 
 
+void resize_images_single(const std::string& file_path, int max_length) {
+    // for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
+        // if (entry.is_regular_file()) {
+           
+            std::string extension = efile_path.extension().string();
+
+            // 支持的图片格式
+            if (extension == ".jpg" || extension == ".png" || extension == ".bmp") {
+                cv::Mat img = cv::imread(file_path);
+                if (img.empty()) {
+                    st d::cerr << "无法读取图片: " << file_path << std::endl;
+                    continue;
+                }
+
+                int width = img.cols;
+                int height = img.rows;
+                std::cout << "处理图片: " << file_path << " (原始尺寸: " << width << "x" << height << ")" << std::endl;
+                int long_side = std::max(width, height);
+
+                // 如果已经小于等于 max_length，则跳过
+                if (long_side <= max_length) continue;
+
+                // 计算缩放比例
+                double scale = static_cast<double>(max_length) / long_side;
+                int new_width = static_cast<int>(width * scale);
+                int new_height = static_cast<int>(height * scale);
+
+                cv::Mat resized;
+                cv::resize(img, resized, cv::Size(new_width, new_height));
+
+                // 覆盖保存
+                if (!cv::imwrite(file_path, resized)) {
+                    std::cerr << "保存失败: " << file_path << std::endl;
+                } else {
+                    std::cout << "处理完成: " << file_path << std::endl;
+                }
+            }
+        // }
+    // }
+}
+
 
 
 void resize_images_in_folder(const std::string& folder_path, int max_length) {
