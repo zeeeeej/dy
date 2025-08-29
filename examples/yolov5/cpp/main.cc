@@ -388,12 +388,12 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
   rknn_app_context_t rknn_app_ctx;
 
 
-  Mat cropFromScaledCoordinates(const string& src_path, 
+  cv::Mat cropFromScaledCoordinates(const string& src_path, 
                              const string& scale_path, 
                              const vector<int>& scaled_coords) {
     // 读取原图和缩放图片
-    Mat src_image = imread(src_path);
-    Mat scale_image = imread(scale_path);
+    cv::Mat src_image = imread(src_path);
+    cv::Mat scale_image = imread(scale_path);
     
     if (src_image.empty()) {
         throw runtime_error("无法读取原图: " + src_path);
