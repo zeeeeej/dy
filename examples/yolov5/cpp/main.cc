@@ -186,7 +186,7 @@ int process_image_with_yolov5_v2(const std::string& src_path,const std::string& 
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
 
     std::vector<std::string> frames;
-    frames.push_back(src_path);
+    frames.push_back(scale_path);
     // std::vector<std::string> frames = get_image_paths(src_path);
     printf("process_image_with_yolov5_v2 get_image_paths ok.\n");
     for (const std::string& img_path : frames) {
