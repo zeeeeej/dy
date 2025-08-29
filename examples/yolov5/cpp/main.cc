@@ -387,6 +387,65 @@ int process_image_with_yolov5(const std::string& src_path, const std::string& ds
 }
   rknn_app_context_t rknn_app_ctx;
 
+
+  Mat cropFromScaledCoordinates(const string& src_path, 
+                             const string& scale_path, 
+                             const vector<int>& scaled_coords) {
+    // 读取原图和缩放图片
+    Mat src_image = imread(src_path);
+    Mat scale_image = imread(scale_path);
+    
+    if (src_image.empty()) {
+        throw runtime_error("无法读取原图: " + src_path);
+    }
+    if (scale_image.empty()) {
+        throw runtime_error("无法读取缩放图片: " + scale_path);
+    }
+    
+    // 获取原图和缩放图片的尺寸
+    int src_width = src_image.cols;
+    int src_height = src_image.rows;
+    int scale_width = scale_image.cols;
+    int scale_height = scale_image.rows;
+    
+    // 计算宽高缩放比例
+    double width_ratio = static_cast<double>(src_width) / scale_width;
+    double height_ratio = static_cast<double>(src_height) / scale_height;
+    
+    // 解包缩放图片上的坐标
+    if (scaled_coords.size() != 4) {
+        throw runtime_error("坐标参数必须包含4个值: left, top, right, bottom");
+    }
+    
+    int left_scale = scaled_coords[0];
+    int top_scale = scaled_coords[1];
+    int right_scale = scaled_coords[2];
+    int bottom_scale = scaled_coords[3];
+    
+    // 将缩放图片坐标映射到原图坐标
+    int left_src = static_cast<int>(left_scale * width_ratio);
+    int top_src = static_cast<int>(top_scale * height_ratio);
+    int right_src = static_cast<int>(right_scale * width_ratio);
+    int bottom_src = static_cast<int>(bottom_scale * height_ratio);
+    
+    // 确保坐标在图像范围内
+    left_src = max(0, min(left_src, src_width - 1));
+    top_src = max(0, min(top_src, src_height - 1));
+    right_src = max(0, min(right_src, src_width - 1));
+    bottom_src = max(0, min(bottom_src, src_height - 1));
+    
+    // 验证坐标有效性
+    if (left_src >= right_src || top_src >= bottom_src) {
+        throw runtime_error("无效的坐标范围");
+    }
+    
+    // 从原图中截取对应区域
+    Rect roi(left_src, top_src, right_src - left_src, bottom_src - top_src);
+    Mat cropped_image = src_image(roi);
+    
+    return cropped_image;
+}
+
   bool cropImage(const char* src_path, const char* transform_path, 
                int left, int top, int right, int bottom) {
     // 读取原始图像
@@ -453,8 +512,8 @@ static int scale_index = 0;
         int bottom = tmp[0][3];
         if (left!=0 && top !=0 && right !=0 && bottom !=0)
         {
-
-                bool result =cropImage (src_path,transform_path,left,top,right,bottom);
+                int sacle = 2; // todo 计算scale
+                bool result =cropImage (src_path,transform_path,left*sacle,top*sacle,right*sacle,bottom*sacle);
                 if (result)
                 {
                     std::cout << "cropImage success !"  << std::endl;
