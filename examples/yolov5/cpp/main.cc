@@ -87,9 +87,11 @@ extern "C"{
 // int enable_minilog = 0;
 // int rkipc_log_level = LOG_INFO;
 
-std::string app_version = "V0.4";
+std::string app_version = "d0.0.7";
 static int pic_id = 0;
 static int pic_action_id = 0; // 用于标识拍照的动作ID
+
+std::string SCALE_PATH = "/userdata/hadlinks/scale";
 
 int addr_biu = 2;
 
@@ -484,16 +486,16 @@ static int scale_index = 0;
  */
  int transform_pic_my(const char * src_path, char * transform_path){
     // const std::string& src_path, int box[5][4], rknn_app_context_t& rknn_app_ctx 111
-     std::cout << "transform_pic_my =>"<< src_path<<std::endl;
-     char  salce_path[1024];
-     snprintf(salce_path,1024,"/userdata/%s_%05d.jpg","hd_scale",scale_index++);
+    std::cout << "transform_pic_my =>"<< src_path<<std::endl;
+    //char  salce_path[1024];
+    //snprintf(salce_path,1024,"/userdata/%s_%05d.jpg","hd_scale",scale_index++);
     int tmp [5][4] = {0};
     //if(rknn_app_ctx){
-        int ret =  process_image_with_yolov5_v2(src_path,salce_path,tmp,rknn_app_ctx);
+        int ret =  process_image_with_yolov5_v2(src_path,SCALE_PATH,tmp,rknn_app_ctx);
         std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
         for (size_t i = 0; i < 5; i++)
         {
-            std::cout << i <<"<----" << std::endl;
+            std::cout << i <<"<------" << std::endl;
 
             for (size_t j = 0; j < 4; j++)
             {
@@ -715,6 +717,15 @@ int main(int argc, char **argv)
 		}
     }
 
+    // todo 清空文件夹
+    if(access(SCALE_PATH, F_OK) == 0) {
+        LOG_INFO("SCALE_PATH Directory exists. -> %s\n",SCALE_PATH);
+    } else {
+        if( mkdir(SCALE_PATH, 0755) == -1 ){
+			LOG_ERROR("create SCALE_PATH folder fail -> %s\n",SCALE_PATH);
+		}
+    }
+
 	if(access("/userdata/update_ota.tar", F_OK) == 0)
 	{
 		if(remove("/userdata/update_ota.tar") == 0)
@@ -745,7 +756,7 @@ int main(int argc, char **argv)
     const char *image_tmp_path = "/userdata/tmp_images_path";
     const char *images_dir_path = "/userdata/images_dir_path";
 
-    delete_specified_folder(image_tmp_path);
+    delete_specified_folder(image_tmp_path);    
     delete_specified_folder(images_dir_path);
 
     ensure_path_exists(image_tmp_path);
