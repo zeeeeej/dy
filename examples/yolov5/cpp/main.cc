@@ -133,7 +133,7 @@ void *on_event(int event_id, void *event_value, size_t event_value_size) {
  */
 static int process_image_with_yolov5_v2(const std::string& src_path,const std::string& scale_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
     int ret = 0;
-    std::cout<<"<$>process_image_with_yolov5_v2" << src_path << scale_path <<std:endl;
+    std::cout<<"<$>process_image_with_yolov5_v2" << src_path << scale_path <<std::endl;
     resize_images_single(src_path,scale_path, 960);
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
     std::vector<std::string> frames;
@@ -521,7 +521,7 @@ int main(int argc, char **argv)
     }
 }
 
-    hd_uart_init(HD_CAMERA_ADDR, images_dir_path, app_version.c_str(), action_id_collect, on_event,transform_pic_my);
+    hd_uart_init(HD_CAMERA_ADDR, images_dir_path, app_version, action_id_collect, on_event,transform_pic_my);
 
     while (g_main_run_) {
 		usleep(1000 * 1000);
