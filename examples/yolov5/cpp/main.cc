@@ -131,10 +131,10 @@ void *on_event(int event_id, void *event_value, size_t event_value_size) {
  * @param dst_path 生成的目标图片
  * @result 0:成功 其他：错误码。
  */
-static int process_image_with_yolov5_v2(const std::string& src_path,const std::string& scale_path, int box[5][4], rknn_app_context_t& rknn_app_ctx) {
+static int process_image_with_yolov5_v2(const std::string& src_path,const std::string& scale_path, int box[5][4], rknn_app_context_t& rknn_app_ctx,double * scale_ratio) {
     int ret = 0;
     std::cout<<"<$>process_image_with_yolov5_v2" << src_path << scale_path <<std::endl;
-    resize_images_single(src_path,scale_path, 960);
+    resize_images_single(src_path,scale_path, 960,scale_ratio);
     printf("process_image_with_yolov5_v2 resize_images_in_folder ok.\n");
     std::vector<std::string> frames;
     frames.push_back(scale_path);
@@ -181,6 +181,7 @@ static int process_image_with_yolov5_v2(const std::string& src_path,const std::s
             {dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
                             rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);
             }  
+            return 11;
         }
         object_detect_result_list od_results;
                 
@@ -202,6 +203,7 @@ static int process_image_with_yolov5_v2(const std::string& src_path,const std::s
                 dma_buf_free(rknn_app_ctx.img_dma_buf.size, &rknn_app_ctx.img_dma_buf.dma_buf_fd, 
                             rknn_app_ctx.img_dma_buf.dma_buf_virt_addr);                        
             }  
+            return 22;
         }
         for (int i = 0; i < od_results.count; i++)
         {
@@ -226,7 +228,9 @@ static int process_image_with_yolov5_v2(const std::string& src_path,const std::s
      
 }
 
-static cv::Mat cropFromScaledCoordinates(const string& src_path, const string& scale_path, int left, int top, int right, int bottom) {
+static cv::Mat cropFromScaledCoordinates(const string& src_path, const string& scale_path, int left, int top, int right, int bottom,
+double scale_ratio
+) {
     // 读取原图和缩放图片
     cv::Mat src_image = cv::imread(src_path);
     cv::Mat scale_image = cv::imread(scale_path);
@@ -245,10 +249,15 @@ static cv::Mat cropFromScaledCoordinates(const string& src_path, const string& s
     int scale_height = scale_image.rows;
     
     // 计算宽高缩放比例
-    double width_ratio = static_cast<double>(src_width) / scale_width;
-    double height_ratio = static_cast<double>(src_height) / scale_height;
-    double ratio = width_ratio>height_ratio? width_ratio :height_ratio;
-    
+    if(scale_ratio==0){
+        double width_ratio = static_cast<double>(src_width) / scale_width;
+        double height_ratio = static_cast<double>(src_height) / scale_height;
+        double ratio = width_ratio>height_ratio? width_ratio :height_ratio;
+        print(">>> ratio = %d <<<\n",ratio);
+    }else{
+        print("<<< ratio = %d >>>\n",ratio);
+    }
+
     int left_scale = left;
     int top_scale = top;
     int right_scale = right;
@@ -321,31 +330,36 @@ static bool cropImage(const char* src_path, const char* transform_path, int left
  * @return 成功返回0 失败返回1
  */
  static int transform_pic_my(const char * src_path, char * transform_path){
+    std::cout << "#############################################"<<std::endl;
     std::cout << "transform_pic_my : "<< src_path<<std::endl;
+    double scale_ratio;
     snprintf(scale_path,1024,"%s/%s_%d.jpg",SCALE_PATH,"hd_scale",scale_index++);
     int tmp [5][4] = {0};
-    int ret =  process_image_with_yolov5_v2(src_path,scale_path,tmp,rknn_app_ctx);
-    std::cout << "process_image_with_yolov5_v2 ret = " << ret <<std::endl;
-    int left = tmp[0][0];
-    int top = tmp[0][1];
-    int right = tmp[0][2];
-    int bottom = tmp[0][3];
-    if (left!=0 && top !=0 && right !=0 && bottom !=0)
-    {
-            std::cout << "before cropImage "<< src_path <<"["<<left<<","<<top<<","<<right<<","<<bottom<<"]"<<std::endl;
-            bool result = false;
-            try{
-                cv::Mat r = cropFromScaledCoordinates(src_path,scale_path,left, top, right, bottom);
-                    if (!cv::imwrite(transform_path, r)) {
-                    std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
-                    return 3;
+    int ret =  process_image_with_yolov5_v2(src_path,scale_path,tmp,rknn_app_ctx,&scale_ratio);
+
+    std::cout << "process_image_with_yolov5_v2 ret = " << ret << " ,scale_ratio = " << scale_ratio <<std::endl;
+    if(0 == ret){
+        int left = tmp[0][0];
+        int top = tmp[0][1];
+        int right = tmp[0][2];
+        int bottom = tmp[0][3];
+        if (left!=0 && top !=0 && right !=0 && bottom !=0)
+        {
+                std::cout << "before cropImage "<< src_path <<"["<<left<<","<<top<<","<<right<<","<<bottom<<"]"<<std::endl;
+                bool result = false;
+                try{
+                    cv::Mat r = cropFromScaledCoordinates(src_path,scale_path,left, top, right, bottom,scale_ratio);
+                        if (!cv::imwrite(transform_path, r)) {
+                        std::cerr << "Error: Could not save the cropped image to " << transform_path << std::endl;
+                        return 3;
+                    }
+                    std::cout << "cropImage success !!!!! " << transform_path  << std::endl;
+                    result = true;
+                } catch (const std::exception& e) {
+                    std::cerr << "cropImage fail!!!!!错误: " << e.what() << std::endl;
                 }
-                std::cout << "cropImage success !!!!! " << transform_path  << std::endl;
-                result = true;
-            } catch (const std::exception& e) {
-                std::cerr << "cropImage fail!!!!!错误: " << e.what() << std::endl;
-            }
-        return result?0:2;
+            return result?0:2;
+        }
     }
     deleteFile(scale_path);
     return 1;

@@ -451,7 +451,7 @@ void delete_oldest_folders(const std::filesystem::path& parent_path, size_t max_
 }
 
 
-void resize_images_single(const std::string& file_path, const std::string& scale_path , int max_length) {
+void resize_images_single(const std::string& file_path, const std::string& scale_path , int max_length,double * scale_ratio) {
     // for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
         // if (entry.is_regular_file()) {
            
@@ -475,6 +475,7 @@ void resize_images_single(const std::string& file_path, const std::string& scale
 
                 // 计算缩放比例
                 double scale = static_cast<double>(max_length) / long_side;
+                *scale_ratio = scale;
                 int new_width = static_cast<int>(width * scale);
                 int new_height = static_cast<int>(height * scale);
 
