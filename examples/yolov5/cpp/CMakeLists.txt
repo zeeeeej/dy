@@ -29,7 +29,7 @@ set(ULBIC_DIR /home/book/zc/app_sdk_v0.0.2.git/manhattan_doc/prebuilt/arm-rockch
 set (CMAKE_C_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-gcc)
 set (CMAKE_CXX_COMPILER ${ULBIC_DIR}/bin/arm-rockchip830-linux-uclibcgnueabihf-g++)
 
-
+# /Users/xiangpengle/Documents/job/manhattan/code/camera-rv1103/examples/yolov5/cpp
 set(My_SO 1)
 
 if(My_SO EQUAL 1)

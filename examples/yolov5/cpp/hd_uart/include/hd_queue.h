@@ -18,6 +18,7 @@ extern "C" {
         pthread_mutex_t mutex;          // 互斥锁
         pthread_cond_t not_empty;       // 非空条件变量
         pthread_cond_t not_full;        // 非满条件变量
+        int terminated; // 添加终止标志
     } HDBlockingQueue;
 
     // 初始化队列
@@ -52,6 +53,7 @@ typedef struct {
     pthread_mutex_t mutex;          // 互斥锁
     pthread_cond_t not_empty;       // 非空条件变量
     pthread_cond_t not_full;        // 非满条件变量
+    int terminated; // 添加终止标志
 } HDBlockingQueueUint8;
 
 // 初始化队列

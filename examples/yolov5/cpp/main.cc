@@ -255,7 +255,7 @@ double scale_ratio
         double ratio = width_ratio>height_ratio? width_ratio :height_ratio;
         print(">>> ratio = %d <<<\n",ratio);
     }else{
-        print("<<< ratio = %d >>>\n",ratio);
+        print("<<< ratio = %d >>>\n",scale_ratio);
     }
 
     int left_scale = left;

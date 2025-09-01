@@ -266,6 +266,7 @@ static void *hd_camera_ota_progress_thread(void *arg) {
     LOGD("hd_camera_ota_progress_thread start...\n");
     while (g_running && g_hd_push_mode_file_size > 0) {
         sleep(3);
+        if (!g_running)break;
         if (g_hd_push_mode_file_size != 0) {
             double progress;
             if (g_hd_push_recv_count >= g_hd_push_mode_file_size) {
@@ -437,15 +438,22 @@ int hd_camera_ota_init(uint8_t addr) {
 
 
 void hd_camera_ota_deinit() {
+    printf("hd_camera_ota_deinit \n");
     g_running = 0;
-    g_addr = -1;
+    hd_queue_destroy_uint8(g_hd_push_frame_queue);
+    printf("hd_camera_ota_deinit hd_queue_destroy_uint8 ok\n");
     if (g_hd_push_t) {
         pthread_join(g_hd_push_t, NULL);
+        printf("hd_camera_ota_deinit  g_hd_push_t ok\n");
     }
-
     if (g_hd_push_progress_pthread_t) {
         pthread_join(g_hd_push_progress_pthread_t, NULL);
+        printf("hd_camera_ota_deinit  g_hd_push_progress_pthread_t ok\n");
     }
-    hd_queue_destroy_uint8(g_hd_push_frame_queue);
+    printf("hd_camera_ota_deinit  ok\n");
+    g_addr = -1;
     g_hd_push_frame_queue = NULL;
+
+
+
 }

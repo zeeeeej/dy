@@ -140,6 +140,7 @@ static void my_remove_directory(const char *path);
 static int on_action_info_removed(const HD_ACTION_ID_INFO *item);
 //</editor-fold>
 
+#define RK_UART_SENDBYTE_DELAY 100000
 int hd_camera_uart_write(const unsigned char *raw, size_t raw_size) {
     if (g_running == 0) {
         return -5;
@@ -151,12 +152,11 @@ int hd_camera_uart_write(const unsigned char *raw, size_t raw_size) {
     hd_printf_buff(raw, raw_size, "发送", 0);
 
     rs485_pwr_on();
-    usleep(9000);
+    usleep(RK_UART_SENDBYTE_DELAY);
     for (int i = 0; i < raw_size; ++i) {
         rk_uart_sendbyte(raw[i]);
-        usleep(16);
     }
-    usleep(4000);
+    usleep(RK_UART_SENDBYTE_DELAY);
     rs485_pwr_off();
     LOGI("发送完毕\n");
     return 0;
@@ -1421,6 +1421,30 @@ static void free_queue(HDBlockingQueueUint8 *queue) {
     }
 }
 
+static void *handle_uart_debug(void *arg) {
+    LOGI("handle_uart_debug start...\n");
+    uint8_t index = 0;
+    uint8_t buff[128];
+    buff[0] = 0xaa;
+    buff[1] = 0x5a;
+    buff[2] = 0x01;
+    buff[3] = 0x01;
+    buff[4] = 0x00;
+    buff[5] = 0x00;
+    buff[6] = 0x00;
+    buff[8] = 0xaa;
+    buff[9] = 0xbb;
+    while (g_running) {
+        usleep(5000 * 1000);
+        buff[7] = index;
+        hd_camera_uart_write(buff, 10);
+        index++;
+    }
+
+    LOGI("handle_uart_debug end.\n");
+    return NULL;
+}
+
 #ifdef HD_UART_USE_QUEUE
 
 static void *handle_uart_data_thread(void *arg) {
@@ -1484,17 +1508,17 @@ void hd_uart_deinit() {
     hd_camera_shell_deinit();
     LOGI("hd_camera_shell_deinit ok\n");
 
+    free_queue(g_frame_queue);
+
     if (g_frame_consume_t) {
         pthread_join(g_frame_consume_t, NULL);
         LOGI("g_frame_consume_t ok\n");
     }
 
-    free_queue(g_frame_queue);
     hd_pic_infos_deinit();
     LOGI("hd_pic_infos_deinit ok\n");
 
     g_frame_queue = NULL;
-
 }
 
 void hd_camera_change_serial_mode(HD_SERIAL_MODE mode) {
@@ -1992,7 +2016,7 @@ static int handle_uart_data(const unsigned char *raw, size_t raw_size) {
 /***************************************************************************************************/
 /****************************** hd_uart.so *********************************************************/
 /***************************************************************************************************/
-#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.7"                    // 库版本
+#define HD_UART_PARSER_VERSION_INTERNAL         "0.3.8.9"                    // 库版本
 
 int hd_uart_init(
         uint8_t addr,
@@ -2010,11 +2034,14 @@ int hd_uart_init(
     uint32_t delay = calculate_3_5_char_time(PROTOCOL_RATE_DEFAULT, 8, 0, 1);
 
     if (SNAP_TEST_WITH_PURE) {
-        // 测试hd_c_log.c
         snprintf(g_pic_dir_path, sizeof(g_pic_dir_path), "%s", SNAP_PATH);
         create_directory_if_not_exists(SNAP_PATH);
     } else {
-        snprintf(g_pic_dir_path, sizeof(g_pic_dir_path), "%s", pic_dir_path);
+        if (pic_dir_path){
+            snprintf(g_pic_dir_path, sizeof(g_pic_dir_path), "%s", pic_dir_path);
+        }else{
+            snprintf(g_pic_dir_path, sizeof(g_pic_dir_path), "%s", "/userdata/error_path");
+        }
     }
 
     LOGI(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
@@ -2024,6 +2051,7 @@ int hd_uart_init(
     LOGI("hd_uart_init addr                 :       <%d> \n", addr);
     LOGI("hd_uart_init pic_dir_path         :       <%s> \n", g_pic_dir_path);
     LOGI("hd_uart_init delay                :       <%d> \n", delay);
+    LOGI("hd_uart_init send byte delay      :       <%d> us\n", RK_UART_SENDBYTE_DELAY);
     LOGI("hd_uart_max               	    :       <%d> \n", PROTOCOL_MAX_FRAME_LEN);
     for (int i = 0; i < sizeof(PULL_MODE_FILE_HEADER_TAIL); ++i) {
         printf("%02x ", PULL_MODE_FILE_HEADER_TAIL[i]);
@@ -2045,7 +2073,7 @@ int hd_uart_init(
 
         my_remove_directory(SNAP_PATH);
 
-        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, NULL);
+        ret = hd_camera_produce_init(addr, SNAP_PATH, SNAP_DEMO_CROP_PIC, hd_uart_on_pic_add, transform_pic);
         if (ret) {
             LOGE("hd_camera_produce_init error! %d\n", ret);
             return 0;
@@ -2072,6 +2100,8 @@ int hd_uart_init(
 #ifdef HD_UART_USE_QUEUE
     pthread_create(&g_frame_consume_t, NULL, handle_uart_data_thread, NULL);
 #endif
+    //pthread_t debug_thread_t;
+    //pthread_create(&debug_thread_t, NULL, handle_uart_debug, NULL);
     LOGI("hd_uart_init completed !!!\n");
     return 0;
 }

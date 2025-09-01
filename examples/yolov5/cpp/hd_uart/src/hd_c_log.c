@@ -384,6 +384,7 @@ void deque_print(Deque *deque, void (*print_func)(void *)) {
 
 typedef struct {
     uint8_t snap_id;
+    uint8_t snap_angle;
     uint32_t timestamp;
     char *file_name;
 } SnapshotItem;
@@ -463,7 +464,8 @@ void SnapshotResource_free(SnapshotResource *res) {
 #define SNAP_OFFSET_MAX             5       // 范围区间 根据实际测试调整
 #define CHECK_CLOSE_DOOR_COUNT_MAX  3       // 连续angel减少次数
 #define FILE_NAME_LENGTH            512     // 文件path最大长度
-#define HD_SNAP_TYPE_STATIC_DYNAMIC HD_SNAP_TYPE_STATIC_DYNAMIC      // 动销项目
+#define DY_CROP_MAX                 10      // 动态图片生成最大数量
+//#define HD_SNAP_TYPE_STATIC_DYNAMIC HD_SNAP_TYPE_STATIC_DYNAMIC      // 动销项目
 
 static int (*g_callback)(char *, char **, int) = NULL;
 
@@ -637,9 +639,8 @@ static void *get_angle_func(void *arg) {
     return NULL;
 }
 
-static void *snap_thread_func(void *arg) {
-    printf("[%s]snap_thread_func  开始拍照\n", tag);
 
+static void snap_thread_func_dynamic() {
     uint32_t snap_timestamp;
     int ret;
     int angel = g_angle;
@@ -648,6 +649,97 @@ static void *snap_thread_func(void *arg) {
     char tmp_img_name[FILE_NAME_LENGTH];        // timestamp_index.jpg
     char delete_file_path[FILE_NAME_LENGTH];
 
+    // 生成action_path
+    snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
+    printf("action_id_src_path = %s %s \n", action_id_src_path, tmp_img_name);
+    int result = mkdir_recursive(action_id_src_path); // todo 判断结果
+    if (result) {
+        printf("[%s]snap_thread_func mkdir_recursive fail! %d  \n", tag, result);
+    }
+
+    while (g_running && snap_count < current_task->snap_max) {
+        if (!current_task->running) {
+            printf("[%s]snap_thread_func  current_task->running = false\n", tag);
+            usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
+            break;
+        }
+
+
+        angel = g_angle;
+
+        // 不在范围内直接不考虑
+        if (current_task->trigger_type == 0 /*主动抓图不考虑角度*/ && angel < (current_task->triggerAngel)) {
+            printf("[%s]snap_thread_func  不在角度范围内 %d  < (%d) \n", tag, angel,current_task->triggerAngel);
+            usleep(1000 * 1000 / SNAPSHOT_CHECK_COUNT);
+            continue;
+        }
+
+        // 重置时间和pic_id
+        snap_timestamp = time(NULL);
+//        refresh_snap_id(current_task->cameraType);
+        // 生成file_name
+        snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_src_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
+        printf("[%s]snap_thread_func >>> 准备拍照(%d) %s/%s \n", tag, angel, action_id_src_path, tmp_img_name);
+        // 拍照
+        ret = qjy_take_photo(2, snap_pic_id, tmp_img_name, action_id_src_path);
+        if (ret) {
+            printf("[%s]snap error %d \n", tag, ret);
+            continue;
+        }
+
+        usleep(1000000 / 5);
+
+        // 生成记录，检查是否满了
+        int full = deque_is_full(current_task->pics);
+        if (full) {
+            printf("[%s]snap error 满了 \n", tag);
+            void *data;
+            deque_pop_front(current_task->pics, &data);
+            if (data) {
+                SnapshotItem *item = data;
+                // 删除文件
+                snprintf(delete_file_path, sizeof(delete_file_path), "%s/%s/%s", g_src_path, current_task->name,
+                         item->file_name);
+                printf("delete_file_if_exists before 文件：%s ,file_name:%s\n",delete_file_path,item->file_name);
+                delete_file_if_exists(delete_file_path);
+                SnapshotItem_free(item);
+            }
+        }
+        SnapshotItem *item = malloc(sizeof(SnapshotItem));
+        if (item == NULL) {
+            printf("[%s]snap error malloc SnapshotItem fail\n", tag);
+            continue;
+        }
+        item->snap_id = *snap_pic_id;
+        item->timestamp = snap_timestamp;
+        item->snap_angle = angel;
+        item->file_name = strdup(tmp_img_name);
+
+
+        deque_push_rear(current_task->pics, item);
+        refresh_snap_id(current_task->cameraType);
+        snap_count++;
+    }
+    printf("[%s]动态拍照结束 一共拍照%d次 \n", tag, snap_count);
+}
+
+static void snap_thread_func_static() {
+    uint32_t snap_timestamp;
+    int ret;
+    int angel = g_angle;
+    int snap_count = 0;
+    char action_id_src_path[FILE_NAME_LENGTH];  // src action_id 文件夹path
+    char tmp_img_name[FILE_NAME_LENGTH];        // timestamp_index.jpg
+    char delete_file_path[FILE_NAME_LENGTH];
+
+    // 生成action_path
+    snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
+    printf("action_id_src_path = %s %s \n", action_id_src_path, tmp_img_name);
+    int result = mkdir_recursive(action_id_src_path); // todo 判断结果
+    if (result) {
+        printf("[%s]snap_thread_func mkdir_recursive fail! %d  \n", tag, result);
+    }
+
 #ifndef HD_SNAP_TYPE_STATIC_DYNAMIC
     int first = 1;                              //第一次不需要延迟
 
@@ -655,7 +747,6 @@ static void *snap_thread_func(void *arg) {
     int check_close_door = 0;                   // 连续3次下降，就代表关门
     int check_close_door_count = 0;             // 记录连续下降次数
 #endif
-
     while (g_running && snap_count < current_task->snap_max) {
         if (!current_task->running) {
             printf("[%s]snap_thread_func  current_task->running = false\n", tag);
@@ -699,7 +790,8 @@ static void *snap_thread_func(void *arg) {
             continue;
         }
         check_close_door_count++;
-        if (current_task->trigger_type == 0 && check_close_door_count >= CHECK_CLOSE_DOOR_COUNT_MAX) {     // 连续大于CHECK_CLOSE_DOOR_COUNT_MAX，说明是关门
+        if (current_task->trigger_type == 0 &&
+            check_close_door_count >= CHECK_CLOSE_DOOR_COUNT_MAX) {     // 连续大于CHECK_CLOSE_DOOR_COUNT_MAX，说明是关门
             printf("[%s]snap_thread_func  连续%d次角度下降\n", tag, CHECK_CLOSE_DOOR_COUNT_MAX);
             check_close_door = 1;
             check_close_door_count = 0; // 重置
@@ -723,14 +815,8 @@ static void *snap_thread_func(void *arg) {
         snap_timestamp = time(NULL);
 //        refresh_snap_id(current_task->cameraType);
         // 生成file_name
-        snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
-        // 生成action_path
-        snprintf(action_id_src_path, sizeof(action_id_src_path), "%s/%s", g_src_path, current_task->name);
-        printf("action_id_src_path = %s %s \n", action_id_src_path, tmp_img_name);
-        int result = mkdir_recursive(action_id_src_path); // todo 判断结果
-        if (result) {
-            printf("[%s]snap_thread_func mkdir_recursive fail! %d  \n", tag, result);
-        }
+        snprintf(tmp_img_name, sizeof(tmp_img_name), "hd_src_%d_%03d.jpg", snap_timestamp, *snap_pic_id);
+
         printf("[%s]snap_thread_func >>> 准备拍照(%d) %s/%s \n", tag, angel, action_id_src_path, tmp_img_name);
         // 拍照
         ret = qjy_take_photo(2, snap_pic_id, tmp_img_name, action_id_src_path);
@@ -749,11 +835,11 @@ static void *snap_thread_func(void *arg) {
             deque_pop_front(current_task->pics, &data);
             if (data) {
                 SnapshotItem *item = data;
-                SnapshotItem_free(item);
                 // 删除文件
-                snprintf(delete_file_path, sizeof(delete_file_path), "%s/%s/%s", g_dst_path, current_task->name,
+                snprintf(delete_file_path, sizeof(delete_file_path), "%s/%s/%s", g_src_path, current_task->name,
                          item->file_name);
-                delete_file_if_exists(item->file_name);
+                delete_file_if_exists(delete_file_path);
+                SnapshotItem_free(item);
             }
         }
         SnapshotItem *item = malloc(sizeof(SnapshotItem));
@@ -764,7 +850,7 @@ static void *snap_thread_func(void *arg) {
         item->snap_id = *snap_pic_id;
         item->timestamp = snap_timestamp;
         item->file_name = strdup(tmp_img_name);
-
+        item->snap_angle = angel;
 
         deque_push_rear(current_task->pics, item);
         refresh_snap_id(current_task->cameraType);
@@ -777,7 +863,17 @@ static void *snap_thread_func(void *arg) {
         }
     }
 
-    printf("[%s]snap_thread_func. end!  一共%d张\n", tag, snap_count);
+    printf("[%s]静态拍照结束 一共拍照%d次 \n", tag, snap_count);
+}
+
+static void *snap_thread_func(void *arg) {
+    printf("[%s]snap_thread_func  开始拍照\n", tag);
+    if (current_task->cameraType == CAMERA_TYPE_S) {
+        snap_thread_func_static();
+    } else if (current_task->cameraType == CAMERA_TYPE_D) {
+        snap_thread_func_dynamic();
+    }
+    printf("[%s]snap_thread_func. 结束拍照!\n", tag);
     return NULL;
 }
 
@@ -850,7 +946,7 @@ static void *handle_thread_func(void *arg) {
                 refresh_pic_id(res->cameraType);
                 ret = hd_camera_protocol_pic_info_encode(dest_file_name, index_1++, file_md5, file_size, index_2++,
                                                          g_addr,
-                                                         res->triggerAngel, res->triggerType, res->pics[i]->timestamp,
+                                                         res->pics[i]->snap_angle, res->triggerType, res->pics[i]->timestamp,
                                                          *g_pic_id);
 
 
@@ -881,13 +977,31 @@ static void *handle_thread_func(void *arg) {
             }
             printf("静态处理完毕！！！\n");
         } else if (res->cameraType == CAMERA_TYPE_D) { // 动态图片
+            printf("[%s]handle_thread_func handle_photo 处理动态照片.......期望：%d(张) \n", tag, res->pic_count);
             for (int i = res->pic_count - 1; i >= 0; --i) {
+
+                if (result_pic_size > DY_CROP_MAX) {
+                    printf("[%s]handle_thread_func handle_photo 处理动态照片 已满%d张 \n", tag,DY_CROP_MAX);
+                    SnapshotItem_free(res->pics[i]);
+                    res->pics[i] = NULL;
+                    continue;
+                }
 
                 if (g_transform_pic == NULL) {
                     // 直接用测试图
                     snprintf(transform_pic_path, sizeof(transform_pic_path), "%s", g_demo_path);
                 } else {
-                    printf("g_transform_pic %s -> %s \n", src_file_path, transform_pic_path);
+
+                    // 原始图片地址
+                    snprintf(src_file_path, sizeof(src_file_path), "%s/%s/%s", g_src_path, res->action_id_name,
+                             res->pics[i]->file_name);
+
+                    // 目标图片地址
+                    snprintf(transform_pic_path, sizeof(transform_pic_path), "%s/%s/%s_%d_%s", g_src_path, res->action_id_name,
+                             "crop_",i,res->pics[i]->file_name);
+
+
+                    printf("g_transform_pic 处理图片 原始地址：%s -> 目标地址：%s \n", src_file_path, transform_pic_path);
                     int ret = g_transform_pic(src_file_path, transform_pic_path);
                     if (ret) {
                         SnapshotItem_free(res->pics[i]);
@@ -911,7 +1025,7 @@ static void *handle_thread_func(void *arg) {
                 refresh_pic_id(res->cameraType);
                 ret = hd_camera_protocol_pic_info_encode(dest_file_name, index_1++, file_md5, file_size, index_2++,
                                                          g_addr,
-                                                         res->triggerAngel, 0, res->pics[i]->timestamp,
+                                                         res->pics[i]->snap_angle, res->triggerType, res->pics[i]->timestamp,
                                                          *g_pic_id);
                 if (ret)continue;
                 // 复制文件到dst
@@ -926,9 +1040,7 @@ static void *handle_thread_func(void *arg) {
                 }
                 result_pic_size++;
                 SnapshotItem_free(res->pics[i]);
-                if (result_pic_size > 5) {
-                    continue;
-                }
+                res->pics[i] = NULL;
             }
             printf("动态处理完毕！！！\n");
         }
@@ -970,6 +1082,11 @@ static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_ind
     printf("[%s]do_snapshot_start %d %d\n", tag, action_id_timestamp, action_id_index);
     // 1.创建任务
     pthread_mutex_lock(&g_current_task_lock);
+    if (current_task != NULL ){
+        printf("[%s]do_snapshot_start 正在拍照中....\n", tag);
+        pthread_mutex_unlock(&g_current_task_lock);
+        return 2;
+    }
     SnapshotTask *task = malloc(sizeof(SnapshotTask));
     if (task == NULL) {
         printf("[%s]do_snapshot_start malloc error\n", tag);
@@ -982,10 +1099,10 @@ static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_ind
     char tmp_name[FILE_NAME_LENGTH];
     do_action_id_2_str(tmp_name, sizeof(tmp_name), action_id_timestamp, action_id_index);
     task->name = strdup(tmp_name);
-    task->triggerAngel = g_addr == 1 ? 40 : 20;
+    task->triggerAngel = g_addr == PROTOCOL_SLAVE_STATIC ? 60 : 20;
     task->trigger_type = trigger_type;
-    task->cameraType = g_addr == 1 ? CAMERA_TYPE_S : CAMERA_TYPE_D;
-    Deque *pics = deque_init(MAX_PICS, free_data_func);
+    task->cameraType = g_addr == PROTOCOL_SLAVE_STATIC ? CAMERA_TYPE_S : CAMERA_TYPE_D;
+    Deque *pics = deque_init(g_addr == PROTOCOL_SLAVE_STATIC?MAX_PICS:MAX_PICS*2, free_data_func);
     if (NULL == pics) {
         printf("[%s]do_snapshot_start malloc error\n", tag);
         pthread_mutex_unlock(&g_current_task_lock);
@@ -993,7 +1110,7 @@ static int do_snapshot_start(uint32_t action_id_timestamp, uint8_t action_id_ind
     }
     task->pics = pics;
     task->running = 1;
-    task->snap_max = 100000; // 暂时默认一个最大值，表示可以一直拍。
+    task->snap_max = 1000000; // 暂时默认一个最大值，表示可以一直拍。
 #ifdef HD_SNAP_TYPE_STATIC_DYNAMIC
     task->snap_max = 1; // 动销只拍一张
 #endif
@@ -1106,7 +1223,8 @@ int hd_camera_produce_init(uint8_t addr,
     if (!snap_pic_id) {
         return 2;
     }
-    *g_pic_id = 0;
+    * g_pic_id = 0;
+    * snap_pic_id = 0;
     g_queue = hd_queue_create(100);
     if (g_queue == NULL)return 3;
     restore_sensor();
@@ -1121,7 +1239,13 @@ int hd_camera_produce_take_photos_actively(uint16_t *pic_id) {
     uint32_t action_id_timestamp = time(NULL);
     uint8_t action_id_index = 0xfe;
     hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index, 1, 1);
-    usleep(100 * 1000);
+
+    if (g_addr == PROTOCOL_SLAVE_DYNAMIC){
+        usleep(10 * 1000 * 1000);
+    }else if(g_addr == 0){
+        usleep(100 * 1000);
+    }
+
     hd_camera_produce_on_action_id_changed(action_id_timestamp, action_id_index + 1, 0, 1);
 
     pthread_mutex_lock(&my_mutex);
@@ -1150,7 +1274,6 @@ int hd_camera_produce_take_photos_actively(uint16_t *pic_id) {
     }
     pthread_mutex_unlock(&my_mutex);
 
-
     printf("hd_camera_produce_take_photos_actively Received notification!\n");
 
     // 超时返回
@@ -1161,16 +1284,16 @@ int hd_camera_produce_on_action_id_changed(uint32_t action_id_timestamp, uint8_t
                                            uint8_t trigger_type) {
     printf("[%s]hd_camera_produce_on_action_id_changed status %d\n", tag, status);
     int ret;
-    ret = do_snapshot_stop(action_id_timestamp, action_id_index); // 关闭拍摄
-    printf("[%s]do_snapshot_stop ret = %d\n", tag, ret);
     if (status == 0) {
+        ret = do_snapshot_stop(action_id_timestamp, action_id_index); // 关闭拍摄
+        printf("[%s]do_snapshot_stop ret = %d\n", tag, ret);
         restore_sensor();
     } else {
         ret = do_snapshot_start(action_id_timestamp, action_id_index, trigger_type);
         printf("[%s]do_snapshot_start ret = %d\n", tag, ret);
     }
 
-    return 0;
+    return ret;
 }
 
 static void item_free(void **item) {

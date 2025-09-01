@@ -504,7 +504,7 @@ int delete_file_if_exists(const char *filename) {
         if (errno == ENOENT) {
             printf("文件 %s 不存在\n", filename);
         } else {
-            perror("删除文件失败");
+            printf("删除文件失败 %s 不存在\n", filename);
         }
         return -1; // 失败
     }

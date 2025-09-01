@@ -12,7 +12,7 @@ extern "C" {
 #define DEBUG         0  // 1:打开 0：关闭
 #define CONTEXT       0  // 1:mac 0:板子
 
-#define PROTOCOL_VERSION                "1.0"                       // 协议版本
+#define PROTOCOL_VERSION                "1.3"                       // 协议版本
 #define PROTOCOL_HEADER_0               0x5A                        // 协议头标识0
 #define PROTOCOL_HEADER_1               0xAA                        // 协议头标识1
 #define PROTOCOL_SLAVE_STATIC           0x01                        // 静态摄像头从机地址
