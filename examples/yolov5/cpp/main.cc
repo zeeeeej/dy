@@ -249,13 +249,15 @@ double scale_ratio
     int scale_height = scale_image.rows;
     
     // 计算宽高缩放比例
-    if(scale_ratio==0){
+    double ratio;
+    if(scale_ratio == 0){
         double width_ratio = static_cast<double>(src_width) / scale_width;
         double height_ratio = static_cast<double>(src_height) / scale_height;
-        double ratio = width_ratio>height_ratio? width_ratio :height_ratio;
-        print(">>> ratio = %d <<<\n",ratio);
+        ratio = width_ratio>height_ratio? width_ratio :height_ratio;
+        printf(">>> ratio = %lf <<<\n",ratio);
     }else{
-        print("<<< ratio = %d >>>\n",scale_ratio);
+        ratio = scale_ratio;
+        printf("<<< ratio = %lf >>>\n",scale_ratio);
     }
 
     int left_scale = left;
@@ -264,10 +266,10 @@ double scale_ratio
     int bottom_scale = bottom;
     
     // 将缩放图片坐标映射到原图坐标
-    int left_src = static_cast<int>(left_scale * ratio);
-    int top_src = static_cast<int>(top_scale * ratio);
-    int right_src = static_cast<int>(right_scale * ratio);
-    int bottom_src = static_cast<int>(bottom_scale * ratio);
+    int left_src = static_cast<int>(left_scale / ratio);
+    int top_src = static_cast<int>(top_scale / ratio);
+    int right_src = static_cast<int>(right_scale / ratio);
+    int bottom_src = static_cast<int>(bottom_scale / ratio);
     
     // 确保坐标在图像范围内
     left_src = max(0, min(left_src, src_width - 1));
@@ -358,6 +360,7 @@ static bool cropImage(const char* src_path, const char* transform_path, int left
                 } catch (const std::exception& e) {
                     std::cerr << "cropImage fail!!!!!错误: " << e.what() << std::endl;
                 }
+            deleteFile(scale_path);
             return result?0:2;
         }
     }
